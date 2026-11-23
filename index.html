@@ -1,131 +1,129 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#080b14">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Football Gift Challenge</title>
 <style>
-:root{--gold:#ffd36a;--gold2:#a86d19;--bg:#080b14;--panel:#111827;--muted:#9aa7bd;--line:#29364b}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#17233b 0,#080b14 58%);color:#f5f7fb;font-family:Arial,Helvetica,sans-serif;min-height:100vh}
-header{padding:22px 16px 10px;text-align:center}.eyebrow{letter-spacing:.24em;color:var(--gold);font-size:11px;font-weight:900}
-h1{font-size:clamp(28px,7vw,54px);margin:8px 0 4px;font-weight:1000;letter-spacing:-.04em;text-shadow:0 4px 24px #c68c3444}
-.sub{color:var(--muted);font-size:13px}.wrap{max-width:1050px;margin:auto;padding:12px 16px 40px}
-.panel{background:linear-gradient(145deg,#151f31,#0d1421);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 14px 40px #0005;margin:12px 0}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{flex:1}
-input,button{font:inherit;border-radius:11px;padding:12px 13px;border:1px solid #34445e;background:#0b1220;color:#fff;min-width:0}
-input{width:100%}button{cursor:pointer;font-weight:800;background:linear-gradient(180deg,#f5c96b,#b97a23);color:#17120a;border:1px solid #ffdc8b;box-shadow:0 4px 14px #0005}
-button.secondary{background:#1a2940;color:#e9f0fb;border-color:#3b4e6a}button:disabled{opacity:.45;cursor:not-allowed}
-.section-title{font-size:13px;letter-spacing:.12em;color:var(--gold);font-weight:900;margin:0 0 12px}
-.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
-.gift{aspect-ratio:1/1.05;border:1px solid #725322;border-radius:14px;background:radial-gradient(circle at 50% 25%,#354866,#172337 58%,#101827);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;position:relative;overflow:hidden;transition:.18s}
-.gift:before{content:"";position:absolute;inset:5px;border:1px solid #e7bd6640;border-radius:10px;pointer-events:none}
-.gift .emoji{font-size:clamp(27px,6vw,48px);filter:drop-shadow(0 5px 5px #0008)}
-.gift .num{font-size:11px;color:#d6dfef;letter-spacing:.14em;font-weight:900}
-.gift:hover:not(:disabled){transform:translateY(-3px);filter:brightness(1.2)}
-.gift:disabled{cursor:not-allowed;opacity:.7}.gift.opened{background:linear-gradient(145deg,#2b3547,#111827);border-color:#59677c}
-.notice{color:var(--muted);font-size:12px;line-height:1.5}.status{font-weight:800;color:var(--gold);font-size:13px}
-.prizes{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px}
-.prize{border:1px solid var(--line);background:#0c1422;border-radius:12px;padding:11px;display:flex;gap:10px;align-items:center}
-.prize b{display:block;font-size:12px}.prize small{color:var(--muted);font-size:11px}
-.prize .pemoji{font-size:25px}.rank{font-size:10px;color:var(--gold);font-weight:900}
-#result{display:none;text-align:center;padding:22px;border:1px solid #b98736;background:radial-gradient(circle,#49351a,#151b29 70%);border-radius:16px;margin-top:12px}
-#result .big{font-size:58px}#result h2{margin:5px 0;color:var(--gold)}
-.list{display:grid;gap:7px}.item{display:flex;justify-content:space-between;gap:10px;padding:9px 11px;background:#0b1320;border-radius:9px;font-size:12px}
-.hidden{display:none!important}.pill{display:inline-block;padding:5px 8px;border-radius:99px;background:#26364e;color:#dce7f7;font-size:10px;font-weight:900}
-footer{text-align:center;color:#64748b;font-size:11px;padding:20px}
-@media(max-width:480px){.grid{gap:6px}.panel{padding:12px}.gift .num{font-size:9px}}
-
-/* Cinematic Football reward reveal */
-.gift.shaking{animation:chestShake .16s infinite;filter:brightness(1.65);box-shadow:0 0 22px #ffd36a99;border-color:#ffe7a1}
-.gift.shaking .emoji{animation:chestGlow .45s infinite alternate;filter:drop-shadow(0 0 14px #ffd36a)}
-@keyframes chestShake{0%{transform:translate(0,0) rotate(0)}25%{transform:translate(-3px,1px) rotate(-3deg)}50%{transform:translate(3px,-1px) rotate(3deg)}75%{transform:translate(-2px,-1px) rotate(-2deg)}100%{transform:translate(0,0) rotate(0)}}
-@keyframes chestGlow{from{transform:scale(1)}to{transform:scale(1.18)}}
-#reveal{display:none;position:fixed;inset:0;z-index:50;background:radial-gradient(ellipse at center,#293c5cdd 0,#050914f5 72%);align-items:center;justify-content:center;padding:20px;overflow:hidden}
-#reveal.show{display:flex;animation:fadeIn .35s ease-out}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.reveal-card{position:relative;text-align:center;width:min(560px,100%);padding:28px 18px;border:1px solid #8b713d;border-radius:22px;background:linear-gradient(145deg,#1b2b43,#0a101d);box-shadow:0 0 55px #e8ad4655;z-index:2;animation:popIn .55s cubic-bezier(.2,1.5,.4,1)}
-@keyframes popIn{from{transform:scale(.45) rotate(-5deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
-#reveal.gold .reveal-card{border:2px solid #ffe18a;box-shadow:0 0 24px #ffcf55,0 0 90px #ffb52b88}
-#reveal.legendary .reveal-card{border:2px solid #ffe18a;box-shadow:0 0 35px #ffe18a,0 0 130px #ffae22aa;animation:legendPop .8s cubic-bezier(.15,1.6,.3,1)}
-@keyframes legendPop{0%{transform:scale(.2) rotate(-12deg);opacity:0}65%{transform:scale(1.12) rotate(3deg)}100%{transform:scale(1) rotate(0);opacity:1}}
-.reveal-kicker{color:#f8cf73;letter-spacing:.22em;font-size:11px;font-weight:1000}.reveal-icon{font-size:clamp(70px,18vw,116px);margin:12px 0;filter:drop-shadow(0 0 18px #ffd36a)}
-.reveal-card h2{font-size:clamp(24px,6vw,38px);margin:4px 0 10px;color:#ffe3a0;text-transform:uppercase}.reveal-card p{color:#d9e2f1;margin:0 0 18px}
-.reveal-banner{display:inline-block;padding:10px 17px;border:1px solid #ffe6a2;background:linear-gradient(90deg,#79501b,#d99a31,#79501b);color:#fff6df;font-weight:1000;letter-spacing:.12em;border-radius:7px;box-shadow:0 0 24px #ffcb4a77}
-.spark{position:absolute;width:7px;height:7px;border-radius:50%;background:#ffe18a;box-shadow:0 0 12px 4px #ffc34c;animation:sparkFly 1.6s ease-out forwards;z-index:1}
-@keyframes sparkFly{0%{transform:translate(0,0) scale(.3);opacity:0}15%{opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}}
-#reveal-close{margin-top:18px;min-width:180px}
-@media(prefers-reduced-motion:reduce){.gift.shaking,.gift.shaking .emoji,.reveal-card,.spark{animation:none!important}}
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #174b2c, #07110b 70%);
+  color: white;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.card {
+  width: 90%;
+  max-width: 420px;
+  background: #102019;
+  border: 2px solid #9cff00;
+  border-radius: 20px;
+  padding: 25px;
+  text-align: center;
+  box-shadow: 0 0 25px #5a9e23;
+}
+h1 { color: #aaff00; }
+input, button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 12px;
+  border-radius: 10px;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+input {
+  background: #07110b;
+  border: 1px solid #668b53;
+  color: white;
+}
+button {
+  background: #aaff00;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+#message { min-height: 25px; color: #ffd45a; }
+#game { display: none; }
 </style>
 </head>
 <body>
-<header><div class="eyebrow">THE ULTIMATE FOOTBALL REWARD DROP</div><h1>🎁 FOOTBALL GIFT CHALLENGE</h1><div class="sub">15 Mystery-Boxen · Live-Runde · Seltene Football-Belohnungen</div></header>
-<main class="wrap">
-<section class="panel">
- <div class="section-title">SPIELER-LOGIN</div>
- <div class="row"><div><input id="nickname" maxlength="18" placeholder="Dein Spielername"></div><button id="join">BEITRETEN</button></div>
- <p class="notice">Verwende am besten nur einen Spitznamen, keine Telefonnummer oder andere privaten Daten.</p>
- <div id="playerStatus" class="status">Noch nicht beigetreten</div>
-</section>
-<section class="panel">
- <div class="row"><div><div class="section-title">LIVE GESCHENK-DROP</div><div class="notice">Wähle eine der 15 Boxen. Jede Öffnung ist ein neuer Versuch. Bereits gewonnene Preise können für dich nicht erneut gezogen werden.</div></div><div style="text-align:right"><span class="pill" id="connection">OFFLINE-DEMO</span></div></div>
- <div class="grid" id="giftGrid"></div>
- <div id="result"><div class="big" id="resultEmoji">🎁</div><h2 id="resultTitle">Überraschung!</h2><div id="resultText"></div></div>
- <div id="reveal" aria-live="polite"><div class="reveal-card"><div class="reveal-kicker">FOOTBALL GIFT DROP</div><div class="reveal-icon" id="revealEmoji">🎁</div><div class="reveal-banner" id="revealBanner">BOX GEÖFFNET</div><h2 id="revealTitle">Überraschung!</h2><p id="revealText"></p><button id="reveal-close">WEITER</button></div></div>
- <p class="notice" id="roundStatus">Demo-Modus: Ergebnisse werden nur auf diesem Gerät gespeichert. Für echte Live-Übertragung muss Firebase eingerichtet werden.</p>
-</section>
-<section class="panel">
- <div class="section-title">GEWINNE & SELTENHEIT</div>
- <div class="prizes">
-  <div class="prize"><span class="pemoji">🤡</span><div><div class="rank">RANG 5 · 4 %</div><b>Loser Token</b><small>Prank – kein echter Vorteil</small></div></div>
-  <div class="prize"><span class="pemoji">🥅</span><div><div class="rank">RANG 4 · 2 %</div><b>Anstoß- & Torwart-Bonus</b><small>Spielbonus</small></div></div>
-  <div class="prize"><span class="pemoji">⚽</span><div><div class="rank">RANG 3 · 1 %</div><b>1-Tor-Vorsprung-Bonus</b><small>Spielbonus</small></div></div>
-  <div class="prize"><span class="pemoji">🏆</span><div><div class="rank">RANG 2 · 0,4 %</div><b>Football Token</b><small>Du entscheidest das nächste Turnier</small></div></div>
-  <div class="prize"><span class="pemoji">👑</span><div><div class="rank">RANG 1 · 0,1 %</div><b>Revenge Token</b><small>Du darfst eine Revanche machen</small></div></div>
- </div>
- <p class="notice">Gesamtchance auf einen Gewinn: 7,5 %. Niete: 92,5 %. Jede Belohnung ist pro Spieler nur einmal erhältlich. Die Wahrscheinlichkeiten gelten nur für noch nicht gewonnene Preise.</p>
-</section>
-<section class="panel">
- <div class="section-title">DEINE SAMMLUNG</div><div id="collection" class="list"><div class="notice">Melde dich an, um deine Sammlung zu sehen.</div></div>
-</section>
-<section class="panel">
- <div class="section-title">ADMIN-BEREICH</div>
- <div class="notice">Diese Vorschau enthält eine lokale Demo-Verwaltung. Sie ist noch nicht für eine öffentliche Live-Runde abgesichert.</div>
- <div class="row" style="margin-top:10px"><input id="adminPin" type="password" placeholder="Demo-Admin-PIN"><button class="secondary" id="adminLogin">ADMIN ÖFFNEN</button></div>
- <div id="adminTools" class="hidden">
-  <p class="status">Demo-Admin aktiviert</p>
-  <div class="row"><button class="secondary" id="resetMine">Meine Demo-Sammlung zurücksetzen</button><button class="secondary" id="newMix">Boxen neu mischen</button></div>
-  <p class="notice">Für die echte Version muss die Admin-Berechtigung serverseitig geschützt werden. Ein PIN im HTML wäre für eine öffentliche Website nicht sicher.</p>
- </div>
-</section>
-<footer>FOOTBALL GIFT CHALLENGE · Fanprojekt für eure private Fußballgruppe</footer>
-</main>
-<script>
-const prizes=[
- {id:"loser",name:"Loser Token",emoji:"🤡",chance:4,desc:"Reingefallen! Das war der Prank-Token."},
- {id:"keeper",name:"Anstoß- & Torwart-Bonus",emoji:"🥅",chance:2,desc:"Du bekommst den Anstoß- und Torwart-Bonus!"},
- {id:"goal",name:"1-Tor-Vorsprung-Bonus",emoji:"⚽",chance:1,desc:"Du startest das nächste passende Spiel mit einem Tor Vorsprung!"},
- {id:"football",name:"Football Token",emoji:"🏆",chance:.4,desc:"Du darfst das nächste Turnier entscheiden!"},
- {id:"revenge",name:"Revenge Token",emoji:"👑",chance:.1,desc:"ULTRA RARE! Du darfst eine Revanche machen!"}
-];
-const $=id=>document.getElementById(id);
-let player=localStorage.getItem("fgc_player")||"", inventory=JSON.parse(localStorage.getItem("fgc_inventory")||"[]"), opened=0, order=[];
-function shuffle(){order=Array.from({length:15},(_,i)=>i+1).sort(()=>Math.random()-.5);renderBoxes()}
-function save(){localStorage.setItem("fgc_inventory",JSON.stringify(inventory))}
-function join(){let n=$("nickname").value.trim();if(!n){alert("Gib zuerst einen Spielernamen ein.");return}player=n;localStorage.setItem("fgc_player",player);$("playerStatus").textContent="Angemeldet als "+player;renderCollection();$("roundStatus").textContent="Du kannst beliebig viele Boxen öffnen. Gewinne bleiben pro Spieler einmalig."; }
-function draw(){let available=prizes.filter(p=>!inventory.includes(p.id));let roll=Math.random()*100;let cumulative=0;for(const p of available){cumulative+=p.chance;if(roll<cumulative)return p}return null}
-function burst(){const layer=$("reveal");for(let i=0;i<44;i++){const e=document.createElement("i");e.className="spark";e.style.left="50%";e.style.top="48%";e.style.setProperty("--dx",(Math.random()*560-280)+"px");e.style.setProperty("--dy",(Math.random()*560-280)+"px");e.style.animationDelay=(Math.random()*.28)+"s";layer.appendChild(e);setTimeout(()=>e.remove(),2100)}}
-function showReveal(prize,index){const layer=$("reveal");layer.className="show";layer.classList.add(prize?(prize.id==="revenge"||prize.id==="football"?"legendary":"gold"):"common");$("revealEmoji").textContent=prize?prize.emoji:"💨";$("revealTitle").textContent=prize?prize.name:"Diesmal nichts gefunden";$("revealText").textContent=prize?prize.desc:"Die Box war leer. Die nächste Chance wartet schon.";$("revealBanner").textContent=prize?(prize.id==="revenge"?"ULTRA RARE · REVENGE TOKEN":prize.id==="football"?"LEGENDÄRER FUND": "BONUS GEFUNDEN"):"KEIN GEWINN";burst();}
-function openBox(index){if(!player){alert("Bitte zuerst beitreten.");return}const box=document.querySelector(`[data-box="${index}"]`);if(!box||box.disabled)return;document.querySelectorAll(".gift").forEach(b=>b.disabled=true);box.classList.add("shaking");box.querySelector(".emoji").textContent="🎁";$("roundStatus").textContent=`${player} öffnet Box ${index} … die Box zittert!`;setTimeout(()=>{let prize=draw();opened++;box.classList.remove("shaking");box.classList.add("opened");box.querySelector(".emoji").textContent=prize?prize.emoji:"💨";if(prize){inventory.push(prize.id);save();renderCollection()}$("result").style.display="block";$("resultEmoji").textContent=prize?prize.emoji:"💨";$("resultTitle").textContent=prize?prize.name:"Leider eine Niete!";$("resultText").textContent=prize?prize.desc:"Diesmal war nichts drin.";$("roundStatus").textContent=`${player} hat Box ${index} geöffnet · Versuch ${opened}.`;showReveal(prize,index);},2600)}
-$("reveal-close").onclick=()=>{$("reveal").className="";document.querySelectorAll(".gift").forEach(b=>b.disabled=false);setTimeout(shuffle,350)};
 
-function renderBoxes(){let g=$("giftGrid");g.innerHTML="";for(let i=0;i<15;i++){let b=document.createElement("button");b.className="gift";b.dataset.box=i+1;b.innerHTML=`<span class="emoji">🎁</span><span class="num">BOX ${String(i+1).padStart(2,"0")}</span>`;b.onclick=()=>openBox(i+1);g.appendChild(b)}}
-function renderCollection(){let c=$("collection");c.innerHTML="";if(!player){c.innerHTML='<div class="notice">Melde dich an, um deine Sammlung zu sehen.</div>';return}let won=prizes.filter(p=>inventory.includes(p.id));if(!won.length){c.innerHTML='<div class="notice">Noch keine Gewinne. Viel Glück!</div>';return}for(const p of won){let d=document.createElement("div");d.className="item";d.innerHTML=`<span>${p.emoji} ${p.name}</span><b>GEWONNEN</b>`;c.appendChild(d)}}
-$("join").onclick=join;
-$("adminLogin").onclick=()=>{if($("adminPin").value==="FOOTBALL2026")$("adminTools").classList.remove("hidden");else alert("Falsche Demo-PIN.")};
-$("resetMine").onclick=()=>{if(confirm("Deine lokale Demo-Sammlung wirklich zurücksetzen?")){inventory=[];save();renderCollection();$("result").style.display="none"}};
-$("newMix").onclick=shuffle;
-if(player){$("nickname").value=player;$("playerStatus").textContent="Angemeldet als "+player}
-renderBoxes();renderCollection();
+<div class="card">
+  <h1>⚽ FOOTBALL GIFT CHALLENGE</h1>
+
+  <div id="login">
+    <p>Gib deinen Spielernamen ein:</p>
+    <input id="name" maxlength="20" placeholder="Dein Spielername">
+    <button id="join">Spiel betreten</button>
+    <p id="message"></p>
+  </div>
+
+  <div id="game">
+    <h2>Willkommen!</h2>
+    <p id="welcome"></p>
+    <p class="small">Dein eigener Spielraum wurde erstellt.</p>
+    <h2>🎁 Dein Spielraum</h2>
+    <p>Die Boxen kommen im nächsten Schritt.</p>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth,
+  signInAnonymously
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getDatabase,
+  ref,
+  set
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+const joinButton = document.getElementById("join");
+const nameInput = document.getElementById("name");
+const message = document.getElementById("message");
+
+joinButton.addEventListener("click", async () => {
+  const playerName = nameInput.value.trim();
+
+  if (!playerName) {
+    message.textContent = "Bitte gib einen Spielernamen ein.";
+    return;
+  }
+
+  joinButton.disabled = true;
+  message.textContent = "Verbindung wird hergestellt ...";
+
+  try {
+    const result = await signInAnonymously(auth);
+    const uid = result.user.uid;
+
+    await set(ref(db, "players/" + uid), {
+      name: playerName,
+      joinedAt: Date.now()
+    });
+
+    document.getElementById("login").style.display = "none";
+    document.getElementById("game").style.display = "block";
+    document.getElementById("welcome").textContent =
+      "Hallo " + playerName + "!";
+
+  } catch (error) {
+    console.error(error);
+    message.textContent = "Fehler: " + error.message;
+    joinButton.disabled = false;
+  }
+});
 </script>
-</body></html>
+
+</body>
+</html>
