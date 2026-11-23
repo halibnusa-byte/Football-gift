@@ -6,81 +6,201 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Football Gift Challenge</title>
 <style>
+:root {
+  --green: #a6ff00;
+  --bg: #07110d;
+  --panel: #102019;
+  --gold: #ffd45a;
+}
+* { box-sizing: border-box; }
 body {
   margin: 0;
-  min-height: 100vh;
-  background: radial-gradient(circle at top, #174b2c, #07110b 70%);
+  background: radial-gradient(ellipse at top,#19472b,#07110d 70%);
   color: white;
-  font-family: Arial, sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  font-family: Arial,sans-serif;
+  min-height: 100vh;
 }
-.card {
-  width: 90%;
-  max-width: 420px;
-  background: #102019;
-  border: 2px solid #9cff00;
-  border-radius: 20px;
-  padding: 25px;
+header {
   text-align: center;
-  box-shadow: 0 0 25px #5a9e23;
+  padding: 22px 10px;
+  background: #07100ddd;
+  border-bottom: 2px solid var(--green);
 }
-h1 { color: #aaff00; }
-input, button {
-  width: 100%;
-  padding: 14px;
-  margin-top: 12px;
-  border-radius: 10px;
-  box-sizing: border-box;
+h1 {
+  color: var(--green);
+  margin: 0;
+  font-size: clamp(23px,5vw,36px);
+  text-shadow: 0 0 15px #8cff00;
+}
+main { max-width: 1050px; margin: auto; padding: 15px; }
+.panel {
+  background: var(--panel);
+  border: 1px solid #31513a;
+  border-radius: 16px;
+  padding: 16px;
+  margin: 14px 0;
+  box-shadow: 0 8px 25px #0006;
+}
+input,button {
   font-size: 16px;
+  border-radius: 10px;
+  padding: 12px;
 }
 input {
-  background: #07110b;
-  border: 1px solid #668b53;
+  background: #07110d;
   color: white;
+  border: 1px solid #47634e;
+  width: 100%;
+  margin: 8px 0;
 }
 button {
-  background: #aaff00;
-  border: none;
+  background: var(--green);
+  color: #07110d;
+  border: 0;
   font-weight: bold;
   cursor: pointer;
 }
-#message { min-height: 25px; color: #ffd45a; }
-#game { display: none; }
+button:disabled { opacity: .4; cursor: not-allowed; }
+.small { color: #a7b8aa; font-size: 13px; }
+.hidden { display: none !important; }
+.status { color: var(--green); font-weight: bold; }
+#power.active { color: var(--gold); text-shadow: 0 0 12px var(--gold); }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(5,minmax(0,1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+.box {
+  min-height: 90px;
+  background: linear-gradient(145deg,#203c2a,#101d15);
+  border: 2px solid #75c52a;
+  color: white;
+  border-radius: 13px;
+  font-size: 27px;
+  transition: transform .2s,box-shadow .2s;
+}
+.box:hover:not(:disabled) {
+  transform: translateY(-4px);
+  box-shadow: 0 0 15px #9dff00;
+}
+.box.opened { background: #253029; border-color: #59665b; }
+.box.rare { border-color: var(--gold); box-shadow: 0 0 13px #ffc83d; }
+.box.reveal { animation: reveal .65s ease; }
+@keyframes reveal {
+  0% { transform: scale(.8); opacity: .4; }
+  55% { transform: scale(1.13); box-shadow: 0 0 30px var(--green); }
+  100% { transform: scale(1); opacity: 1; }
+}
+#result {
+  min-height: 65px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  padding: 15px;
+}
+.win {
+  color: var(--green);
+  animation: glow .8s ease;
+}
+@keyframes glow {
+  50% { text-shadow: 0 0 25px var(--green); transform: scale(1.08); }
+}
+.gold header { border-color: var(--gold); }
+.gold h1 { color: var(--gold); text-shadow: 0 0 15px var(--gold); }
+.gold .box {
+  border-color: var(--gold);
+  background: linear-gradient(145deg,#59451b,#20190c);
+}
+.gold button { background: var(--gold); }
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+li { margin: 8px 0; }
+@media(max-width:600px) {
+  .grid { gap: 6px; }
+  .box { min-height: 72px; font-size: 22px; padding: 5px; }
+  .columns { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
 
-<div class="card">
+<header>
   <h1>⚽ FOOTBALL GIFT CHALLENGE</h1>
+  <p id="power">⚡ POWER HOURS: AUS</p>
+  <p class="small" id="clock"></p>
+</header>
 
-  <div id="login">
-    <p>Gib deinen Spielernamen ein:</p>
-    <input id="name" maxlength="20" placeholder="Dein Spielername">
-    <button id="join">Spiel betreten</button>
-    <p id="message"></p>
+<main>
+<section class="panel" id="login">
+  <h2>Willkommen!</h2>
+  <p>Gib deinen Spielernamen ein:</p>
+  <input id="playerName" maxlength="20" placeholder="Dein Spielername">
+  <button id="join">Spiel betreten</button>
+  <p class="small" id="loginMessage"></p>
+</section>
+
+<div id="game" class="hidden">
+  <section class="panel">
+    <div class="columns">
+      <div><b>Dein Spielraum</b><p id="myName">Spieler</p></div>
+      <div><b>Runde</b><p id="round">1</p></div>
+    </div>
+    <p>Geöffnete Boxen: <b id="opened">0 / 3</b></p>
+    <p class="small">Nach drei Boxen werden deine Boxen automatisch neu gemischt.</p>
+  </section>
+
+  <section class="panel">
+    <h2>🎁 Deine Boxen</h2>
+    <div class="grid" id="boxes"></div>
+    <div id="result">Wähle eine Box!</div>
+  </section>
+
+  <div class="columns">
+    <section class="panel">
+      <h3>🏆 Deine Token</h3>
+      <ul id="tokens"><li>Noch keine Gewinne</li></ul>
+    </section>
+    <section class="panel">
+      <h3>📺 Live-Übertragung</h3>
+      <p class="small">Wähle einen Spieler, der gerade online ist.</p>
+      <div id="online">Lade Spieler …</div>
+      <div id="watch" class="hidden">
+        <p id="watchTitle">Spieler-Übertragung</p>
+        <div class="grid" id="watchBoxes"></div>
+        <button id="stopWatch">Übertragung verlassen</button>
+      </div>
+    </section>
   </div>
 
-  <div id="game">
-    <h2>Willkommen!</h2>
-    <p id="welcome"></p>
-    <p class="small">Dein eigener Spielraum wurde erstellt.</p>
-    <h2>🎁 Dein Spielraum</h2>
-    <p>Die Boxen kommen im nächsten Schritt.</p>
-  </div>
+  <section class="panel">
+    <h3>🥇 Seltenste Geschenke</h3>
+    <ol id="ranking"><li>Noch keine Gewinne</li></ol>
+  </section>
+
+  <section class="panel">
+    <h3>📜 Deine letzten Gewinne</h3>
+    <ul id="history"><li>Noch keine Gewinne</li></ul>
+  </section>
 </div>
+
+<section class="panel">
+  <h3>ℹ️ Spielregeln</h3>
+  <p>Jeder Spieler spielt in seinem eigenen Spielraum. Pro Runde dürfen drei Boxen geöffnet werden. Danach wird automatisch neu gemischt. Es kann auch eine komplette Runde ohne Bonus geben.</p>
+  <p class="small">Die Gewinnchancen werden nicht angezeigt.</p>
+</section>
+</main>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getAuth,
-  signInAnonymously
+  getAuth, signInAnonymously
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getDatabase,
-  ref,
-  set
+  getDatabase, ref, set, get, onValue, remove
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { firebaseConfig } from "./firebase-config.js";
 
@@ -88,42 +208,414 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-const joinButton = document.getElementById("join");
-const nameInput = document.getElementById("name");
-const message = document.getElementById("message");
+const prizes = [
+  {name:"Revenge Token",chance:0.05,rarity:1},
+  {name:"Football Token",chance:0.20,rarity:2},
+  {name:"Penalty Token",chance:0.30,rarity:3,once:true},
+  {name:"Ein-Tor-Vorsprung",chance:1,rarity:4},
+  {name:"Rotkarten-Entferner",chance:1.5,rarity:5},
+  {name:"Anstoß- & Torwart-Bonus",chance:2,rarity:6},
+  {name:"Torwart-Switch-Token",chance:2.5,rarity:7},
+  {name:"Loser Token",chance:4,rarity:8}
+];
 
-joinButton.addEventListener("click", async () => {
-  const playerName = nameInput.value.trim();
+const MISS_CHANCE = 88.45;
+const expiry = new Date("2026-11-28T14:30:00+01:00");
 
-  if (!playerName) {
-    message.textContent = "Bitte gib einen Spielernamen ein.";
+let user = null;
+let playerName = "";
+let round = 1;
+let opened = 0;
+let roomBoxes = [];
+let inventory = {};
+let history = [];
+let wonOnce = {};
+let watching = null;
+let unsubLive = null;
+let unsubOnline = null;
+let unsubRanking = null;
+let isPower = false;
+
+const $ = id => document.getElementById(id);
+
+function safeName(s) {
+  return String(s || "").replace(/[<>]/g,"").trim().slice(0,20);
+}
+
+function gameOpen() {
+  return new Date() < expiry;
+}
+
+function powerHours() {
+  const d = new Date();
+  const day = d.getDay();
+  const minutes = d.getHours()*60+d.getMinutes();
+  return day === 6 || (minutes >= 900 && minutes < 1020);
+}
+
+function updateClock() {
+  isPower = powerHours();
+  document.body.classList.toggle("gold",isPower);
+  $("power").textContent = isPower ? "✨ POWER HOURS AKTIV" : "⚡ POWER HOURS: AUS";
+  $("power").classList.toggle("active",isPower);
+  $("clock").textContent = gameOpen()
+    ? "Spielende: Samstag, 28. November 2026, 14:30 Uhr"
+    : "Das Spiel ist beendet.";
+}
+setInterval(updateClock,1000);
+updateClock();
+function multiplier() {
+  return isPower ? 2 : 1;
+}
+
+// Eine seltene Box erscheint nur mit 1 % Chance pro Mischung.
+// Es kann höchstens eine seltene Box geben.
+function makeBoxes() {
+  const rareRoll = Math.random() * 100;
+  let rare = null;
+
+  if (rareRoll < 1) {
+    const x = Math.random() * 100;
+    rare = x < 70 ? "Bronze" :
+           x < 90 ? "Silver" :
+           x < 98 ? "Gold" : "Diamond";
+  }
+
+  const rareIndex = rare ? Math.floor(Math.random() * 15) : -1;
+
+  return Array.from({length:15}, (_,i) => ({
+    opened:false,
+    rare:i === rareIndex ? rare : null,
+    prize:null
+  }));
+}
+
+// Multipliziert die Bonuschancen und verteilt den Rest auf Nieten.
+// Jede Box wird unabhängig ausgewürfelt.
+function rollPrize(boxType) {
+  const rareMultiplier = {
+    Bronze:2, Silver:3, Gold:4, Diamond:5
+  }[boxType] || 1;
+
+  const mult = multiplier() * rareMultiplier;
+  const weights = prizes.map(p => p.chance * mult);
+  const total = weights.reduce((a,b) => a+b,0);
+
+  // Wenn die Gesamtchance über 100 % steigt, werden alle Chancen
+  // proportional normalisiert.
+  const scale = total > 100 ? 100/total : 1;
+  const bonusTotal = total * scale;
+  const missWeight = 100 - bonusTotal;
+
+  let roll = Math.random() * 100;
+
+  for (let i=0; i<prizes.length; i++) {
+    const weight = weights[i] * scale;
+    if (roll < weight) return prizes[i];
+    roll -= weight;
+  }
+
+  return null;
+}
+
+function publicBoxes() {
+  return roomBoxes.map((b,i) => ({
+    number:i+1,
+    opened:b.opened,
+    rare:b.rare || null,
+    result:b.opened ? (b.prize?.name || "Niete") : null
+  }));
+}
+
+async function publishLive() {
+  if (!user) return;
+  await set(ref(db,"live/"+user.uid), {
+    label:"Spieler-"+user.uid.slice(0,4),
+    online:true,
+    boxes:publicBoxes(),
+    round,
+    updatedAt:Date.now()
+  });
+}
+
+async function savePrivate() {
+  if (!user) return;
+  await set(ref(db,"players/"+user.uid), {
+    playerName,
+    round,
+    opened,
+    inventory,
+    history,
+    wonOnce,
+    boxes:roomBoxes
+  });
+}
+
+function renderBoxes() {
+  const grid=$("boxes");
+  grid.innerHTML="";
+
+  roomBoxes.forEach((b,i) => {
+    const btn=document.createElement("button");
+    btn.className="box"+(b.opened?" opened":"")+(b.rare?" rare":"");
+    btn.textContent=b.opened?(b.prize?"🎉":"❌"):(b.rare?"💎":"🎁");
+    btn.disabled=b.opened||opened>=3||!gameOpen();
+    btn.setAttribute("aria-label","Box "+(i+1));
+    btn.onclick=()=>openBox(i,btn);
+    grid.appendChild(btn);
+  });
+
+  $("opened").textContent=opened+" / 3";
+  $("round").textContent=round;
+}
+
+function renderTokens() {
+  const list=$("tokens");
+  list.innerHTML="";
+  const keys=Object.keys(inventory).filter(k=>inventory[k]>0);
+
+  if(!keys.length) {
+    list.innerHTML="<li>Noch keine Gewinne</li>";
     return;
   }
 
-  joinButton.disabled = true;
-  message.textContent = "Verbindung wird hergestellt ...";
+  keys.forEach(k=>{
+    const li=document.createElement("li");
+    li.textContent=k+" × "+inventory[k];
+    list.appendChild(li);
+  });
+}
 
-  try {
-    const result = await signInAnonymously(auth);
-    const uid = result.user.uid;
+function renderHistory() {
+  const list=$("history");
+  list.innerHTML="";
 
-    await set(ref(db, "players/" + uid), {
-      name: playerName,
-      joinedAt: Date.now()
+  if(!history.length) {
+    list.innerHTML="<li>Noch keine Gewinne</li>";
+    return;
+  }
+
+  history.slice(-12).reverse().forEach(x=>{
+    const li=document.createElement("li");
+    li.textContent=x;
+    list.appendChild(li);
+  });
+}
+
+async function addRanking(prize) {
+  await set(ref(db,"ranking/"+user.uid+"_"+Date.now()),{
+    player:playerName,
+    prize:prize.name,
+    rarity:prize.rarity,
+    time:Date.now()
+  });
+}
+
+async function openBox(index,btn) {
+  if(!gameOpen()||opened>=3||roomBoxes[index].opened) return;
+
+  const box=roomBoxes[index];
+  let prize=rollPrize(box.rare);
+
+  box.opened=true;
+  opened++;
+
+  if(prize && prize.once && wonOnce[prize.name]) {
+    prize=null;
+  }
+
+  box.prize=prize;
+  btn.classList.add("reveal");
+
+  $("result").className="";
+
+  if(prize) {
+    inventory[prize.name]=(inventory[prize.name]||0)+1;
+    if(prize.once) wonOnce[prize.name]=true;
+
+    history.push(prize.name);
+    $("result").textContent="🎉 GEWONNEN: "+prize.name+"!";
+    $("result").className="win";
+
+    await addRanking(prize);
+  } else {
+    $("result").textContent="❌ NIETE!";
+  }
+
+  await savePrivate();
+  await publishLive();
+
+  renderBoxes();
+  renderTokens();
+  renderHistory();
+
+  if(opened===3) {
+    $("result").textContent+=" — Neue Runde wird gemischt …";
+
+    setTimeout(async()=>{
+      round++;
+      opened=0;
+      roomBoxes=makeBoxes();
+
+      $("result").className="";
+      $("result").textContent="Neue Runde! Viel Glück!";
+
+      await savePrivate();
+      await publishLive();
+      renderBoxes();
+    },1600);
+  }
+}
+
+function watchPlayer(id,label) {
+  if(unsubLive) unsubLive();
+
+  watching=id;
+  $("watch").classList.remove("hidden");
+  $("watchTitle").textContent="📺 LIVE: "+label;
+
+  unsubLive=onValue(ref(db,"live/"+id),snap=>{
+    const data=snap.val();
+    const grid=$("watchBoxes");
+    grid.innerHTML="";
+
+    if(!data||!data.online) {
+      $("watchTitle").textContent="Spieler ist offline";
+      return;
+    }
+
+    (data.boxes||[]).forEach(b=>{
+      const el=document.createElement("div");
+      el.className="box"+(b.opened?" opened":"")+(b.rare?" rare":"");
+      el.style.display="grid";
+      el.style.placeItems="center";
+      el.textContent=b.opened?(b.result==="Niete"?"❌":"🎉"):(b.rare?"💎":"🎁");
+      grid.appendChild(el);
+    });
+  });
+}
+
+$("stopWatch").onclick=()=>{
+  if(unsubLive) unsubLive();
+  unsubLive=null;
+  watching=null;
+  $("watch").classList.add("hidden");
+};
+
+function startOnlineList() {
+  if(unsubOnline) unsubOnline();
+
+  unsubOnline=onValue(ref(db,"live"),snap=>{
+    const data=snap.val()||{};
+    const list=$("online");
+    list.innerHTML="";
+    let count=0;
+
+    Object.entries(data).forEach(([id,p])=>{
+      if(id===user.uid||!p.online||Date.now()-(p.updatedAt||0)>60000) return;
+
+      count++;
+      const b=document.createElement("button");
+      b.textContent="📺 "+(p.label||"Spieler ansehen");
+      b.style.margin="4px";
+      b.onclick=()=>watchPlayer(id,p.label||"Spieler");
+      list.appendChild(b);
     });
 
-    document.getElementById("login").style.display = "none";
-    document.getElementById("game").style.display = "block";
-    document.getElementById("welcome").textContent =
-      "Hallo " + playerName + "!";
+    if(!count) list.textContent="Gerade ist niemand anderes online.";
+  });
+}
 
-  } catch (error) {
-    console.error(error);
-    message.textContent = "Fehler: " + error.message;
-    joinButton.disabled = false;
+function startRanking() {
+  if(unsubRanking) unsubRanking();
+
+  unsubRanking=onValue(ref(db,"ranking"),snap=>{
+    const data=Object.values(snap.val()||{});
+    data.sort((a,b)=>(a.rarity||99)-(b.rarity||99));
+
+    const list=$("ranking");
+    list.innerHTML="";
+
+    if(!data.length) {
+      list.innerHTML="<li>Noch keine Gewinne</li>";
+      return;
+    }
+
+    data.slice(0,10).forEach(x=>{
+      const li=document.createElement("li");
+      li.textContent=x.player+" — "+x.prize;
+      list.appendChild(li);
+    });
+  });
+}
+
+async function enterGame() {
+  const name=safeName($("playerName").value);
+
+  if(!name) {
+    $("loginMessage").textContent="Bitte gib einen Spielernamen ein.";
+    return;
   }
+
+  if(!gameOpen()) {
+    $("loginMessage").textContent="Das Spiel ist beendet.";
+    return;
+  }
+
+  $("join").disabled=true;
+  $("loginMessage").textContent="Verbindung wird hergestellt …";
+
+  try {
+    const result=await signInAnonymously(auth);
+    user=result.user;
+    playerName=name;
+
+    $("myName").textContent=name;
+    $("login").classList.add("hidden");
+    $("game").classList.remove("hidden");
+
+    const snap=await get(ref(db,"players/"+user.uid));
+
+    if(snap.exists()) {
+      const d=snap.val();
+      round=d.round||1;
+      opened=d.opened||0;
+      inventory=d.inventory||{};
+      history=d.history||[];
+      wonOnce=d.wonOnce||{};
+      roomBoxes=d.boxes||makeBoxes();
+    } else {
+      round=1;
+      opened=0;
+      inventory={};
+      history=[];
+      wonOnce={};
+      roomBoxes=makeBoxes();
+    }
+
+    await savePrivate();
+    await publishLive();
+
+    renderBoxes();
+    renderTokens();
+    renderHistory();
+
+    startOnlineList();
+    startRanking();
+
+  } catch(e) {
+    console.error(e);
+    $("loginMessage").textContent="Fehler: "+e.message;
+    $("join").disabled=false;
+  }
+}
+
+$("join").onclick=enterGame;
+
+window.addEventListener("beforeunload",()=>{
+  if(user) remove(ref(db,"live/"+user.uid));
 });
 </script>
-
 </body>
 </html>
+
