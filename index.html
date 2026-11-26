@@ -1,1271 +1,552 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#090909">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Football Gift Challenge – The Comeback Era</title>
-
 <style>
 :root{
-  --gold:#e8bd55;
-  --gold2:#ffe6a0;
-  --bg:#090909;
-  --panel:#151515;
-  --panel2:#202020;
-  --text:#f7f3e9;
-  --muted:#aaa49a;
-  --red:#e34c4c;
-  --green:#52ce8b;
+ --gold:#e8bd55;--gold2:#ffe9a8;--bg:#090909;
+ --panel:#191714;--line:#66512c;--white:#f8f4e9;
 }
 *{box-sizing:border-box}
 body{
-  margin:0;
-  background:radial-gradient(circle at top,#252016 0,#090909 48%);
-  color:var(--text);
-  font-family:Arial,Helvetica,sans-serif;
-  min-height:100vh;
+ margin:0;background:radial-gradient(circle at top,#302717,#090909 65%);
+ color:var(--white);font-family:Arial,sans-serif
 }
-button,input,select,textarea{font:inherit}
-button{
-  border:1px solid #80652e;
-  background:linear-gradient(135deg,#f3d37e,#b9872d);
-  color:#17120a;
-  padding:11px 16px;
-  border-radius:11px;
-  font-weight:800;
-  cursor:pointer;
-  transition:.15s;
-}
-button:hover{filter:brightness(1.12);transform:translateY(-1px)}
-button:disabled{opacity:.4;cursor:not-allowed;transform:none}
-button.secondary{background:#292929;color:white;border-color:#494949}
-button.danger{background:#8c2929;color:white;border-color:#bd4545}
-button.success{background:#176a45;color:white;border-color:#2b9b68}
-input,select,textarea{
-  width:100%;
-  background:#101010;
-  color:white;
-  border:1px solid #49433a;
-  padding:12px;
-  border-radius:9px;
-  outline:none;
-}
-input:focus,select:focus,textarea:focus{border-color:var(--gold)}
-textarea{min-height:85px;resize:vertical}
 header{
-  padding:22px 15px;
-  text-align:center;
-  border-bottom:1px solid #5b4824;
-  background:rgba(0,0,0,.65);
+ text-align:center;padding:24px 10px;background:#080808;
+ border-bottom:1px solid var(--line)
 }
-.logo{
-  color:var(--gold2);
-  font-size:clamp(23px,5vw,39px);
-  font-weight:1000;
-  letter-spacing:1px;
-  text-shadow:0 0 20px #d4a84255;
+.logo{font-size:clamp(23px,5vw,38px);font-weight:900;color:var(--gold2);text-shadow:0 0 18px #e8bd5577}
+.sub{font-size:11px;letter-spacing:4px;color:var(--gold);margin-top:7px}
+nav{display:flex;gap:7px;overflow-x:auto;padding:10px;background:#101010;position:sticky;top:0;z-index:5}
+button{
+ border:1px solid #9a7837;background:linear-gradient(135deg,#f6d989,#b88932);
+ color:#17120a;padding:10px 13px;border-radius:9px;font-weight:bold;cursor:pointer
 }
-.subtitle{color:#c4b58f;margin-top:7px;font-size:12px;letter-spacing:3px}
-nav{
-  display:flex;
-  gap:7px;
-  padding:12px;
-  overflow-x:auto;
-  position:sticky;
-  top:0;
-  z-index:20;
-  background:#0c0c0cf2;
-  border-bottom:1px solid #3c3320;
+button.secondary{background:#292929;color:white;border-color:#555}
+button.danger{background:#792929;color:white;border-color:#b44}
+button:disabled{opacity:.4;cursor:not-allowed}
+nav button{white-space:nowrap}
+main{max-width:1100px;margin:auto;padding:14px}
+.page{display:none}.page.active{display:block}
+.card{background:linear-gradient(145deg,#211e18,#111);border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:13px}
+h2,h3{color:#ffe7a4;margin-top:0}
+input,select,textarea{
+ width:100%;padding:11px;margin:4px 0;background:#0b0b0b;color:white;
+ border:1px solid #62512f;border-radius:8px
 }
-nav button{white-space:nowrap;padding:10px 13px;font-size:13px}
-nav button.active{box-shadow:0 0 14px #e8bd5555}
-main{max-width:1100px;margin:auto;padding:17px}
-.page{display:none}
-.page.active{display:block}
-.card{
-  background:linear-gradient(145deg,#1d1b17,#111);
-  border:1px solid #4b4029;
-  border-radius:16px;
-  padding:17px;
-  margin-bottom:15px;
-  box-shadow:0 8px 25px #0005;
-}
-h2,h3{color:var(--gold2);margin-top:0}
-h2{font-size:23px}
-h3{font-size:17px}
-.muted{color:var(--muted)}
-.small{font-size:12px}
-.gold{color:var(--gold)}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.row>*{flex:1}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:11px}
-.stat{
-  background:#0d0d0d;
-  border:1px solid #393126;
-  padding:14px;
-  border-radius:12px;
-}
+textarea{min-height:75px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row>*{flex:1;min-width:120px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:9px}
+.stat,.gift,.event{background:#111;border:1px solid #4d4028;border-radius:11px;padding:13px}
 .stat strong{display:block;color:var(--gold);font-size:25px;margin-top:5px}
-.gift-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:12px}
-.gift{
-  background:linear-gradient(145deg,#29251b,#111);
-  border:1px solid #76602e;
-  border-radius:15px;
-  min-height:135px;
-  padding:12px;
-  text-align:center;
-  cursor:pointer;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  gap:8px;
-}
-.gift .emoji{font-size:39px}
-.gift.opened{opacity:.45;cursor:not-allowed;filter:grayscale(1)}
-.gift.selected{outline:2px solid var(--gold);box-shadow:0 0 20px #e8bd5555}
-.badge{
-  display:inline-block;
-  padding:5px 9px;
-  border-radius:30px;
-  background:#29251b;
-  color:var(--gold2);
-  border:1px solid #66532b;
-  font-size:11px;
-  margin:3px;
-}
-.event-card{
-  border:1px solid #403a2e;
-  border-radius:12px;
-  padding:13px;
-  background:#111;
-}
-.event-card h3{margin-bottom:6px}
-.event-card p{font-size:13px;color:#b9b4a9;line-height:1.45}
-.event-card.active-event{border-color:var(--gold);box-shadow:0 0 16px #e8bd5522}
-.list{display:flex;flex-direction:column;gap:8px}
-.list-item{
-  background:#101010;
-  border:1px solid #39342a;
-  border-radius:10px;
-  padding:11px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-}
-.token-icon{font-size:25px}
-hr{border:0;border-top:1px solid #3b3426;margin:16px 0}
-.notice{
-  padding:12px;
-  background:#211d13;
-  border:1px solid #6b5429;
-  border-radius:10px;
-  color:#e7d5a5;
-  font-size:13px;
-  line-height:1.5;
-}
-#toast{
-  position:fixed;
-  bottom:18px;
-  left:50%;
-  transform:translateX(-50%);
-  background:#f0d17b;
-  color:#17120a;
-  padding:13px 20px;
-  border-radius:12px;
-  font-weight:800;
-  z-index:100;
-  display:none;
-  box-shadow:0 5px 25px #0009;
-  max-width:90%;
-  text-align:center;
-}
-#modal{
-  position:fixed;
-  inset:0;
-  background:#000d;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:80;
-  padding:15px;
-}
-#modal.show{display:flex}
-.modal-box{
-  width:min(520px,100%);
-  max-height:90vh;
-  overflow:auto;
-  background:#171613;
-  border:1px solid var(--gold);
-  border-radius:18px;
-  padding:22px;
-  text-align:center;
-}
-.modal-box .big{font-size:65px;margin:12px}
-footer{text-align:center;color:#777;font-size:11px;padding:25px}
-#chatMessages{
-  height:280px;overflow:auto;background:#0a0a0a;
-  border:1px solid #39342a;border-radius:10px;padding:10px;
-}
-.chat-message{padding:8px;border-bottom:1px solid #292929;font-size:13px}
-.chat-message b{color:var(--gold)}
+.gifts{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:10px}
+.gift{text-align:center;min-height:125px;cursor:pointer;background:linear-gradient(145deg,#302717,#111)}
+.gift .emoji{font-size:42px}
+.gift.opened{opacity:.35;pointer-events:none}
+.gift.shaking{animation:shake .65s linear 4;box-shadow:0 0 28px #f8d77d}
+.events{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px}
+.event.active{border-color:var(--gold);box-shadow:0 0 15px #e8bd5544}
+.list{display:grid;gap:7px}
+.item{padding:10px;background:#101010;border:1px solid #393329;border-radius:9px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.muted{color:#aaa;font-size:13px}
+.gold{color:var(--gold)}
+.notice{padding:12px;background:#241e12;border:1px solid #66512c;border-radius:9px;font-size:13px;line-height:1.5}
 .hidden{display:none!important}
-.event-skibidi{background:radial-gradient(circle at top,#302044,#08080b)}
-.event-godzilla{background:radial-gradient(circle at top,#183b37,#080b0b)}
-.event-hacker{background:radial-gradient(circle at top,#073b1d,#050b07)}
-.event-robot{background:radial-gradient(circle at top,#253b4c,#080b0e)}
-.event-unicorn{background:radial-gradient(circle at top,#452044,#100a18)}
-.event-lava{background:radial-gradient(circle at top,#51200c,#100806)}
-.event-ocean{background:radial-gradient(circle at top,#063b58,#050b12)}
-@media(max-width:600px){
-  main{padding:11px}
-  .card{padding:13px}
-  nav{padding:9px}
-  nav button{font-size:12px}
+#modal{display:none;position:fixed;inset:0;background:#000e;z-index:20;align-items:center;justify-content:center;padding:15px}
+#modal.show{display:flex}
+.modalbox{width:min(480px,100%);background:#191714;border:1px solid var(--gold);border-radius:17px;padding:22px;text-align:center}
+.big{font-size:65px}
+#toast{position:fixed;bottom:15px;left:50%;transform:translateX(-50%);background:#222;border:1px solid var(--gold);padding:12px 18px;border-radius:10px;display:none;z-index:30}
+@keyframes shake{
+ 0%,100%{transform:translateX(0) rotate(0)}
+ 20%{transform:translateX(-6px) rotate(-5deg)}
+ 40%{transform:translateX(6px) rotate(5deg)}
+ 60%{transform:translateX(-5px) rotate(-4deg)}
+ 80%{transform:translateX(5px) rotate(4deg)}
 }
+@keyframes glow{0%,100%{box-shadow:0 0 10px #e8bd5577}50%{box-shadow:0 0 35px #ffe9a8}}
+.winner{animation:glow 1s infinite;border-color:var(--gold)}
+footer{text-align:center;padding:25px;color:#777;font-size:12px}
 </style>
 </head>
-
 <body>
 <header>
-  <div class="logo">🏆 FOOTBALL GIFT CHALLENGE</div>
-  <div class="subtitle">THE COMEBACK ERA</div>
+ <div class="logo">🏆 FOOTBALL GIFT CHALLENGE</div>
+ <div class="sub">THE COMEBACK ERA</div>
 </header>
 
-<nav id="navigation">
-  <button class="active" data-page="home">🏠 Start</button>
-  <button data-page="gifts">🎁 Geschenke</button>
-  <button data-page="events">⚡ Events</button>
-  <button data-page="tokens">🪙 Tokens</button>
-  <button data-page="shop">🛒 Shop</button>
-  <button data-page="chat">💬 Live Chat</button>
-  <button data-page="leaderboard">🏆 Rangliste</button>
-  <button data-page="admin">👑 Admin</button>
+<nav>
+ <button onclick="showPage('game')">🎁 Spiel</button>
+ <button onclick="showPage('events')">⚡ Events</button>
+ <button onclick="showPage('shop')">🛒 Shop</button>
+ <button onclick="showPage('chat')">💬 Live Chat</button>
+ <button onclick="showPage('players')">👥 Spieler</button>
+ <button onclick="showPage('admin')">👑 Admin</button>
 </nav>
 
 <main>
-
-<section class="page active" id="home">
-  <div class="card">
-    <h2>Willkommen zur Comeback Era!</h2>
-    <p class="muted">Öffne Geschenke, sammle seltene Tokens, spiele Events und kämpfe dich an die Spitze.</p>
-    <div class="notice">
-      🎁 Jedes Geschenk zählt. Manche enthalten einen Token – andere eine Niete.
-      <br>⚽ Der Football Token kann im gesamten Spiel nur ein einziges Mal vergeben werden.
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>Spiel beitreten</h2>
-    <label for="playerName">Dein Spielername</label>
-    <div class="row" style="margin-top:8px">
-      <input id="playerName" maxlength="20" placeholder="Spielernamen eingeben">
-      <button onclick="joinGame()">Beitreten</button>
-    </div>
-    <p class="muted small" id="joinStatus">Gib deinen Namen ein, um lokal beizutreten.</p>
-  </div>
-
+<section id="game" class="page active">
+ <div class="card">
+  <h2>🎁 Geschenk-Runde</h2>
   <div class="grid">
-    <div class="stat">Spieler<strong id="statPlayers">0</strong></div>
-    <div class="stat">Deine Geschenke<strong id="statGifts">0</strong></div>
-    <div class="stat">Deine Tokens<strong id="statTokens">0</strong></div>
-    <div class="stat">Shop-Budget<strong id="statBudget">0</strong></div>
+   <div class="stat">Runde<strong id="roundNo">1</strong></div>
+   <div class="stat">Versuche übrig<strong id="attempts">3</strong></div>
+   <div class="stat">Shop-Budget<strong id="budget">0</strong></div>
   </div>
-
-  <div class="card" style="margin-top:15px">
-    <h2>Aktuelles Event</h2>
-    <div id="homeEvent" class="notice">Aktuell läuft kein Event.</div>
+  <p class="muted" id="gameStatus">Wähle ein Geschenk aus!</p>
+  <div class="gifts" id="giftGrid"></div>
+  <div class="row" style="margin-top:12px">
+   <button onclick="showMyRewards()">Meine Belohnungen</button>
+   <button class="secondary" onclick="showPage('shop')">Zum Shop</button>
   </div>
-
-  <div class="card">
-    <h2>Spielregeln</h2>
-    <ul class="muted">
-      <li>Pro Runde gibt es 15 Geschenke.</li>
-      <li>Jeder Spieler hat 3 Öffnungsversuche pro Runde.</li>
-      <li>Der Admin startet und beendet die Runden.</li>
-      <li>Nach einer Runde werden die Geschenke neu gemischt.</li>
-      <li>Jedes geöffnete Geschenk bringt einen Budgetpunkt für den Admin-Shop.</li>
-      <li>Das Shop-Budget bleibt dauerhaft erhalten und wird nicht negativ.</li>
-      <li>Der Football Token kann nur einmal im gesamten Spiel vergeben werden.</li>
-    </ul>
-  </div>
+ </div>
+ <div class="card">
+  <h3>🏅 Meine Tokens</h3>
+  <div id="myTokens" class="list muted">Noch keine Tokens erhalten.</div>
+ </div>
 </section>
 
-<section class="page" id="gifts">
-  <div class="card">
-    <h2>🎁 Geschenk-Runde</h2>
-    <div class="row">
-      <div class="stat">Runde<strong id="roundNumber">1</strong></div>
-      <div class="stat">Versuche übrig<strong id="attemptsLeft">0</strong></div>
-      <div class="stat">Status<strong id="roundStatus">Wartet</strong></div>
-    </div>
-    <p class="muted small" id="giftHint">Der Admin muss zuerst eine Runde starten.</p>
-  </div>
-  <div class="gift-grid" id="giftGrid"></div>
+<section id="events" class="page">
+ <div class="card">
+  <h2>⚡ Events</h2>
+  <p class="muted">Events können vom Admin gestartet werden.</p>
+  <div id="eventGrid" class="events"></div>
+ </div>
 </section>
 
-<section class="page" id="events">
-  <div class="card">
-    <h2>⚡ Event-Zentrale</h2>
-    <p class="muted">Events können nur vom Admin gestartet werden. Event-Belohnungen verwenden die bestehenden sechs Haupt-Tokens oder Nieten.</p>
-    <div id="eventStatus" class="notice">Kein Event aktiv.</div>
+<section id="shop" class="page">
+ <div class="card">
+  <h2>🛒 Admin Shop</h2>
+  <div class="grid">
+   <div class="stat">Dein Budget<strong id="shopBudget">0</strong></div>
+   <div class="stat">Artikel<strong id="shopCount">0</strong></div>
   </div>
-  <div class="grid" id="eventGrid"></div>
+  <div id="shopItems" class="list"></div>
+ </div>
 </section>
 
-<section class="page" id="tokens">
-  <div class="card">
-    <h2>🪙 Die sechs Haupt-Tokens</h2>
-    <p class="muted">Es gibt genau sechs Haupt-Tokens. Es werden keine neuen Tokenarten hinzugefügt.</p>
-    <div id="tokenCollection" class="list"></div>
-  </div>
-  <div class="card">
-    <h3>Token-Regeln</h3>
-    <ul class="muted">
-      <li>Double Goal Token ist der zweitseltenste Token.</li>
-      <li>Selbst-Retter-Token ist der viertseltenste Token.</li>
-      <li>Der Football Token kann nur einmal im gesamten Spiel vergeben werden.</li>
-      <li>Events dürfen vorhandene Tokens oder Nieten vergeben.</li>
-    </ul>
-  </div>
+<section id="chat" class="page">
+ <div class="card">
+  <h2>💬 Live Chat</h2>
+  <div id="chatMessages" class="list"></div>
+  <textarea id="chatInput" placeholder="Schreibe eine Nachricht..."></textarea>
+  <button onclick="sendMessage()">Nachricht senden</button>
+  <p class="muted">In dieser lokalen Version sehen nur Nutzer dieses Browsers die Nachrichten.</p>
+ </div>
 </section>
 
-<section class="page" id="shop">
-  <div class="card">
-    <h2>🛒 Admin Shop</h2>
-    <div class="grid">
-      <div class="stat">Dein Budget<strong id="shopBudget">0</strong></div>
-      <div class="stat">Produkte<strong id="shopProductsCount">0</strong></div>
-    </div>
-    <p class="muted small">Jedes geöffnete Geschenk erhöht das Gesamtbudget um einen Punkt. Einkäufe reduzieren es.</p>
-  </div>
-  <div class="card">
-    <h3>Shop-Angebote</h3>
-    <div id="shopProducts" class="list"></div>
-  </div>
+<section id="players" class="page">
+ <div class="card">
+  <h2>👥 Spieler</h2>
+  <div id="playerList" class="list"></div>
+ </div>
 </section>
 
-<section class="page" id="chat">
-  <div class="card">
-    <h2>💬 Live Chat</h2>
-    <p class="muted small">Nachrichten werden in dieser Browser-Sitzung angezeigt. Für einen echten gemeinsamen Live-Chat ist eine Serververbindung erforderlich.</p>
-    <div id="chatMessages"></div>
-    <div class="row" style="margin-top:10px">
-      <input id="chatInput" maxlength="250" placeholder="Nachricht schreiben...">
-      <button onclick="sendChat()">Senden</button>
-    </div>
-  </div>
-</section>
-
-<section class="page" id="leaderboard">
-  <div class="card">
-    <h2>🏆 Rangliste</h2>
-    <div id="leaderboardList" class="list"></div>
-  </div>
-</section>
-
-<section class="page" id="admin">
-  <div class="card">
-    <h2>👑 Admin-Zentrale</h2>
-    <div class="notice">
-      Dies ist eine lokale Demo-Adminoberfläche. Ein echter, sicherer Admin-Zugang muss über Firebase Security Rules und eine serverseitig geprüfte Admin-Berechtigung abgesichert werden.
-    </div>
-    <hr>
-    <h3>Admin-Modus</h3>
-    <div class="row">
-      <button onclick="toggleAdmin()" id="adminToggle">Admin-Modus aktivieren</button>
-      <span id="adminStatus" class="badge">Nicht aktiviert</span>
-    </div>
+<section id="admin" class="page">
+ <div class="card">
+  <h2>👑 Admin-Zentrale</h2>
+  <div id="adminLogin">
+   <p class="notice">Admin-Bereich: Für einen echten Hauptadmin-Zugang muss Firebase Authentication mit einem serverseitig geprüften Admin-Recht verbunden werden. Ein Passwort im HTML wäre nicht sicher.</p>
+   <input id="adminEmail" type="email" placeholder="Admin-E-Mail">
+   <input id="adminPassword" type="password" placeholder="Passwort">
+   <button onclick="adminLogin()">Anmelden</button>
+   <p id="adminLoginStatus" class="muted"></p>
   </div>
 
-  <div class="card">
+  <div id="adminPanel" class="hidden">
+   <div class="notice">Du bist in der lokalen Admin-Oberfläche. Diese Anmeldung ist nur eine Demo und schützt keine gemeinsamen Spielaktionen.</div>
+   <div class="grid" style="margin-top:12px">
+    <div class="stat">1. Admin-Zentrale<strong>⚙️</strong></div>
+    <div class="stat">2. Codes & Rechte<strong>🔐</strong></div>
+    <div class="stat">3. Nachrichten<strong>📢</strong></div>
+    <div class="stat">4. Spieler<strong>👥</strong></div>
+    <div class="stat">5. Belohnungen<strong>🎁</strong></div>
+    <div class="stat">6. Tokens<strong>🏅</strong></div>
+    <div class="stat">7. Sperren<strong>🚫</strong></div>
+    <div class="stat">8. Server Lockdown<strong>🔒</strong></div>
+    <div class="stat">9. Events & Glück<strong>⚡</strong></div>
+   </div>
+
+   <div class="card">
     <h3>Runden-Steuerung</h3>
     <div class="row">
-      <button onclick="startRound()">Runde starten</button>
-      <button class="secondary" onclick="endRound()">Runde beenden</button>
-      <button class="danger" onclick="resetRound()">Runde zurücksetzen</button>
+     <button onclick="startRound()">Runde starten</button>
+     <button class="danger" onclick="endRound()">Runde beenden</button>
+     <button class="secondary" onclick="resetRound()">Runde zurücksetzen</button>
     </div>
-  </div>
+   </div>
 
-  <div class="card">
-    <h3>Geschenk vergeben</h3>
-    <label>Spieler auswählen</label>
-    <select id="awardPlayer"></select>
-    <label style="display:block;margin-top:10px">Belohnung</label>
-    <select id="awardPrize"></select>
-    <div class="row" style="margin-top:10px">
-      <button onclick="awardPrize()">Belohnung vergeben</button>
-      <button class="secondary" onclick="randomRecipient()">🎲 ZUFÄLLIG</button>
-    </div>
-  </div>
+   <div class="card">
+    <h3>Spieler hinzufügen</h3>
+    <input id="newPlayer" placeholder="Spielername">
+    <button onclick="addPlayer()">Spieler hinzufügen</button>
+   </div>
 
-  <div class="card">
-    <h3>Event-Steuerung</h3>
-    <label>Event auswählen</label>
-    <select id="adminEventSelect"></select>
-    <div class="row" style="margin-top:10px">
-      <button onclick="startSelectedEvent()">Event starten</button>
-      <button class="danger" onclick="stopEvent()">Event beenden</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>Shop verwalten</h3>
-    <label>Produktname</label>
-    <input id="newProductName" placeholder="Produktname">
-    <div class="row" style="margin-top:8px">
-      <input id="newProductPrice" type="number" min="0" placeholder="Preis">
-      <input id="newProductStock" type="number" min="0" placeholder="Bestand">
-    </div>
-    <button style="margin-top:9px" onclick="addProduct()">Produkt hinzufügen</button>
-    <hr>
-    <label>Budget hinzufügen</label>
-    <div class="row" style="margin-top:8px">
-      <input id="budgetAmount" type="number" min="0" placeholder="Punkte">
-      <button onclick="addBudget()">Hinzufügen</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>Spieler-Verwaltung</h3>
-    <div id="adminPlayers" class="list"></div>
-  </div>
-
-  <div class="card">
-    <h3>Power Hour</h3>
-    <p class="muted small">Power-Hour-Status wird lokal angezeigt. Die tatsächliche globale Aktivierung muss serverseitig synchronisiert werden.</p>
-    <button onclick="togglePowerHour()" id="powerButton">Power Hour aktivieren</button>
-    <span id="powerStatus" class="badge">Aus</span>
-  </div>
-
-  <div class="card">
-    <h3>Spiel-Daten</h3>
+   <div class="card">
+    <h3>Geschenk oder Token vergeben</h3>
+    <select id="rewardSelect"></select>
+    <select id="rewardPlayer"></select>
     <div class="row">
-      <button class="secondary" onclick="exportData()">Daten exportieren</button>
-      <button class="danger" onclick="resetAll()">Lokale Daten löschen</button>
+     <button onclick="giveReward(false)">Vergeben</button>
+     <button onclick="giveReward(true)">ZUFÄLLIG</button>
     </div>
-    <p class="muted small">Der Export enthält nur die lokalen Demo-Daten dieses Browsers.</p>
-  </div>
-</section>
+   </div>
 
+   <div class="card">
+    <h3>Event-Steuerung</h3>
+    <select id="adminEventSelect"></select>
+    <div class="row">
+     <button onclick="toggleEvent(true)">Event starten</button>
+     <button class="secondary" onclick="toggleEvent(false)">Event stoppen</button>
+    </div>
+   </div>
+
+   <div class="card">
+    <h3>Shop verwalten</h3>
+    <input id="productName" placeholder="Produktname">
+    <div class="row">
+     <input id="productPrice" type="number" min="0" placeholder="Preis">
+     <input id="productStock" type="number" min="0" placeholder="Bestand">
+    </div>
+    <button onclick="addProduct()">Produkt hinzufügen</button>
+   </div>
+
+   <div class="card">
+    <h3>Server Lockdown</h3>
+    <p class="muted">Lokale Demo-Funktion. Ein echter Lockdown muss serverseitig über Firebase-Regeln erzwungen werden.</p>
+    <button class="danger" onclick="toggleLockdown()">Lockdown umschalten</button>
+    <p id="lockStatus" class="gold">Lockdown: AUS</p>
+   </div>
+
+   <div class="card">
+    <h3>Budget-Verwaltung</h3>
+    <input id="budgetChange" type="number" placeholder="Budget ändern (+ oder -)">
+    <button onclick="changeBudget()">Budget anpassen</button>
+   </div>
+
+   <button class="secondary" onclick="adminLogout()">Admin abmelden</button>
+  </div>
+ </div>
+</section>
 </main>
 
-<footer>
-  FOOTBALL GIFT CHALLENGE · THE COMEBACK ERA
-</footer>
-
 <div id="modal">
-  <div class="modal-box">
-    <div id="modalEmoji" class="big">🎁</div>
-    <h2 id="modalTitle">Geschenk geöffnet!</h2>
-    <p id="modalText"></p>
-    <button onclick="closeModal()">Weiter</button>
-  </div>
+ <div class="modalbox">
+  <div class="big" id="modalEmoji">🎁</div>
+  <h2 id="modalTitle">Geschenk geöffnet!</h2>
+  <p id="modalText"></p>
+  <button onclick="closeModal()">Weiter</button>
+ </div>
 </div>
 <div id="toast"></div>
+<footer>FOOTBALL GIFT CHALLENGE · THE COMEBACK ERA</footer>
 
 <script>
-"use strict";
-
-/* =========================================================
-   SPIELDATEN
-   Diese Version speichert den Demo-Spielstand lokal im Browser.
-   ========================================================= */
-
-const TOKEN_DEFINITIONS = [
-  {id:"revenge",name:"Revenge Token",icon:"🔥",rarity:"Extrem selten"},
-  {id:"football_loser",name:"Football Loser Token",icon:"💀",rarity:"Selten"},
-  {id:"double_goal",name:"Double Goal Token",icon:"⚽",rarity:"Zweitseltenster Token"},
-  {id:"self_rescuer",name:"Selbst-Retter-Token",icon:"🛟",rarity:"Viertseltenster Token"},
-  {id:"freekick",name:"Freistoß-Token",icon:"🥅",rarity:"Selten"},
-  {id:"football",name:"Football Token",icon:"🏆",rarity:"Einmalig"}
+const TOKENS=[
+ "Revenge Token",
+ "Football Loser Token",
+ "Double Goal Token",
+ "Selbst-Retter-Token",
+ "Freistoß-Token",
+ "Football Token"
 ];
 
-const EVENT_DEFINITIONS = [
- {id:"galaxy",name:"Galaxy Event",icon:"🌌",description:"Das Galaxy-Geschenk kann nur während dieses Events erscheinen. Spawn-Chance: 0,001 %.",detail:"Galaxy-Geschenk · 0,001 % Spawn-Chance."},
- {id:"unicorn",name:"Einhorn Event",icon:"🦄",description:"Geschenke erhalten einen flackernden Regenbogen-Effekt. Jeder Spieler darf die Pinata einmal schlagen.",detail:"Die Pinata behält ihr eigenes Design. Sie kann vorhandene Tokens oder Nieten ausgeben."},
- {id:"hacker",name:"Hacker Event",icon:"💻",description:"Grüne Geschenke mit Binärcode, Glitches und digitaler Hacker-Optik.",detail:"Hacker Scanner: zeigt Token oder Niete, aber nicht den genauen Token."},
- {id:"robot",name:"Roboter Event",icon:"🤖",description:"Alle Geschenke werden zu Roboterhelmen mit blinkenden LED-Augen.",detail:"Robot Scanner: zeigt die Seltenheit eines Geschenks, aber nicht den genauen Token."},
- {id:"magic",name:"Zauberwürfel Event",icon:"🧊",description:"Geschenke werden zu Rubik's Cubes. Löse THE MAGIC MIX und wähle danach einen von drei Würfeln.",detail:"Falsche Lösung bedeutet Niete. MAGIC REMIX mischt die drei Auswahlmöglichkeiten einmal neu."},
- {id:"diamond",name:"Diamond Event",icon:"💎",description:"Ein besonderes Diamond-Event mit Diamond-Geschenken.",detail:"Diamond-Geschenke werden nach den vom Admin festgelegten Event-Regeln vergeben."},
- {id:"time_travel",name:"Time Travel Event",icon:"⏳",description:"Wähle Ronaldo, Messi oder Neymar. Ein zufällig ausgewähltes Video wird einmal abgespielt.",detail:"Je Fußballer sind zwei Shorts vorgesehen. Nach dem Video gibt es einen bestehenden Token oder eine Niete."},
- {id:"school",name:"School Event – THE FINAL EXAM",icon:"🎒",description:"Jeder Spieler bekommt eine Prüfungsfrage mit drei Antwortmöglichkeiten.",detail:"Richtige Antwort: ein Überraschungs-Schulranzen. Falsche Antwort: Niete. Schwierigkeit abhängig vom Glück."},
- {id:"lava",name:"Lava Event – LAVA SURVIVAL",icon:"🌋",description:"Vulkan-Hintergrund, Lava-Alarm und schnelle Entscheidungen.",detail:"Richtige Entscheidung kann eine Lava-Truhe freischalten. LAVA SHIELD schützt einmal vor einer falschen Entscheidung."},
- {id:"alien",name:"Alien Invasion",icon:"👽",description:"UFOs entführen Geschenke. Spieler müssen Entscheidungen treffen, um sie zurückzuholen.",detail:"ALIEN RADAR hilft dabei, entführte Geschenke zu lokalisieren."},
- {id:"lasertag",name:"LaserTag",icon:"🔫",description:"Jeder gegen jeden in einer futuristischen Arena.",detail:"3 Leben pro Spieler. Jeder Treffer kostet ein Leben. Wer keine Leben mehr hat, scheidet aus. Der letzte Spieler gewinnt. Die Plätze 1–3 erhalten je ein Diamond Geschenk."},
- {id:"ocean",name:"Ocean Event – THE LOST TREASURE",icon:"🌊",description:"Unterwasserwelt mit Korallen, Fischen und drei Schatztruhen.",detail:"Jeder wählt eine Schatztruhe. Ein goldener Hai kann ein besonderes Geschenk hinterlassen. PEARL RADAR gibt einen Hinweis."},
- {id:"zombie",name:"Zombie Event – THE LAST SURVIVOR",icon:"🧟",description:"Drei Impfstoff-Fläschchen und fünf geheimnisvolle Fläschchen.",detail:"Das richtige Fläschchen bringt ein Geschenk. Ein leeres Fläschchen bedeutet Niete. Eine Zombie-Hand kann ein Geschenk greifen."},
- {id:"multiverse",name:"Multiverse – DIMENSION BREAK",icon:"🌀",description:"Die Dimension wechselt alle 30 Sekunden. Jede Dimension hat eine eigene Überraschungsmechanik.",detail:"Spieler können Dimensionsrisse nutzen. Ein geheimes Dimensionsgeschenk kann erscheinen."},
- {id:"football_event",name:"Football Event – THE GOLDEN CUP",icon:"🏟️",description:"Fußballstadion und Elfmeter-Challenge.",detail:"Fußball-Aufgaben und Überraschungsbelohnungen."},
- {id:"dinosaur",name:"Dinosaur Event – JURASSIC TREASURE",icon:"🦖",description:"Dinosaurier-Eier, Fossilien und Urzeit-Schätze.",detail:"Fossilien sammeln und Dinosaurier entdecken."},
- {id:"candy",name:"Candy Event – SWEET CHAOS",icon:"🍬",description:"Süßigkeiten-Geschenke und süße Überraschungen.",detail:"Süßigkeiten kombinieren und Belohnungen entdecken."},
- {id:"castle",name:"Castle Event – THE ROYAL SECRET",icon:"🏰",description:"Königliche Schatztruhen und geheime Aufgaben.",detail:"König, Ritter und Zauberer als Themenrollen."},
- {id:"space",name:"Space Event – GALACTIC MISSION",icon:"🚀",description:"Weltraummissionen und verschiedene Planeten.",detail:"Raumschiffe und Planeten-Aufgaben."},
- {id:"ghost",name:"Ghost Event – HAUNTED GIFTS",icon:"👻",description:"Geister-Geschenke und geheimnisvolle Illusionen.",detail:"Finde heraus, welche Geschenke echt sind."},
- {id:"winter",name:"Winter Event – FROZEN KINGDOM",icon:"❄️",description:"Eingefrorene Geschenke und frostige Rätsel.",detail:"Eisblöcke durch Rätsel auftauen."},
- {id:"egypt",name:"Egypt Event – THE PHARAOH'S SECRET",icon:"🐫",description:"Sarkophage, Pyramiden und Hieroglyphen.",detail:"Geheime Zeichen entschlüsseln."},
- {id:"superhero",name:"Superhero Event – HERO ACADEMY",icon:"🦸",description:"Helden-Kapseln und besondere Aufgaben.",detail:"Überraschende Superhelden-Prüfungen."},
- {id:"racing",name:"Racing Event – TURBO CHALLENGE",icon:"🏎️",description:"Zeitrennen und Bestzeiten.",detail:"Die drei besten Spieler erhalten eine Belohnung."},
- {id:"dragon",name:"Dragon Event – DRAGON EGGS",icon:"🐉",description:"Dracheneier und Drachen-Überraschungen.",detail:"Dracheneier entdecken und Eigenschaften kombinieren."},
- {id:"music",name:"Music Event – BEAT MASTER",icon:"🎵",description:"Rhythmus merken und wiederholen.",detail:"Wer den Rhythmus richtig trifft, erhält eine Chance auf eine Belohnung."},
- {id:"mystery",name:"Mystery Event – THE UNKNOWN",icon:"🔎",description:"Ein geheimnisvoller Fall muss gelöst werden.",detail:"Hinweise sammeln und das Rätsel lösen."},
- {id:"blitz",name:"Blitz Event – 60 SECOND MADNESS",icon:"⚡",description:"Viele kurze Aufgaben innerhalb von 60 Sekunden.",detail:"Schnelligkeit und Aufmerksamkeit entscheiden."},
- {id:"plants",name:"Plants Event – SECRET GARDEN",icon:"🌱",description:"Magische Samen wachsen in mehreren Stufen.",detail:"Ein geheimnisvoller Garten mit Überraschungen."},
- {id:"elephants",name:"Elephant Event – ELEPHANT PARADE",icon:"🐘",description:"Elefanten nach Farben und Mustern sortieren.",detail:"Aufmerksamkeit und Mustererkennung sind gefragt."},
- {id:"pirate",name:"Pirate Event",icon:"🏴‍☠️",description:"Schatzkarten-Suche und Piraten-Schätze.",detail:"Finde den richtigen Weg zum Schatz."},
- {id:"carnival",name:"Carnival Event",icon:"🎪",description:"Jahrmarkt-Spiele und kleine Herausforderungen.",detail:"Gewinne einen Jahrmarkt-Preis."},
- {id:"ninja",name:"Ninja Event",icon:"🥷",description:"Geheime Ninja-Aufgaben und Reaktionstests.",detail:"Schließe Ninja-Prüfungen ab."},
- {id:"toy",name:"Toy Event",icon:"🧸",description:"Spielzeuge aus verschiedenen Teilen zusammensetzen.",detail:"Finde die passenden Teile."},
- {id:"crystal",name:"Crystal Event",icon:"🔮",description:"Kristalle sammeln und kombinieren.",detail:"Entdecke seltene Kristall-Kombinationen."},
- {id:"wild_west",name:"Wild West Event",icon:"🤠",description:"Goldsuche und Rätsel im Wilden Westen.",detail:"Finde das Gold."},
- {id:"bakery",name:"Bakery Event",icon:"🧁",description:"Kuchen verzieren und Back-Aufgaben lösen.",detail:"Kreiere den richtigen Kuchen."},
- {id:"comic",name:"Comic Event",icon:"💥",description:"Entscheidungen verändern den Verlauf einer Comic-Geschichte.",detail:"Wähle den nächsten Teil der Geschichte."},
- {id:"safari",name:"Safari Event",icon:"🦁",description:"Tiere entdecken und fotografieren.",detail:"Finde die gesuchten Tiere."},
- {id:"cyber",name:"Cyber Event",icon:"🖥️",description:"Codes entschlüsseln und digitale Rätsel lösen.",detail:"Knacke die Geheimcodes."},
- {id:"wizard",name:"Wizard Event",icon:"🧙",description:"Zaubersprüche und magische Kombinationen.",detail:"Finde die richtige Zauber-Kombination."},
- {id:"moon",name:"Moon Event",icon:"🌙",description:"Mondsteine sammeln und Sternbilder verbinden.",detail:"Verbinde die richtigen Sterne."},
- {id:"arcade",name:"Arcade Event",icon:"🕹️",description:"Mini-Spiele und Highscores.",detail:"Erreiche einen neuen Rekord."},
- {id:"samurai",name:"Samurai Event",icon:"⚔️",description:"Geschicklichkeits- und Reaktionsaufgaben.",detail:"Beweise deine Konzentration."},
- {id:"stone_age",name:"Stone Age Event",icon:"🪨",description:"Steintafeln zusammensetzen und Symbole finden.",detail:"Löse urzeitliche Rätsel."},
- {id:"masquerade",name:"Masquerade Event",icon:"🎭",description:"Masken und geheime Figuren erkennen.",detail:"Finde heraus, wer sich hinter der Maske verbirgt."},
- {id:"science",name:"Science Event",icon:"🧪",description:"Virtuelle Experimente und Wissenschafts-Aufgaben.",detail:"Finde die richtige Versuchslösung."},
- {id:"luxury",name:"Luxury Event",icon:"💍",description:"Luxus-Aufgaben und virtuelle Diamanten.",detail:"Entdecke luxuriöse Überraschungen."},
- {id:"rainbow",name:"Rainbow Event",icon:"🌈",description:"Farbreihen merken und wiederholen.",detail:"Wiederhole die richtige Farbfolge."},
- {id:"time_machine",name:"Time Machine Event",icon:"🕰️",description:"Ereignisse in die richtige zeitliche Reihenfolge bringen.",detail:"Ordne die Ereignisse korrekt."},
- {id:"skibidi",name:"Skibidi Event",icon:"🚽",description:"Das ursprüngliche Skibidi-Event mit fünf Boss-Stufen und fünf Lucky Wheels.",detail:"Die fünf Boss-Stufen und Lucky Wheels müssen nach den ursprünglichen Event-Regeln gespielt werden."},
- {id:"godzilla_kong",name:"Godzilla vs. Kong",icon:"🦖",description:"Ein Video wird abgespielt und mitten im Video angehalten. Danach entscheidest du, wer gewinnt.",detail:"Richtige Entscheidung: Geschenk. Falsche Entscheidung: keine Belohnung."},
- {id:"spiderman",name:"Spider-Man Event",icon:"🕷️",description:"Spider-Man-Themen-Event.",detail:"Event-Aufgaben und Überraschungen."},
- {id:"coca_cola",name:"Coca-Cola Event",icon:"🥤",description:"Coca-Cola-Themen-Event.",detail:"Event-Aufgaben und Überraschungen."}
+const EVENTS=[
+ "Galaxy Event","Unicorn Event","Hacker Event","Robot Event",
+ "Magic Cube Event","Diamond Event","Time Travel Event",
+ "School – THE FINAL EXAM","Lava – LAVA SURVIVAL",
+ "Alien Invasion","LaserTag","Ocean – THE LOST TREASURE",
+ "Zombie – THE LAST SURVIVOR","Multiverse – DIMENSION BREAK",
+ "Football – THE GOLDEN CUP","Dinosaur – JURASSIC TREASURE",
+ "Candy – SWEET CHAOS","Castle – THE ROYAL SECRET",
+ "Space – GALACTIC MISSION","Ghost – HAUNTED GIFTS",
+ "Winter – FROZEN KINGDOM","Egypt – THE PHARAOH'S SECRET",
+ "Superhero – HERO ACADEMY","Racing – TURBO CHALLENGE",
+ "Dragon – DRAGON EGGS","Music – BEAT MASTER",
+ "Mystery – THE UNKNOWN","Blitz – 60 SECOND MADNESS",
+ "Plants – SECRET GARDEN","Elephants – ELEPHANT PARADE",
+ "Pirate Event","Carnival Event","Ninja Event","Toy Event",
+ "Crystal Event","Wild West Event","Bakery Event","Comic Event",
+ "Safari Event","Cyber Event","Wizard Event","Moon Event",
+ "Arcade Event","Samurai Event","Stone Age Event",
+ "Masquerade Event","Science Event","Luxury Event",
+ "Rainbow Event","Time Machine Event","Skibidi Event",
+ "Godzilla vs Kong Event","Spider-Man Event","Coca-Cola Event"
 ];
 
-const DEFAULT_PRODUCTS = [
- {id:"hacker_scanner",name:"Hacker Scanner",description:"Zeigt Token oder Niete – nicht den genauen Token.",price:12,stock:5},
- {id:"robot_scanner",name:"Robot Scanner",description:"Zeigt die Seltenheit eines Geschenks.",price:18,stock:4},
- {id:"magic_remix",name:"MAGIC REMIX",description:"Mischt die drei Würfel-Auswahlen einmal neu.",price:20,stock:3},
- {id:"golden_report",name:"GOLDEN REPORT CARD",description:"Lässt eine bereits beantwortete Frage neu bewerten.",price:35,stock:1},
- {id:"lava_shield",name:"LAVA SHIELD",description:"Schützt einmal vor einer falschen Lava-Entscheidung.",price:22,stock:3},
- {id:"alien_radar",name:"ALIEN RADAR",description:"Hilft, entführte Geschenke zu lokalisieren.",price:20,stock:3},
- {id:"pearl_radar",name:"PEARL RADAR",description:"Gibt einen Hinweis zu einer der drei Schatztruhen.",price:15,stock:4},
- {id:"zombie_detector",name:"ZOMBIE DETECTOR",description:"Zeigt, ob ein Fläschchen sicher oder gefährlich ist.",price:20,stock:3},
- {id:"dimension_key",name:"DIMENSION KEY",description:"Erlaubt einmal die Wahl einer anderen Dimension.",price:25,stock:2}
-];
-
-const DEFAULT_STATE = {
- playerName:"",
- players:[],
- currentPlayerId:null,
- round:1,
- roundActive:false,
- attempts:{},
- gifts:[],
- openedGifts:0,
- budget:0,
- products:[],
- tokens:{},
- footballTokenOwner:null,
- activeEvent:null,
- eventLog:[],
- chat:[],
- powerHour:false,
- adminMode:false,
- boughtItems:{},
- skibidi:{stage:0,wheels:[]},
- createdAt:Date.now()
+const defaultState={
+ round:1,attempts:3,budget:0,roundActive:true,lockdown:false,
+ gifts:Array.from({length:15},(_,i)=>({id:i,opened:false})),
+ tokens:[],players:["Spieler 1"],chat:[],
+ products:[
+  {name:"Hacker Scanner",price:10,stock:3},
+  {name:"Robot Scanner",price:15,stock:3},
+  {name:"MAGIC REMIX",price:20,stock:2},
+  {name:"GOLDEN REPORT CARD",price:25,stock:1},
+  {name:"LAVA SHIELD",price:15,stock:3},
+  {name:"ALIEN RADAR",price:15,stock:3},
+  {name:"PEARL RADAR",price:15,stock:3},
+  {name:"ZOMBIE DETECTOR",price:15,stock:3},
+  {name:"DIMENSION KEY",price:20,stock:2}
+ ],
+ activeEvents:[],rewards:[]
 };
 
-let state = loadState();
+let state;
+try{
+ state=JSON.parse(localStorage.getItem("fgc_comeback_state"))||structuredClone(defaultState);
+}catch(e){state=structuredClone(defaultState)}
 
-function loadState(){
-  try{
-    const saved=localStorage.getItem("fcg_comeback_era_v1");
-    if(saved){
-      const parsed=JSON.parse(saved);
-      return {...structuredClone(DEFAULT_STATE),...parsed};
-    }
-  }catch(e){console.warn("Spielstand konnte nicht geladen werden",e)}
-  return structuredClone(DEFAULT_STATE);
+let currentPlayer=state.players[0]||"Spieler 1";
+let isAdmin=false;
+
+function save(){
+ localStorage.setItem("fgc_comeback_state",JSON.stringify(state));
+ renderAll();
 }
-function saveState(){
-  try{localStorage.setItem("fcg_comeback_era_v1",JSON.stringify(state))}
-  catch(e){toast("Speichern fehlgeschlagen. Eventuell ist der Speicher voll.")}
+function showPage(id){
+ document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
 }
-function uid(){return Math.random().toString(36).slice(2,10)+Date.now().toString(36)}
 function toast(message){
-  const el=document.getElementById("toast");
-  el.textContent=message;
-  el.style.display="block";
-  clearTimeout(toast.timer);
-  toast.timer=setTimeout(()=>el.style.display="none",2600);
+ const t=document.getElementById("toast");
+ t.textContent=message;t.style.display="block";
+ setTimeout(()=>t.style.display="none",2200);
 }
-function escapeHTML(value){
-  return String(value).replace(/[&<>"']/g,c=>({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  }[c]));
+function openModal(emoji,title,text){
+ document.getElementById("modalEmoji").textContent=emoji;
+ document.getElementById("modalTitle").textContent=title;
+ document.getElementById("modalText").textContent=text;
+ document.getElementById("modal").classList.add("show");
 }
-function currentPlayer(){
-  return state.players.find(p=>p.id===state.currentPlayerId)||null;
-}
-function ensurePlayerData(player){
-  if(!player.tokens)player.tokens={};
-  if(!player.opened)player.opened=0;
-  if(!player.attempts)player.attempts=0;
-  if(!player.budget)player.budget=0;
-  if(!player.items)player.items=[];
-}
-function isAdmin(){return state.adminMode===true}
+function closeModal(){document.getElementById("modal").classList.remove("show")}
 
-function joinGame(){
-  const name=document.getElementById("playerName").value.trim();
-  if(name.length<2){toast("Bitte gib einen Namen mit mindestens 2 Zeichen ein.");return}
-  let player=state.players.find(p=>p.name.toLowerCase()===name.toLowerCase());
-  if(!player){
-    player={id:uid(),name,tokens:{},opened:0,attempts:0,budget:0,items:[]};
-    state.players.push(player);
-  }
-  ensurePlayerData(player);
-  state.currentPlayerId=player.id;
-  state.playerName=player.name;
-  saveState();
-  document.getElementById("joinStatus").textContent="Du bist als "+player.name+" beigetreten.";
-  toast("Willkommen, "+player.name+"!");
-  renderAll();
-}
-function toggleAdmin(){
-  state.adminMode=!state.adminMode;
-  saveState();
-  renderAll();
-  toast(state.adminMode?"Lokaler Demo-Adminmodus aktiviert.":"Adminmodus deaktiviert.");
-}
-function requireAdmin(){
-  if(!isAdmin()){toast("Nur im lokalen Demo-Adminmodus möglich.");return false}
-  return true;
-}
-
-/* =========================================================
-   RUNDE UND GESCHENKE
-   ========================================================= */
-
-function makeGifts(){
-  const gifts=[];
-  for(let i=0;i<15;i++){
-    gifts.push({id:uid(),number:i+1,opened:false,owner:null});
-  }
-  return gifts;
-}
-function startRound(){
-  if(!requireAdmin())return;
-  if(state.roundActive){toast("Eine Runde läuft bereits.");return}
-  if(!state.gifts.length)state.gifts=makeGifts();
-  state.roundActive=true;
-  state.players.forEach(p=>{p.attempts=0});
-  saveState();
-  renderAll();
-  toast("Runde "+state.round+" gestartet!");
-}
-function endRound(){
-  if(!requireAdmin())return;
-  state.roundActive=false;
-  saveState();
-  renderAll();
-  toast("Runde beendet.");
-}
-function resetRound(){
-  if(!requireAdmin())return;
-  state.roundActive=false;
-  state.gifts=makeGifts();
-  state.players.forEach(p=>p.attempts=0);
-  saveState();
-  renderAll();
-  toast("Geschenke neu gemischt.");
-}
-function openGift(giftId){
-  const player=currentPlayer();
-  if(!player){toast("Bitte zuerst beitreten.");return}
-  if(!state.roundActive){toast("Aktuell läuft keine Runde.");return}
-  const gift=state.gifts.find(g=>g.id===giftId);
-  if(!gift||gift.opened){toast("Dieses Geschenk ist nicht verfügbar.");return}
-  if(player.attempts>=3){toast("Du hast bereits alle 3 Versuche genutzt.");return}
-  gift.opened=true;
-  gift.owner=player.id;
-  player.attempts++;
-  player.opened++;
-  state.openedGifts++;
-  state.budget++;
-  state.budget=Math.max(0,state.budget);
-  saveState();
-  const prize=rollPrize();
-  if(prize==="niet"){
-    showModal("🎁","Eine Niete!","Diesmal war leider kein Token im Geschenk.");
-  }else{
-    awardTokenToPlayer(player,prize);
-    const token=TOKEN_DEFINITIONS.find(t=>t.id===prize);
-    showModal(token.icon,token.name,"Glückwunsch! Du hast einen bestehenden Haupt-Token gewonnen.");
-  }
-  renderAll();
-}
-function rollPrize(){
-  const r=Math.random()*100;
-  if(r<0.03)return "revenge";
-  if(r<0.08)return "double_goal";
-  if(r<0.2)return "self_rescuer";
-  if(r<0.6)return "freekick";
-  if(r<1.2 && !state.footballTokenOwner)return "football";
-  if(r<3)return "football_loser";
-  return "niet";
-}
-function awardTokenToPlayer(player,tokenId){
-  if(!TOKEN_DEFINITIONS.some(t=>t.id===tokenId))return false;
-  if(tokenId==="football"){
-    if(state.footballTokenOwner)return false;
-    state.footballTokenOwner=player.id;
-  }
-  player.tokens[tokenId]=(player.tokens[tokenId]||0)+1;
-  return true;
-}
-
-/* =========================================================
-   TOKENS UND ADMIN-BELOHNUNGEN
-   ========================================================= */
-
-function awardPrize(){
-  if(!requireAdmin())return;
-  const player=state.players.find(p=>p.id===document.getElementById("awardPlayer").value);
-  const prize=document.getElementById("awardPrize").value;
-  if(!player){toast("Spieler auswählen.");return}
-  if(prize==="niet"){
-    toast(player.name+" hat eine Niete erhalten.");
-    state.eventLog.push(player.name+": Niete");
-  }else{
-    if(!awardTokenToPlayer(player,prize)){
-      toast("Der Football Token wurde bereits vergeben.");
-      return;
-    }
-    const token=TOKEN_DEFINITIONS.find(t=>t.id===prize);
-    state.eventLog.push(player.name+": "+token.name);
-    toast(token.name+" an "+player.name+" vergeben.");
-  }
-  saveState();renderAll();
-}
-function randomRecipient(){
-  if(!requireAdmin())return;
-  if(!state.players.length){toast("Noch keine Spieler.");return}
-  const player=state.players[Math.floor(Math.random()*state.players.length)];
-  document.getElementById("awardPlayer").value=player.id;
-  toast("Zufälliger Empfänger: "+player.name);
-}
-
-/* =========================================================
-   EVENTS
-   ========================================================= */
-
-function startSelectedEvent(){
-  if(!requireAdmin())return;
-  const id=document.getElementById("adminEventSelect").value;
-  startEvent(id);
-}
-function startEvent(id){
-  const event=EVENT_DEFINITIONS.find(e=>e.id===id);
-  if(!event){toast("Event nicht gefunden.");return}
-  state.activeEvent=id;
-  state.eventLog.push("Event gestartet: "+event.name);
-  document.body.className="event-"+id.replace(/_/g,"-");
-  saveState();
-  renderAll();
-  toast(event.name+" gestartet!");
-}
-function stopEvent(){
-  if(!requireAdmin())return;
-  if(!state.activeEvent){toast("Kein Event aktiv.");return}
-  const event=EVENT_DEFINITIONS.find(e=>e.id===state.activeEvent);
-  state.eventLog.push("Event beendet: "+(event?event.name:state.activeEvent));
-  state.activeEvent=null;
-  document.body.className="";
-  saveState();
-  renderAll();
-  toast("Event beendet.");
-}
-function startEventFromCard(id){
-  if(!requireAdmin()){toast("Events können nur vom Admin gestartet werden.");return}
-  startEvent(id);
-}
-function eventAction(id){
-  if(!state.activeEvent||state.activeEvent!==id){
-    toast("Dieses Event ist gerade nicht aktiv.");
-    return;
-  }
-  const player=currentPlayer();
-  if(!player){toast("Bitte zuerst beitreten.");return}
-  switch(id){
-    case "unicorn":
-      showModal("🦄","Einhorn-Pinata","Du darfst die Pinata einmal schlagen. Die Belohnung wird vom Event-Admin vergeben.");
-      break;
-    case "magic":
-      magicChallenge();
-      break;
-    case "time_travel":
-      timeTravelChoice();
-      break;
-    case "school":
-      schoolChallenge();
-      break;
-    case "lava":
-      lavaChallenge();
-      break;
-    case "alien":
-      showModal("👽","Alien-Mission","Die Aliens haben Geschenke entführt. Der Admin muss die Rückhol-Aufgabe starten.");
-      break;
-    case "ocean":
-      oceanChoice();
-      break;
-    case "zombie":
-      zombieChallenge();
-      break;
-    case "multiverse":
-      showModal("🌀","Dimensionsriss","Die Dimension wechselt alle 30 Sekunden. Der Admin kann die nächste Dimension festlegen.");
-      break;
-    case "godzilla_kong":
-      showModal("🦖","Godzilla vs. Kong","Das Video-Entscheidungsspiel muss vom Admin mit einem Video und der richtigen Antwort eingerichtet werden.");
-      break;
-    case "skibidi":
-      skibidiChallenge();
-      break;
-    case "lasertag":
-      showModal("🔫","LaserTag","Die echte 3D-Mehrspieler-Arena benötigt einen separaten Multiplayer-Spielserver. Die Regeln: Jeder hat 3 Leben. Der letzte Spieler gewinnt.");
-      break;
-    default:
-      showModal("🎁","Event-Aufgabe", "Dieses Event ist im Event-Katalog angelegt. Die konkrete Mini-Spiel-Runde muss vom Admin eingerichtet werden.");
-  }
-}
-function randomExistingReward(player){
-  const possible=["niet","football_loser","freekick","self_rescuer","double_goal","revenge"];
-  if(!state.footballTokenOwner)possible.push("football");
-  const prize=possible[Math.floor(Math.random()*possible.length)];
-  if(prize==="niet"){
-    showModal("❌","Niete","Leider keine Belohnung diesmal.");
-    return;
-  }
-  awardTokenToPlayer(player,prize);
-  const token=TOKEN_DEFINITIONS.find(t=>t.id===prize);
-  showModal(token.icon,token.name,"Du hast einen bestehenden Haupt-Token gewonnen!");
-  saveState();renderAll();
-}
-function magicChallenge(){
-  const answers=["rot","blau","grün"];
-  const correct=answers[Math.floor(Math.random()*3)];
-  showModal("🧊","THE MAGIC MIX",
-    "Wähle eine Farbe als deine Würfel-Lösung.",
-    [{label:"Rot",value:"rot"},{label:"Blau",value:"blau"},{label:"Grün",value:"grün"}],
-    value=>{
-      if(value===correct)showModal("🎁","Würfel gelöst!","Du darfst eine Überraschung erhalten.");
-      else showModal("❌","Falsche Lösung","Das Ergebnis ist eine Niete.");
-    });
-}
-function timeTravelChoice(){
-  const choices=["Cristiano Ronaldo","Lionel Messi","Neymar Jr."];
-  showModal("⏳","Wähle einen Fußballer",choices.join(" · "));
-}
-function schoolChallenge(){
-  const questions=[
-    {q:"Wie viel ist 5 × 6?",a:["30","25","35"],c:0},
-    {q:"Wie viel sind 15 % von 200?",a:["15","30","45"],c:1},
-    {q:"Ein Artikel kostet 80 €. Er wird um 25 % reduziert. Wie viel kostet er jetzt?",a:["60 €","65 €","70 €"],c:0},
-    {q:"Wie viel ist 9 × 7?",a:["56","63","72"],c:1}
-  ];
-  const q=questions[Math.floor(Math.random()*questions.length)];
-  showModal("🎒","THE FINAL EXAM",q.q,q.a.map((a,i)=>({label:a,value:String(i)})),value=>{
-    if(Number(value)===q.c){
-      showModal("🎁","Richtig!","Du hast die Frage richtig beantwortet. Der Admin kann dir einen Schulranzen geben.");
-    }else{
-      showModal("❌","Falsch!","Diesmal ist es eine Niete.");
-    }
-  });
-}
-function lavaChallenge(){
-  const decisions=[
-    {q:"Der Lava-Alarm startet! Was machst du?",a:["Sicherheitsbereich wählen","Einfach stehen bleiben"],c:0},
-    {q:"Die Brücke wird heiß. Was ist die richtige Entscheidung?",a:["Den sicheren Weg nehmen","Zurück in die Lava laufen"],c:0}
-  ];
-  const q=decisions[Math.floor(Math.random()*decisions.length)];
-  showModal("🌋","LAVA SURVIVAL",q.q,q.a.map((a,i)=>({label:a,value:String(i)})),value=>{
-    if(Number(value)===q.c)showModal("🔥","Geschafft!","Du hast die Entscheidung richtig getroffen. Der Admin kann eine Lava-Truhe freigeben.");
-    else showModal("❌","Zu spät!","Du hast die falsche Entscheidung getroffen.");
-  });
-}
-function oceanChoice(){
-  const chest=Math.floor(Math.random()*3);
-  showModal("🌊","THE LOST TREASURE","Wähle eine von drei Schatztruhen.",[1,2,3].map(n=>({label:"Schatztruhe "+n,value:String(n-1)})),value=>{
-    if(Number(value)===chest)showModal("💎","Schatz gefunden!","Du hast die richtige Schatztruhe gewählt. Der Admin kann deine Belohnung vergeben.");
-    else showModal("🫧","Leere Truhe","Leider war in dieser Truhe kein Schatz.");
-  });
-}
-function zombieChallenge(){
-  const safe=Math.floor(Math.random()*5);
-  showModal("🧟","THE LAST SURVIVOR","Wähle eines von fünf geheimnisvollen Fläschchen.",[1,2,3,4,5].map(n=>({label:"Fläschchen "+n,value:String(n-1)})),value=>{
-    if(Number(value)===safe)showModal("🧪","Richtiges Fläschchen!","Du hast das sichere Fläschchen gefunden. Der Admin kann deine Belohnung vergeben.");
-    else showModal("☠️","Leeres Fläschchen","Diesmal war es leider eine Niete.");
-  });
-}
-function skibidiChallenge(){
-  if(!state.skibidi)state.skibidi={stage:0,wheels:[]};
-  const stage=state.skibidi.stage;
-  if(stage>=5){
-    showModal("🚽","Skibidi Event","Alle fünf Boss-Stufen wurden bereits abgeschlossen.");
-    return;
-  }
-  showModal("🚽","Skibidi Boss-Stufe "+(stage+1),
-    "Boss-Stufe "+(stage+1)+" von 5. Die zugehörigen Lucky Wheels müssen nach dem ursprünglichen Skibidi-Regelwerk vom Admin durchgeführt werden.");
-}
-
-/* =========================================================
-   SHOP
-   ========================================================= */
-
-function addProduct(){
-  if(!requireAdmin())return;
-  const name=document.getElementById("newProductName").value.trim();
-  const price=Number(document.getElementById("newProductPrice").value);
-  const stock=Number(document.getElementById("newProductStock").value);
-  if(!name||!Number.isFinite(price)||price<0||!Number.isInteger(stock)||stock<0){
-    toast("Bitte gültigen Namen, Preis und Bestand eingeben.");return;
-  }
-  state.products.push({id:uid(),name,description:"Admin-Angebot",price,stock});
-  document.getElementById("newProductName").value="";
-  document.getElementById("newProductPrice").value="";
-  document.getElementById("newProductStock").value="";
-  saveState();renderAll();toast("Produkt hinzugefügt.");
-}
-function buyProduct(id){
-  const player=currentPlayer();
-  if(!player){toast("Bitte zuerst beitreten.");return}
-  const product=state.products.find(p=>p.id===id);
-  if(!product){toast("Produkt nicht gefunden.");return}
-  if(product.stock<=0){toast("Ausverkauft.");return}
-  if(state.budget<product.price){toast("Nicht genug Shop-Budget.");return}
-  state.budget=Math.max(0,state.budget-product.price);
-  product.stock--;
-  player.items.push(product.id);
-  state.boughtItems[product.id]=(state.boughtItems[product.id]||0)+1;
-  saveState();renderAll();
-  toast(product.name+" gekauft!");
-}
-function addBudget(){
-  if(!requireAdmin())return;
-  const amount=Number(document.getElementById("budgetAmount").value);
-  if(!Number.isInteger(amount)||amount<=0){toast("Bitte eine positive ganze Zahl eingeben.");return}
-  state.budget+=amount;
-  document.getElementById("budgetAmount").value="";
-  saveState();renderAll();toast("Budget hinzugefügt.");
-}
-function deleteProduct(id){
-  if(!requireAdmin())return;
-  state.products=state.products.filter(p=>p.id!==id);
-  saveState();renderAll();toast("Produkt entfernt.");
-}
-
-/* =========================================================
-   LIVE CHAT – LOKALE DEMO
-   ========================================================= */
-
-function sendChat(){
-  const player=currentPlayer();
-  if(!player){toast("Bitte zuerst beitreten.");return}
-  const input=document.getElementById("chatInput");
-  const message=input.value.trim();
-  if(!message)return;
-  state.chat.push({id:uid(),playerId:player.id,name:player.name,message,time:Date.now()});
-  if(state.chat.length>150)state.chat=state.chat.slice(-150);
-  input.value="";
-  saveState();renderChat();
-}
-function deleteChat(id){
-  const message=state.chat.find(m=>m.id===id);
-  const player=currentPlayer();
-  if(!message||!player)return;
-  if(message.playerId!==player.id&&!isAdmin()){toast("Du kannst nur deine eigenen Nachrichten löschen.");return}
-  state.chat=state.chat.filter(m=>m.id!==id);
-  saveState();renderChat();
-}
-function reportChat(id){
-  toast("Meldung lokal vermerkt. Eine echte Moderation benötigt einen Server.");
-}
-
-/* =========================================================
-   POWER HOUR UND ADMIN-DATEN
-   ========================================================= */
-
-function togglePowerHour(){
-  if(!requireAdmin())return;
-  state.powerHour=!state.powerHour;
-  saveState();renderAll();
-  toast(state.powerHour?"Power Hour aktiviert.":"Power Hour beendet.");
-}
-function removePlayer(id){
-  if(!requireAdmin())return;
-  if(state.footballTokenOwner===id)state.footballTokenOwner=null;
-  state.players=state.players.filter(p=>p.id!==id);
-  if(state.currentPlayerId===id){
-    state.currentPlayerId=null;
-    state.playerName="";
-  }
-  saveState();renderAll();toast("Spieler entfernt.");
-}
-function exportData(){
-  if(!requireAdmin())return;
-  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url;a.download="football-gift-challenge-backup.json";a.click();
-  URL.revokeObjectURL(url);
-}
-function resetAll(){
-  if(!requireAdmin())return;
-  if(!confirm("Wirklich alle lokalen Spiel-Daten löschen?"))return;
-  localStorage.removeItem("fcg_comeback_era_v1");
-  state=structuredClone(DEFAULT_STATE);
-  state.products=structuredClone(DEFAULT_PRODUCTS);
-  renderAll();toast("Lokale Demo-Daten gelöscht.");
-}
-
-/* =========================================================
-   MODAL
-   ========================================================= */
-
-let modalCallback=null;
-function showModal(emoji,title,message,choices=null,callback=null){
-  document.getElementById("modalEmoji").textContent=emoji;
-  document.getElementById("modalTitle").textContent=title;
-  document.getElementById("modalText").textContent=message;
-  const box=document.querySelector(".modal-box");
-  box.querySelectorAll(".choice-button").forEach(b=>b.remove());
-  modalCallback=callback;
-  if(Array.isArray(choices)){
-    choices.forEach(choice=>{
-      const b=document.createElement("button");
-      b.className="choice-button";
-      b.style.display="block";
-      b.style.width="100%";
-      b.style.margin="8px 0";
-      b.textContent=choice.label;
-      b.onclick=()=>{
-        const cb=modalCallback;
-        closeModal();
-        if(cb)cb(choice.value);
-      };
-      box.insertBefore(b,box.querySelector("button"));
-    });
-  }
-  document.getElementById("modal").classList.add("show");
-}
-function closeModal(){
-  document.getElementById("modal").classList.remove("show");
-  modalCallback=null;
-}
-
-/* =========================================================
-   RENDERING
-   ========================================================= */
-
-function renderStats(){
-  const player=currentPlayer();
-  document.getElementById("statPlayers").textContent=state.players.length;
-  document.getElementById("statGifts").textContent=player?player.opened:0;
-  document.getElementById("statTokens").textContent=player?
-    Object.values(player.tokens).reduce((a,b)=>a+b,0):0;
-  document.getElementById("statBudget").textContent=state.budget;
-  document.getElementById("shopBudget").textContent=state.budget;
-  document.getElementById("shopProductsCount").textContent=state.products.length;
-  document.getElementById("roundNumber").textContent=state.round;
-  document.getElementById("roundStatus").textContent=state.roundActive?"Läuft":"Wartet";
-  document.getElementById("attemptsLeft").textContent=player?Math.max(0,3-player.attempts):0;
-  document.getElementById("adminStatus").textContent=isAdmin()?"Aktiv":"Nicht aktiviert";
-  document.getElementById("adminToggle").textContent=isAdmin()?"Admin-Modus deaktivieren":"Admin-Modus aktivieren";
-  document.getElementById("powerStatus").textContent=state.powerHour?"Aktiv":"Aus";
-  document.getElementById("powerButton").textContent=state.powerHour?"Power Hour beenden":"Power Hour aktivieren";
-}
 function renderGifts(){
-  const grid=document.getElementById("giftGrid");
-  grid.innerHTML="";
-  if(!state.gifts.length){
-    grid.innerHTML='<div class="notice">Noch keine Geschenke vorhanden. Der Admin kann eine Runde starten.</div>';
-    return;
+ const grid=document.getElementById("giftGrid");
+ grid.innerHTML="";
+ state.gifts.forEach(g=>{
+  const div=document.createElement("div");
+  div.className="gift"+(g.opened?" opened":"");
+  div.innerHTML='<div class="emoji">🎁</div><b>GESCHENK '+(g.id+1)+'</b><p class="muted">'+(g.opened?"Geöffnet":"Öffnen")+'</p>';
+  div.onclick=()=>openGift(g.id,div);
+  grid.appendChild(div);
+ });
+}
+function openGift(id,element){
+ if(!state.roundActive){toast("Die Runde ist beendet.");return}
+ if(state.lockdown){toast("Der Server ist gesperrt.");return}
+ if(state.attempts<=0){toast("Keine Versuche mehr.");return}
+ const gift=state.gifts.find(g=>g.id===id);
+ if(!gift||gift.opened)return;
+ gift.opened=true;
+ state.attempts--;
+ state.budget++;
+ element.classList.add("shaking");
+ save();
+ setTimeout(()=>{
+  const reward=rollReward();
+  if(reward==="Niete"){
+   openModal("💨","Niete!","Diesmal war leider nichts im Geschenk.");
+  }else{
+   state.tokens.push(reward);
+   state.rewards.push({player:currentPlayer,reward});
+   save();
+   openModal("🏆","GEWINN!","Du hast einen "+reward+" erhalten!");
   }
-  state.gifts.forEach(g=>{
-    const div=document.createElement("div");
-    div.className="gift"+(g.opened?" opened":"");
-    div.innerHTML='<div class="emoji">'+(g.opened?"📦":"🎁")+'</div>'+
-      '<strong>'+(g.opened?"Geöffnet":"Geschenk "+g.number)+'</strong>'+
-      '<span class="small muted">'+(g.opened?"Bereits geöffnet":"Zum Öffnen tippen")+'</span>';
-    if(!g.opened)div.onclick=()=>openGift(g.id);
-    grid.appendChild(div);
-  });
-  const player=currentPlayer();
-  document.getElementById("giftHint").textContent=
-    !state.roundActive?"Der Admin muss zuerst eine Runde starten.":
-    !player?"Bitte zuerst beitreten.":
-    "Du hast noch "+Math.max(0,3-player.attempts)+" von 3 Öffnungen.";
+  save();
+ },2600);
+}
+function rollReward(){
+ const rewards=[
+  {name:"Niete",weight:70},
+  {name:"Football Loser Token",weight:10},
+  {name:"Freistoß-Token",weight:8},
+  {name:"Selbst-Retter-Token",weight:5},
+  {name:"Double Goal Token",weight:3},
+  {name:"Revenge Token",weight:2},
+  {name:"Football Token",weight:2}
+ ];
+ let total=rewards.reduce((s,r)=>s+r.weight,0);
+ let n=Math.random()*total;
+ for(const r of rewards){n-=r.weight;if(n<0){
+  if(r.name==="Football Token"&&state.rewards.some(x=>x.reward==="Football Token"))return "Niete";
+  return r.name;
+ }}
+ return "Niete";
 }
 function renderTokens(){
-  const el=document.getElementById("tokenCollection");
-  const player=currentPlayer();
-  el.innerHTML="";
-  TOKEN_DEFINITIONS.forEach(t=>{
-    const count=player?(player.tokens[t.id]||0):0;
-    const item=document.createElement("div");
-    item.className="list-item";
-    item.innerHTML='<span><span class="token-icon">'+t.icon+'</span> <b>'+escapeHTML(t.name)+'</b><br><span class="muted small">'+escapeHTML(t.rarity)+'</span></span><strong>'+count+'×</strong>';
-    el.appendChild(item);
-  });
-  if(!player)el.insertAdjacentHTML("beforeend",'<p class="muted">Melde dich an, um deine Sammlung zu sehen.</p>');
+ const el=document.getElementById("myTokens");
+ if(!state.tokens.length){el.textContent="Noch keine Tokens erhalten.";return}
+ el.innerHTML="";
+ state.tokens.forEach(t=>{
+  const d=document.createElement("div");d.className="item";d.textContent="🏅 "+t;el.appendChild(d);
+ });
+}
+function showMyRewards(){
+ const mine=state.rewards.filter(r=>r.player===currentPlayer);
+ openModal("🏅","Meine Belohnungen",mine.length?mine.map(r=>r.reward).join(", "):"Du hast noch keine Belohnungen.");
 }
 function renderEvents(){
-  const grid=document.getElementById("eventGrid");
-  grid.innerHTML="";
-  EVENT_DEFINITIONS.forEach(event=>{
-    const active=state.activeEvent===event.id;
-    const div=document.createElement("div");
-    div.className="event-card"+(active?" active-event":"");
-    div.innerHTML='<h3>'+event.icon+' '+escapeHTML(event.name)+'</h3>'+
-      '<p>'+escapeHTML(event.description)+'</p>'+
-      '<p class="small">'+escapeHTML(event.detail)+'</p>'+
-      '<span class="badge">'+(active?"AKTIV":"EVENT")+'</span>'+
-      '<button class="secondary" style="width:100%;margin-top:8px" onclick="eventAction(\''+event.id+'\')">Event öffnen</button>'+
-      (isAdmin()?'<button style="width:100%;margin-top:6px" onclick="startEventFromCard(\''+event.id+'\')">Als Admin starten</button>':'');
-    grid.appendChild(div);
-  });
-  const active=EVENT_DEFINITIONS.find(e=>e.id===state.activeEvent);
-  document.getElementById("eventStatus").textContent=active?
-    active.icon+" "+active.name+" ist aktiv. "+active.detail:
-    "Kein Event aktiv.";
-  document.getElementById("homeEvent").textContent=active?
-    active.icon+" "+active.name+" ist gerade aktiv.":
-    "Aktuell läuft kein Event.";
+ const grid=document.getElementById("eventGrid");grid.innerHTML="";
+ EVENTS.forEach(name=>{
+  const d=document.createElement("div");
+  d.className="event"+(state.activeEvents.includes(name)?" active":"");
+  d.innerHTML="<b>⚡ "+name+"</b><p class='muted'>"+(state.activeEvents.includes(name)?"AKTIV":"Nicht aktiv")+"</p>";
+  grid.appendChild(d);
+ });
 }
 function renderShop(){
-  const el=document.getElementById("shopProducts");
-  el.innerHTML="";
-  state.products.forEach(p=>{
-    const div=document.createElement("div");
-    div.className="list-item";
-    div.innerHTML='<div><b>'+escapeHTML(p.name)+'</b><div class="muted small">'+escapeHTML(p.description||"")+'</div><div class="gold small">'+p.price+' Budgetpunkte · Bestand: '+p.stock+'</div></div>'+
-      '<div style="min-width:90px"><button '+(p.stock<=0||state.budget<p.price?"disabled":"")+' onclick="buyProduct(\''+p.id+'\')">Kaufen</button>'+
-      (isAdmin()?'<button class="danger" style="margin-top:5px" onclick="deleteProduct(\''+p.id+'\')">Entfernen</button>':'')+'</div>';
-    el.appendChild(div);
-  });
-  if(!state.products.length)el.innerHTML='<p class="muted">Keine Produkte vorhanden.</p>';
+ document.getElementById("shopBudget").textContent=state.budget;
+ document.getElementById("budget").textContent=state.budget;
+ document.getElementById("shopCount").textContent=state.products.length;
+ const list=document.getElementById("shopItems");list.innerHTML="";
+ state.products.forEach((p,i)=>{
+  const d=document.createElement("div");d.className="item";
+  const info=document.createElement("span");
+  info.textContent=p.name+" · "+p.price+" Punkte · Bestand: "+p.stock;
+  const b=document.createElement("button");b.textContent="Kaufen";
+  b.disabled=p.stock<=0||state.budget<p.price;
+  b.onclick=()=>buyProduct(i);
+  d.append(info,b);list.appendChild(d);
+ });
+}
+function buyProduct(i){
+ const p=state.products[i];
+ if(!p||p.stock<=0||state.budget<p.price)return;
+ state.budget-=p.price;p.stock--;
+ save();toast(p.name+" gekauft!");
 }
 function renderChat(){
-  const el=document.getElementById("chatMessages");
-  el.innerHTML="";
-  state.chat.forEach(m=>{
-    const div=document.createElement("div");
-    div.className="chat-message";
-    const time=new Date(m.time).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
-    div.innerHTML='<b>'+escapeHTML(m.name)+'</b> <span class="muted small">'+time+'</span><br>'+
-      escapeHTML(m.message)+
-      '<div style="margin-top:5px"><button class="secondary small" onclick="reportChat(\''+m.id+'\')">Melden</button> '+
-      '<button class="secondary small" onclick="deleteChat(\''+m.id+'\')">Löschen</button></div>';
-    el.appendChild(div);
-  });
-  el.scrollTop=el.scrollHeight;
+ const box=document.getElementById("chatMessages");box.innerHTML="";
+ state.chat.forEach((m,i)=>{
+  const d=document.createElement("div");d.className="item";
+  const s=document.createElement("span");s.textContent=m.player+": "+m.text;
+  const b=document.createElement("button");b.className="secondary";b.textContent="Löschen";
+  b.onclick=()=>{if(m.player===currentPlayer||isAdmin){state.chat.splice(i,1);save()}};
+  d.append(s,b);box.appendChild(d);
+ });
 }
-function renderLeaderboard(){
-  const el=document.getElementById("leaderboardList");
-  el.innerHTML="";
-  const players=[...state.players].sort((a,b)=>
-    Object.values(b.tokens||{}).reduce((x,y)=>x+y,0)-
-    Object.values(a.tokens||{}).reduce((x,y)=>x+y,0)
-  );
-  players.forEach((p,i)=>{
-    const total=Object.values(p.tokens||{}).reduce((a,b)=>a+b,0);
-    const div=document.createElement("div");
-    div.className="list-item";
-    div.innerHTML='<strong>#'+(i+1)+' '+escapeHTML(p.name)+'</strong><span class="gold">'+total+' Tokens</span>';
-    el.appendChild(div);
-  });
-  if(!players.length)el.innerHTML='<p class="muted">Noch keine Spieler.</p>';
+function sendMessage(){
+ const input=document.getElementById("chatInput");
+ const text=input.value.trim();if(!text)return;
+ state.chat.push({player:currentPlayer,text,reported:false});
+ input.value="";save();
 }
-function renderAdmin(){
-  const players=document.getElementById("adminPlayers");
-  players.innerHTML="";
-  state.players.forEach(p=>{
-    const total=Object.values(p.tokens||{}).reduce((a,b)=>a+b,0);
-    const div=document.createElement("div");
-    div.className="list-item";
-    div.innerHTML='<span><b>'+escapeHTML(p.name)+'</b><br><span class="muted small">'+total+' Tokens · '+p.opened+' Geschenke geöffnet</span></span>'+
-      '<button class="danger" onclick="removePlayer(\''+p.id+'\')">Entfernen</button>';
-    players.appendChild(div);
-  });
-  const awardPlayer=document.getElementById("awardPlayer");
-  const old=awardPlayer.value;
-  awardPlayer.innerHTML='<option value="">Spieler auswählen</option>';
-  state.players.forEach(p=>{
-    const o=document.createElement("option");o.value=p.id;o.textContent=p.name;awardPlayer.appendChild(o);
-  });
-  if(state.players.some(p=>p.id===old))awardPlayer.value=old;
-  const prize=document.getElementById("awardPrize");
-  prize.innerHTML='<option value="niet">Niete</option>';
-  TOKEN_DEFINITIONS.forEach(t=>{
-    const o=document.createElement("option");
-    o.value=t.id;o.textContent=t.name;
-    if(t.id==="football"&&state.footballTokenOwner)o.disabled=true;
-    prize.appendChild(o);
-  });
-  const eventSelect=document.getElementById("adminEventSelect");
-  eventSelect.innerHTML="";
-  EVENT_DEFINITIONS.forEach(e=>{
-    const o=document.createElement("option");o.value=e.id;o.textContent=e.name;eventSelect.appendChild(o);
-  });
+function renderPlayers(){
+ const box=document.getElementById("playerList");box.innerHTML="";
+ state.players.forEach(p=>{
+  const d=document.createElement("div");d.className="item";
+  d.textContent="👤 "+p+(p===currentPlayer?" (Du)":"");
+  box.appendChild(d);
+ });
 }
-function renderNavigation(){
-  document.querySelectorAll("nav button").forEach(btn=>{
-    btn.classList.toggle("active",btn.dataset.page===document.querySelector(".page.active")?.id);
-  });
+function renderAdminSelects(){
+ const p=document.getElementById("rewardPlayer");p.innerHTML="";
+ state.players.forEach(name=>{
+  const o=document.createElement("option");o.value=name;o.textContent=name;p.appendChild(o);
+ });
+ const r=document.getElementById("rewardSelect");r.innerHTML="";
+ [...TOKENS,"Niete","Diamant Geschenk","Galaxy Geschenk"].forEach(name=>{
+  const o=document.createElement("option");o.value=name;o.textContent=name;r.appendChild(o);
+ });
+ const e=document.getElementById("adminEventSelect");e.innerHTML="";
+ EVENTS.forEach(name=>{
+  const o=document.createElement("option");o.value=name;o.textContent=name;e.appendChild(o);
+ });
 }
 function renderAll(){
-  renderStats();
-  renderGifts();
-  renderTokens();
-  renderEvents();
-  renderShop();
-  renderChat();
-  renderLeaderboard();
-  renderAdmin();
-  renderNavigation();
+ document.getElementById("roundNo").textContent=state.round;
+ document.getElementById("attempts").textContent=state.attempts;
+ document.getElementById("budget").textContent=state.budget;
+ document.getElementById("lockStatus").textContent="Lockdown: "+(state.lockdown?"AN":"AUS");
+ document.getElementById("gameStatus").textContent=state.roundActive?"Wähle ein Geschenk aus!":"Die Runde ist beendet.";
+ renderGifts();renderTokens();renderEvents();renderShop();renderChat();renderPlayers();renderAdminSelects();
 }
-
-/* =========================================================
-   NAVIGATION UND START
-   ========================================================= */
-
-document.querySelectorAll("nav button").forEach(button=>{
-  button.addEventListener("click",()=>{
-    document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-    const page=document.getElementById(button.dataset.page);
-    if(page)page.classList.add("active");
-    renderNavigation();
-  });
-});
-
-document.getElementById("chatInput").addEventListener("keydown",e=>{
-  if(e.key==="Enter")sendChat();
-});
-document.getElementById("playerName").addEventListener("keydown",e=>{
-  if(e.key==="Enter")joinGame();
-});
-
-if(!Array.isArray(state.products)||state.products.length===0){
-  state.products=structuredClone(DEFAULT_PRODUCTS);
+function adminLogin(){
+ const email=document.getElementById("adminEmail").value.trim();
+ const password=document.getElementById("adminPassword").value;
+ document.getElementById("adminLoginStatus").textContent=
+  "Demo: Hier ist noch keine sichere Firebase-Anmeldung angeschlossen. Admin-Rechte werden nicht freigeschaltet.";
+ if(email&&password)toast("Bitte Firebase-Admin-Anmeldung einrichten.");
 }
-state.players.forEach(ensurePlayerData);
-if(state.activeEvent)document.body.className="event-"+state.activeEvent.replace(/_/g,"-");
-saveState();
+function adminLogout(){
+ isAdmin=false;
+ document.getElementById("adminPanel").classList.add("hidden");
+ document.getElementById("adminLogin").classList.remove("hidden");
+}
+function requireAdmin(){
+ if(!isAdmin){toast("Admin-Anmeldung erforderlich.");return false}
+ return true;
+}
+function startRound(){
+ if(!requireAdmin())return;
+ state.roundActive=true;state.attempts=3;state.gifts=Array.from({length:15},(_,i)=>({id:i,opened:false}));
+ save();toast("Neue Runde gestartet!");
+}
+function endRound(){
+ if(!requireAdmin())return;
+ state.roundActive=false;save();toast("Runde beendet.");
+}
+function resetRound(){
+ if(!requireAdmin())return;
+ state.attempts=3;state.gifts=Array.from({length:15},(_,i)=>({id:i,opened:false}));
+ save();toast("Geschenke zurückgesetzt.");
+}
+function addPlayer(){
+ if(!requireAdmin())return;
+ const input=document.getElementById("newPlayer");
+ const name=input.value.trim();if(!name)return;
+ if(state.players.includes(name)){toast("Spieler existiert bereits.");return}
+ state.players.push(name);input.value="";save();
+}
+function giveReward(random){
+ if(!requireAdmin())return;
+ const reward=document.getElementById("rewardSelect").value;
+ let player=document.getElementById("rewardPlayer").value;
+ if(random)player=state.players[Math.floor(Math.random()*state.players.length)];
+ if(!player){toast("Kein Spieler vorhanden.");return}
+ if(reward==="Football Token"&&state.rewards.some(r=>r.reward==="Football Token")){
+  toast("Der Football Token wurde bereits vergeben.");return;
+ }
+ if(reward!=="Niete"&&!state.tokens.includes(reward))state.tokens.push(reward);
+ state.rewards.push({player,reward});
+ save();toast(reward+" an "+player+" vergeben.");
+}
+function toggleEvent(start){
+ if(!requireAdmin())return;
+ const name=document.getElementById("adminEventSelect").value;
+ if(start&&!state.activeEvents.includes(name))state.activeEvents.push(name);
+ if(!start)state.activeEvents=state.activeEvents.filter(x=>x!==name);
+ save();toast(name+(start?" gestartet":" gestoppt"));
+}
+function addProduct(){
+ if(!requireAdmin())return;
+ const name=document.getElementById("productName").value.trim();
+ const price=Number(document.getElementById("productPrice").value);
+ const stock=Number(document.getElementById("productStock").value);
+ if(!name||price<0||stock<0||!Number.isFinite(price)||!Number.isFinite(stock)){toast("Bitte gültige Angaben eingeben.");return}
+ state.products.push({name,price,stock});
+ document.getElementById("productName").value="";
+ save();
+}
+function toggleLockdown(){
+ if(!requireAdmin())return;
+ state.lockdown=!state.lockdown;save();
+}
+function changeBudget(){
+ if(!requireAdmin())return;
+ const amount=Number(document.getElementById("budgetChange").value);
+ if(!Number.isFinite(amount))return;
+ state.budget=Math.max(0,state.budget+amount);
+ document.getElementById("budgetChange").value="";
+ save();
+}
 renderAll();
-
-/* =========================================================
-   ENDE DER EINZELDATEI
-   ========================================================= */
 </script>
 </body>
- </html>
+</html>
