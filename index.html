@@ -282,7 +282,7 @@ async function openBox(i){
  }catch(e){$('result').textContent='Die Box konnte nicht geöffnet werden. Prüfe deine Verbindung und versuche es erneut.';return;}
  if(!claim.committed){$('result').textContent='Diese Box wurde bereits geöffnet oder du hast deine 3 Boxen für diese Runde schon genutzt.';return;}
  opened.push(i);boxes[i].opened=true;renderBoxes();
- await saveRound();
+ const roundSaved=await saveRound();
  try{
   const credit=await runTransaction(path('players/'+uid+'/shopBalance'),v=>(Number(v)||0)+1);
   if(credit.committed){player.shopBalance=credit.snapshot.val();renderShop();}
@@ -290,6 +290,7 @@ async function openBox(i){
  $('result').textContent='Die Box wird geöffnet…';
  await rollAndAward(uid,(boxes[i].rare?rareType.mult:1)*(boxes[i].blitz?10:1),'Box',!!boxes[i].galaxy);
  if(boxes[i].blitz)$('result').textContent='⚡ BLITZ! 10× Glück! '+$('result').textContent;
+ if(!roundSaved)$('result').textContent+=' (Die Öffnung ist sicher registriert; die Rundendarstellung wird beim nächsten Laden abgeglichen.)';
  renderInventory();renderRanking();
 }
 async function enter(){
@@ -307,7 +308,12 @@ async function enter(){
     boxes=player.lastBoxes.map((b,i)=>({...b,id:i,opened:!!b.opened}));opened=boxes.filter(b=>b.opened).map(b=>b.id);
     rareType=boxes.some(b=>b.rare)?RARE.find(r=>r.id===player.lastRareType)||RARE[0]:null;
     roundId=player.lastRoundId||('legacy_'+String(player.roundUpdated||Date.now()));
-    if(!player.lastRoundId)await saveRound();
+    // Reconcile the display with the server-side atomic claim ledger after refresh or a failed round save.
+    const claimSnap=await get(path('players/'+uid+'/boxClaims/'+roundId));
+    const claimState=claimSnap.val()||{};
+    const claimedIds=Object.keys(claimState.opened||{}).map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<15);
+    claimedIds.forEach(id=>{if(!opened.includes(id))opened.push(id);boxes[id].opened=true;});
+    if(!player.lastRoundId||claimedIds.length)await saveRound();
   }else buildRound();
   renderBoxes();subscribe();watchComeback();renderInventory();renderShop();renderRanking();await addActivity('ist dem Spiel beigetreten');await roleRefresh();await ownerAutoRole();applyServerState();
  }catch(e){msg('loginMsg','Verbindung fehlgeschlagen: '+e.message)}
