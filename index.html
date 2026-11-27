@@ -500,7 +500,7 @@ async function resetData(){
  msg('adminMsg','Zurückgesetzt: '+targets.length+' Spieler.');
 }
 async 
-async function renderThemedEventMiniGame(type,body,result,status,claim,win){
+async function renderThemedEventMiniGame(type,run,body,result,status,claim,win){
  const configs={
   pirate:{mode:'map',title:'🗺️ SCHATZKARTE',prompt:'Finde das X auf der Schatzkarte. Du hast genau einen Versuch.'},
   carnival:{mode:'reaction',title:'🎪 JAHRMARKT-REAKTION',prompt:'Warte auf das grüne Signal und tippe dann so schnell wie möglich!'},
@@ -538,6 +538,10 @@ async function renderThemedEventMiniGame(type,body,result,status,claim,win){
   mystery:{mode:'pick',title:'🎭 GEHEIMNISVOLLE TÜREN',prompt:'Hinter einer Tür wartet dein Geschenk. Wähle eine!'}
  };
  const cfg=configs[type];if(!cfg)return false;
+ const secretRef=path('players/'+uid+'/eventChallengeData/'+type+'/'+run);
+ const generated={mapSafe:Math.floor(Math.random()*9),pickSafe:Math.floor(Math.random()*3),keeper:Math.floor(Math.random()*3)};
+ const secretTx=await runTransaction(secretRef,v=>v||generated);
+ const challengeSecret=secretTx.snapshot.val()||generated;
  const heading=document.createElement('h3');heading.textContent=cfg.title;body.append(heading);
  const prompt=document.createElement('p');prompt.textContent=cfg.prompt;body.append(prompt);
  const board=document.createElement('div');board.className='row';board.style.cssText='display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0';body.append(board);
@@ -552,14 +556,14 @@ async function renderThemedEventMiniGame(type,body,result,status,claim,win){
   status.textContent='Die Challenge ist beendet.';
  }
  if(cfg.mode==='map'){
-  const safe=Math.floor(Math.random()*9);
+  const safe=Number(challengeSecret.mapSafe);
   for(let i=0;i<9;i++){const n=i;makeButton('🟫 '+(i+1),async()=>{if(!await begin())return;await finish(n===safe,n===safe?'Schatz gefunden!':'');});}
  }else if(cfg.mode==='pick'){
-  const safe=Math.floor(Math.random()*3);
+  const safe=Number(challengeSecret.pickSafe);
   const labels=type==='multiverse'?['💎 Kristallwelt','🤖 Roboterwelt','🐉 Drachenwelt']:type==='candy'?['🍭 Lolli','🍫 Schokolade','🍬 Bonbons']:type==='dragon'?['🔥 Feuerdrache','❄️ Eisdrache','⚡ Sturmdrache']:['🚪 Tür 1','🚪 Tür 2','🚪 Tür 3'];
   labels.forEach((label,i)=>makeButton(label,async()=>{if(!await begin())return;await finish(i===safe,'Die richtige Wahl getroffen!');}));
  }else if(cfg.mode==='goal'){
-  const keeper=Math.floor(Math.random()*3),lanes=['⬅️ LINKS','⬆️ MITTE','➡️ RECHTS'];
+  const keeper=Number(challengeSecret.keeper),lanes=['⬅️ LINKS','⬆️ MITTE','➡️ RECHTS'];
   lanes.forEach((label,i)=>makeButton(label,async()=>{if(!await begin())return;await finish(i!==keeper,'TOOOR! Elfmeter verwandelt!');}));
  }else if(cfg.mode==='reaction'){
   let armed=false,readyAt=0,timer=null;
@@ -682,7 +686,7 @@ async function renderEventChallenge(){
  }else if(type==='lasertag'){
   await renderLaserTag3D(body,result,status,eventState);
  }else if(['pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type)){
-  renderThemedEventMiniGame(type,body,result,status,claim,win);
+  renderThemedEventMiniGame(type,run,body,result,status,claim,win);
  }else if(['ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type)){
   const games={
    ocean:{q:'Welche dieser Kreaturen lebt im Meer?',a:['Delfin','Kamel','Adler'],correct:0},
