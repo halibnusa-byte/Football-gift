@@ -29,6 +29,8 @@ jobs:
         run: node --check /tmp/football-gift.mjs
       - name: Check established game invariants
         run: python3 tests/check_invariants.py
+      - name: Check Firebase rules fail closed
+        run: python3 tests/check_security_rules.py
       - name: Check HTML and JavaScript DOM references
         run: python3 tests/check_dom_integrity.py
       - name: Check required media assets
