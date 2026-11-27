@@ -2,6 +2,12 @@
 
 Diese Datei dokumentiert die Schritte, die vor einer öffentlichen Freigabe noch in Firebase erledigt und getestet werden müssen. **Sie ändert keine Firebase-Einstellungen und macht die App allein nicht sicher.**
 
+## Important: current rules file is not safe to deploy as production rules
+
+The checked-in `firebase-config.js` is a development draft, not a production security policy. In its current form, authenticated users can write broad data branches while the server is open. The client-writable `adminProof` plus readable code hash also means the code-hash proof is not a secure identity check. A malicious user could potentially impersonate an admin and alter player data, settings, events, or rewards.
+
+**Do not deploy the current rules as a security fix.** The app must be migrated to server-verified Firebase Authentication custom claims and trusted Cloud Functions/Admin SDK operations for sensitive writes. Player-owned cosmetic/profile fields can then be allowed separately, while balances, inventory, tokens, global one-time rewards, event claims, shop purchases, and admin actions are validated on the server. Rules must be tested in the Firebase Emulator before deployment.
+
 ## 1. Hauptadmin sicher festlegen
 
 Die aktuelle HTML-App enthält clientseitige Rollen-/Code-Logik. Alles, was im Browser ausgeliefert wird, kann von Nutzern eingesehen oder verändert werden. Ein geheimer Code oder Hash im JavaScript ist deshalb kein verlässlicher Berechtigungsnachweis.
