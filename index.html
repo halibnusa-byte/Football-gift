@@ -583,10 +583,7 @@ async function renderThemedEventMiniGame(type,run,body,result,status,claim,win){
   lanes.forEach((label,i)=>makeButton(label,async()=>{if(!await begin())return;await finish(i!==keeper,'TOOOR! Elfmeter verwandelt!');}));
  }else if(cfg.mode==='reaction'){
   let armed=false,readyAt=0,timer=null;
-  const b=makeButton('BEREIT',async()=>{
-   if(finished||armed)return;if(!await begin())return;armed=true;b.disabled=true;b.textContent='⏳ WARTEN …';
-   timer=setTimeout(()=>{if(finished)return;readyAt=Date.now();b.disabled=false;b.textContent='🟢 JETZT!';},900+Math.floor(Math.random()*1900));
-  });
+  const b=makeButton('BEREIT',()=>{});
   b.onclick=async()=>{
    if(finished)return;
    if(!armed){if(!await begin())return;armed=true;b.disabled=true;b.textContent='⏳ WARTEN …';timer=setTimeout(()=>{if(finished)return;readyAt=Date.now();b.disabled=false;b.textContent='🟢 JETZT!';},900+Math.floor(Math.random()*1900));return;}
