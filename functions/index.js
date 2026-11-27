@@ -173,12 +173,14 @@ exports.openComebackGift = onCall({ region: "europe-west1" }, async (request) =>
   const auth = requireAuth(request);
   const uid = auth.uid;
   const playerRef = db.ref("players/" + uid);
-  const [playerSnapshot, settingsSnapshot] = await Promise.all([
+  const [playerSnapshot, settingsSnapshot, eventSnapshot] = await Promise.all([
     playerRef.get(),
     db.ref("settings").get(),
+    db.ref("events").get(),
   ]);
   const player = playerSnapshot.val();
   const settings = settingsSnapshot.val() || {};
+  const eventState = eventSnapshot.val() || {};
   if (!player || player.comebackGift !== "ready") {
     throw new HttpsError("failed-precondition", "Dieses Comeback-Geschenk ist nicht verfügbar oder wurde bereits geöffnet.");
   }
@@ -188,6 +190,7 @@ exports.openComebackGift = onCall({ region: "europe-west1" }, async (request) =>
     player,
     claims: auth.token || {},
     uid,
+    eventState,
   });
   let reservedFootball = false;
 
@@ -204,6 +207,7 @@ exports.openComebackGift = onCall({ region: "europe-west1" }, async (request) =>
         player,
         claims: auth.token || {},
         uid,
+        eventState,
       });
     }
   }
