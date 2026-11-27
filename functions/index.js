@@ -146,21 +146,19 @@ exports.grantComebackGifts = onCall({ region: "europe-west1" }, async (request) 
   requireRole(request, ["mainAdmin"]);
   const onlineSnapshot = await db.ref("online").get();
   const online = onlineSnapshot.val() || {};
-  const ids = Object.keys(online).slice(0, 500);
+  const ids = Object.keys(online).slice(0, 200);
   let granted = 0;
   let skipped = Math.max(0, Object.keys(online).length - ids.length);
 
-  for (const uid of ids) {
-    // A client-writable online list is not proof of an account. Confirm each UID.
-    try {
-      await getAuth().getUser(uid);
-    } catch {
-      skipped += 1;
-      continue;
-    }
+  // The online list is client-writable, so only accept UIDs that Auth confirms.
+  const authUsers = ids.length ? await getAuth().getUsers(ids.map((uid) => ({ uid }))) : { users: [] };
+  const validIds = new Set(authUsers.users.map((user) => user.uid));
+  skipped += ids.length - validIds.size;
+
+  for (const uid of validIds) {
     const playerRef = db.ref("players/" + uid);
     const tx = await playerRef.transaction((current) => {
-      if (!current || current.comebackGift !== undefined && current.comebackGift !== null) return;
+      if (!current || (current.comebackGift !== undefined && current.comebackGift !== null)) return;
       return { ...current, comebackGift: "ready", title: "OG COMEBACK PLAYER" };
     });
     if (tx.committed) granted += 1;
@@ -238,7 +236,7 @@ exports.openComebackGift = onCall({ region: "europe-west1" }, async (request) =>
       name: String(player.name || "Spieler").slice(0, 24),
       text: "hat das Legendary Comeback Gift geöffnet: " + prize.name,
       at: now,
-    });
+    }).catch(() => {});
   }
   return { prize: prize ? { id: prize.id, name: prize.name, emoji: prize.emoji } : null };
 });
