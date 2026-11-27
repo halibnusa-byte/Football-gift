@@ -24,6 +24,19 @@ The Firebase rules pasted by the owner are currently time-limited root read/writ
 - Add emulator tests for anonymous users, normal players, Message Man, quarter admins, half admins, and main admin; include attempts to forge roles, alter balances, award duplicate Football Tokens, and modify global events.
 - Test with separate accounts before merging or deploying.
 
-## Current status
+## Current status (updated 2026-11-27)
 
-This branch is a safe working branch created from Main. No production Firebase rules, live data, or Main-branch files have been changed by this audit. Do not merge or deploy until the backend migration and tests are complete.
+Implemented in this branch:
+- Callable role-code verification that assigns Firebase custom claims on the trusted server.
+- Callable event control with an event allowlist and delegated-role checks.
+- Callable server-lock control restricted to the main-admin claim.
+- Reward callable deliberately disabled until a server-authoritative round/claim system exists.
+- Static regression checks and a CI workflow definition.
+
+Still not complete:
+- The browser client has not been migrated to call these endpoints; it still performs privileged direct writes.
+- Role-code hashes still live in legacy Realtime Database paths. Until strict rules prevent client writes to those paths, they are not a trustworthy source of authorization.
+- No production rules have been deployed, and no Firebase Emulator integration tests or successful CI run have been verified.
+- Gift transfers, manual grants, player resets, admin provisioning, announcements, event mini-games, box rounds/rewards, LaserTag, Godzilla votes, and other privileged operations still need trusted server endpoints and client migration.
+
+This branch is a safe working branch created from Main. No production Firebase rules, live data, or Main-branch files have been changed. Do not merge or deploy until the full client migration, private role-code storage, narrow rules, integration tests, and billing review are complete.
