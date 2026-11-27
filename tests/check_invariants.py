@@ -36,6 +36,9 @@ checks = {
     "main-admin global luck is capped at 5x": 'id="adminLuck" type="number" min="1" max="5"' in source and "if(v>5)return msg('adminMsg'" in source,
     "Admin Abuse tips are main-admin-only and priority-sorted": "role==='admin'&&settings.adminAbuseActive===true" in source and "level:'DRINGEND'" in source and "level:'EMPFEHLUNG'" in source and "level:'OPTIONAL'" in source and "tips.sort((a,b)=>a.rank-b.rank)" in source,
     "Main-admin luck requires whole-number values": "!Number.isInteger(v)" in source,
+    "game has no fixed automatic expiry date": "EXPIRY" not in source and "2026-11-28T14:30:00" not in source,
+    "main admin can end and restart the game from the control panel": 'id="srvLock"' in source and 'id="srvUnlock"' in source and "SPIEL BEENDEN" in source and "SPIEL STARTEN" in source and "Nur der Hauptadmin darf das Spiel beenden oder starten." in source,
+    "ending the game blocks box opening for regular players": "if(serverState!=='open'&&!isOwner){$('result').textContent='Das Spiel ist momentan vom Hauptadmin beendet.';return;}" in source,
     "shop purchases use the same merged catalog shown to players": "const item=currentShopCatalog().find(x=>x.id===id)" in source,
     "Shop balance is transaction-based": "players/'+uid+'/shopBalance" in source and "runTransaction" in source,
 }
