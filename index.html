@@ -517,10 +517,15 @@ async function renderEventChallenge(){
  }else if(type==='alien'){
   const q=document.createElement('p');q.textContent='Welcher Planet wird auch der Rote Planet genannt?';const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT ABSENDEN';b.onclick=async()=>{b.disabled=true;if(await claim()){if(inp.value.trim().toLowerCase()==='mars')await win('Rätsel gelöst');else result.textContent='Falsch – kein Geschenk.';}};body.append(q,inp,b);addRadarButton('alien_radar','👽 ALIEN RADAR VERWENDEN','👽 Alien Radar: Der gesuchte Planet ist Mars.');
  }else if(type==='ocean'){
-  const intro=document.createElement('p');intro.textContent='Öffne bis zu drei Schatztruhen. In jeder Truhe wartet vielleicht ein Geschenk – manchmal taucht sogar der goldene Hai auf!';body.append(intro);
+  const intro=document.createElement('p');intro.textContent='Öffne bis zu drei Schatztruhen. Vielleicht findest du einen Schatz oder sogar den goldenen Hai!';body.append(intro);
   const chestStatus=document.createElement('div');chestStatus.className='hint';body.append(chestStatus);
+  const lootRef=path('players/'+uid+'/oceanLoot/'+run);
+  const generated={chests:Array.from({length:3},()=>({golden:false,gift:Math.random()<0.55}))};
+  if(Math.random()<0.06)generated.chests[Math.floor(Math.random()*3)]={golden:true,gift:true};
+  const lootTx=await runTransaction(lootRef,v=>v||generated);
+  const loot=lootTx.snapshot.val()||generated;
   const radar=document.createElement('button');radar.className='secondary';radar.textContent='🦪 PEARL RADAR VERWENDEN';
-  radar.onclick=async()=>{radar.disabled=true;if(await consumeShopItem('pearl_radar')){chestStatus.textContent='🦪 Der Pearl Radar zeigt eine besonders vielversprechende Truhe: Achte auf den goldenen Schimmer!';}else{radar.disabled=false;chestStatus.textContent='Kein Pearl Radar im Inventar.';}};
+  radar.onclick=async()=>{radar.disabled=true;if(await consumeShopItem('pearl_radar')){const target=loot.chests.findIndex(c=>c.golden);const fallback=loot.chests.findIndex(c=>c.gift);chestStatus.textContent=target>=0?'🦈 Pearl Radar: Der goldene Hai ist bei Schatztruhe '+(target+1)+'!':fallback>=0?'🦪 Pearl Radar: Bei Schatztruhe '+(fallback+1)+' liegt ein Geschenk.':'🫧 Der Radar findet heute keinen Schatz.';}else{radar.disabled=false;chestStatus.textContent='Kein Pearl Radar im Inventar.';}};
   if(Number(player.shopItems?.pearl_radar||0)>0)body.append(radar);
   let openedChests=0;
   for(let n=1;n<=3;n++){
@@ -531,14 +536,14 @@ async function renderEventChallenge(){
     const tx=await runTransaction(path('players/'+uid+'/eventClaims/ocean/'+run+'/chest_'+n),v=>v||{token,at:Date.now()});
     if(!tx.committed||tx.snapshot.val()?.token!==token){chestStatus.textContent='Diese Schatztruhe wurde bereits geöffnet.';return;}
     openedChests++;chest.textContent='📭 TRUHE '+n+' GEÖFFNET';
-    if(Math.random()<0.06){chestStatus.textContent='🦈 DER GOLDENE HAI!';await win('Goldener Hai entdeckt');}
-    else if(Math.random()<0.55){chestStatus.textContent='🎁 Du hast einen Schatz gefunden!';await win('Schatz gefunden');}
-    else chestStatus.textContent='🫧 Nur ein paar Luftblasen – Niete!';
+    const reward=loot.chests[n-1]||{gift:false,golden:false};
+    if(reward.golden)chestStatus.textContent='🦈 DER GOLDENE HAI!';else if(reward.gift)chestStatus.textContent='🎁 Du hast einen Schatz gefunden!';else chestStatus.textContent='🫧 Nur Luftblasen – Niete!';
+    if(reward.gift)await win(reward.golden?'Goldener Hai entdeckt':'Schatz gefunden');
     if(openedChests>=3){chestStatus.textContent+=' Alle drei Truhen sind geöffnet.';body.querySelectorAll('button').forEach(x=>{if(x!==radar)x.disabled=true;});}
    };
    body.append(chest);
   }
-  status.textContent='Drei Truhen pro Spieler und Event-Runde.';
+  status.textContent='Drei Truhen pro Spieler und Event-Runde. Deine Truhen-Inhalte bleiben beim Neuladen gleich.';
  }else if(type==='skibidi'){
   const stages=[['Noob-Glücksrad',100],['Glücksrad',500],['Boss-Glücksrad',1000],['Hacker-Glücksrad',1500],['Divine-Glücksrad',2000]];
   if(!await claim()){status.textContent='Du hast deinen Bosskampf in diesem Event bereits benutzt.';body.append(status);return;}
