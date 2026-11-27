@@ -269,7 +269,13 @@ function buildRound(){
 async function saveRound(){if(!uid)return;await update(path('players/'+uid),{lastBoxes:boxes.map((b,i)=>({opened:opened.includes(i),rare:b.rare,galaxy:b.galaxy,blitz:b.blitz})),lastRareType:rareType?.id||null,lastRoundId:roundId,opensThisRound:opened.length,roundUpdated:Date.now()}).catch(()=>{})}
 async function openBox(i){
  if(opened.length>=3||opened.includes(i)||Date.now()>EXPIRY.getTime()||!roundId)return;
- const claim=await runTransaction(path('players/'+uid+'/boxClaims/'+roundId+'/'+i),v=>v===true?undefined:true);
+ const claim=await runTransaction(path('players/'+uid+'/boxClaims/'+roundId),v=>{
+  const state=v&&typeof v==='object'?v:{opened:{},count:0};
+  const claimed={...(state.opened||{})},count=Number(state.count)||0;
+  if(claimed[String(i)]||count>=3)return;
+  claimed[String(i)]=true;
+  return {opened:claimed,count:count+1};
+ });
  if(!claim.committed)return;
  opened.push(i);boxes[i].opened=true;renderBoxes();
  await saveRound();
