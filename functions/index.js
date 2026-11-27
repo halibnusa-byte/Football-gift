@@ -72,9 +72,7 @@ exports.setActiveEvent = onCall({ region: "europe-west1" }, async (request) => {
   }
   const now = Date.now();
   await db.ref("events").update({ active: type, startedAt: now, runId: String(now) });
-  if (type === "skibidi") {
-    await db.ref("settings/completedEvents/skibidi").set(true);
-  }
+  // Mark the event as completed only when it is stopped, not when it starts.
   return { active: type, startedAt: now };
 });
 
