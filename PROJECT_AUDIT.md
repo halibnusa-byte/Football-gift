@@ -10,6 +10,7 @@ Status: Entwicklungsstand, nicht produktionsbereit.
 - 15 gemeinsame Geschenkboxen pro Runde.
 - Höchstens 3 Öffnungen je Spieler und Runde.
 - Jede Box-Öffnung wird pro Spieler und Runden-ID atomar beansprucht und vor der Belohnung gespeichert; ein Neuladen kann dieselbe Box nicht erneut öffnen. Die Drei-Box-Grenze wird ebenfalls atomar über alle Tabs hinweg durchgesetzt.
+- Beim erneuten Beitritt wird die sichtbare Rundendarstellung mit dem atomaren Claim-Ledger abgeglichen. So bleiben bestätigte Öffnungen auch dann sichtbar, wenn das zusätzliche Rundensnapshot-Schreiben nach dem Claim fehlschlägt; der Spieler erhält dafür einen Hinweis.
 - Gemeinsamer Live-Spielstand und Runden-Neustart.
 - Ein Shop-Punkt pro geöffneter Box; Kontostand wird in der Datenbank gespeichert.
 - Bestehende Gewinnliste und Belohnungslogik bleiben erhalten.
@@ -69,8 +70,8 @@ Status: Entwicklungsstand, nicht produktionsbereit.
 
 ## Automatische Prüfungen
 - JavaScript-Modul-Syntaxprüfung in GitHub Actions.
-- Statische Invariantentests für Token-IDs, globalen Football-Token, Galaxy-Event-Bedingung, persistente Box-Claims, Box-Anzahl, Öffnungsgrenze, gespeicherte Event-Challenges und Ocean-/Zombie-Lootdaten, 3D-LaserTag, Shop-Katalog/Käufe und Mini-Game-Abdeckung.
-- GitHub Actions: Syntax- und Invariant-Prüfungen sind auf Commit `b916f56253113f540ad132d1e0118dd6dfc9fc08` erfolgreich durchgelaufen.
+- Statische Invariantentests für Token-IDs, globalen Football-Token, Galaxy-Event-Bedingung, persistente Box-Claims, Box-Anzahl, Öffnungsgrenze, Wiederabgleich des Claim-Ledgers, gespeicherte Event-Challenges und Ocean-/Zombie-Lootdaten, 3D-LaserTag, Shop-Katalog/Käufe und Mini-Game-Abdeckung.
+- GitHub Actions: Die Push-Syntax- und Invariant-Prüfungen für den Box-Claim-Abgleich sind auf Commit `d4f6694e863ce10e49da9ca47c69a4dc342d2678` erfolgreich durchgelaufen; die Pull-Request-Prüfung mit den ergänzten neuen Invariantentests läuft noch.
 
 ## Noch nicht nachgewiesen / blockiert
 
