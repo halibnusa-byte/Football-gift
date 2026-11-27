@@ -402,11 +402,16 @@ async function sendGift(){
 async function grantTokens(){
  if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Tokens vergeben.');
  try{
-  const id=$('awardPrize').value,amount=Math.max(1,Math.min(50,Number($('awardAmount').value)||1)),targets=await resolveTargets($('awardScope').value,$('awardTarget').value);
-  if(id==='football'&&($('awardScope').value==='global'||settings.footballTokenOwner||amount!==1))throw new Error('Football Token darf nur einmal insgesamt und nur an einen einzelnen Spieler vergeben werden.');
-  for(const [target] of targets)await awardPrizeTo(target,id,amount);
-  msg('adminMsg','Token an '+targets.length+' Spieler vergeben.');if($('awardPublic').checked)await addActivity('Owner hat Tokens vergeben.');
- }catch(e){msg('adminMsg',e.message)}
+  const result=await httpsCallable(functions,'grantAdminTokens')({
+   prizeId:$('awardPrize').value,
+   amount:Math.max(1,Math.min(50,Number($('awardAmount').value)||1)),
+   scope:$('awardScope').value,
+   targetName:$('awardTarget').value,
+   public:$('awardPublic').checked
+  });
+  const data=result.data||{};
+  msg('adminMsg',data.prizeId+' an '+data.granted+' Spieler vergeben.');
+ }catch(e){msg('adminMsg',e?.message||'Token-Vergabe fehlgeschlagen.');}
 }
 async function startEvent(type){
  if(!['admin','quarterAdmin','halfAdmin'].includes(role))return msg('adminMsg','Keine Berechtigung.');
