@@ -203,8 +203,8 @@ const luck=()=>Math.max(settings.luckEnabled?Number(settings.luckMultiplier||1):
 const newTokensUnlocked=()=>settings.completedEvents?.skibidi===true;
 const prizeById=id=>PRIZES.find(p=>p.id===id)||({id:'diamondGift',name:'Diamond-Geschenk',emoji:'💎',chance:0});
 function activePrizeList(){return PRIZES.filter(p=>(newTokensUnlocked()||!['deinewahl','doublegoal','footballLoser','selfretter','freistoss','comeback'].includes(p.id))&&!(p.id==='penalty'&&player.inventory?.penalty)&&!(p.id==='football'&&settings.footballTokenOwner));}
-function weightedPrize(mult=1){
- let list=activePrizeList(),weights=list.map(p=>p.chance*mult),sum=weights.reduce((a,b)=>a+b,0);
+function weightedPrize(mult=1,sourceList=activePrizeList()){
+ let list=sourceList,weights=list.map(p=>p.chance*mult),sum=weights.reduce((a,b)=>a+b,0);
  if(sum>100)weights=weights.map(x=>x*100/sum);
  let r=Math.random()*100;
  for(let i=0;i<list.length;i++){r-=weights[i];if(r<0)return list[i]}
@@ -213,7 +213,7 @@ function weightedPrize(mult=1){
 function rarePick(){let r=Math.random();for(const x of RARE){r-=x.p;if(r<0)return x}return RARE[0]}
 function randomGift(){
  const list=activePrizeList().filter(p=>p.id!=='football');
- return weightedPrize(1);
+ return weightedPrize(1,list);
 }
 async function awardPrizeTo(uidTarget,prizeId,amount=1){
  if(prizeId==='football'){
