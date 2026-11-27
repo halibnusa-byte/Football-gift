@@ -17,6 +17,7 @@ Status: Entwicklungsstand, nicht produktionsbereit.
 - Die sechs vereinbarten Haupt-Tokens: Revenge Token, Double Goal Token, Football Loser Token, Selbst-Retter-Token, Freistoß-Token und Football Token.
 - Die Wahrscheinlichkeitsreihenfolge dieser sechs Haupt-Tokens ist in der Gewinnliste abgestuft.
 - Football Token wird über eine globale Datenbank-Transaktion nur einmal vergeben.
+- Zusätzliche Token-Freischaltungen werden erst nach dem tatsächlichen Beenden des Skibidi-Events gesetzt, nicht beim Start.
 - Weitere ältere Preise wie Comeback-, Deine-Wahl-, Penalty- und Spielvorteil-Preise bleiben erhalten.
 - Galaxy Gift kann nur während des Galaxy Events erscheinen; Chance: 0,001 %.
 - Galaxy-Belohnungsauswahl berücksichtigt den globalen Football-Token-Besitzer.
@@ -32,7 +33,8 @@ Status: Entwicklungsstand, nicht produktionsbereit.
 
 ### Admin Abuse und Power Hours
 - Admin Abuse kann nur der Hauptadmin starten und stoppen.
-- Zufällige Empfängerauswahl ist nur während Admin Abuse möglich; die Zufallsauswahl bestimmt den Empfänger, nicht Geschenk oder Token. Der Hauptadmin wählt die Belohnung.
+- Zufällige Empfängerauswahl für Geschenke, Tokens, Galaxy-Truhen und Blitz ist nur während Admin Abuse möglich; sie bestimmt ausschließlich einen anderen Online-Spieler als Empfänger, niemals die Belohnung. Der Hauptadmin wählt Geschenk/Token/Event-Aktion.
+- Der Admin-Abuse-Tippgeber zeigt nur dem Hauptadmin während aktivem Admin Abuse Hinweise, sortiert nach DRINGEND, EMPFEHLUNG und OPTIONAL. Er führt keine Aktionen selbst aus.
 - Legendary Comeback Gift kann nur während aktivem Admin Abuse an die aktuell online befindlichen Teilnehmer vergeben werden; jeder Teilnehmer erhält drei verdeckte Karten und wählt eine. Der Titel OG COMEBACK PLAYER und das kosmetische Cape bleiben erhalten.
 - Power Hours: Sonntag–Freitag 15:00–17:00 Uhr, Samstag ganztägig. Normale Spieler erhalten mindestens 2× Glück; das globale Hauptadmin-Glück ist 1×–5×. Werte werden nicht miteinander multipliziert.
 
