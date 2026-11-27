@@ -9,7 +9,7 @@ Status: Entwicklungsstand, nicht produktionsbereit.
 ### Runden und Geschenke
 - 15 gemeinsame Geschenkboxen pro Runde.
 - Höchstens 3 Öffnungen je Spieler und Runde.
-- Jede Box-Öffnung wird pro Spieler und Runden-ID atomar beansprucht und vor der Belohnung gespeichert; ein Neuladen kann dieselbe Box nicht erneut öffnen.
+- Jede Box-Öffnung wird pro Spieler und Runden-ID atomar beansprucht und vor der Belohnung gespeichert; ein Neuladen kann dieselbe Box nicht erneut öffnen. Die Drei-Box-Grenze wird ebenfalls atomar über alle Tabs hinweg durchgesetzt.
 - Gemeinsamer Live-Spielstand und Runden-Neustart.
 - Ein Shop-Punkt pro geöffneter Box; Kontostand wird in der Datenbank gespeichert.
 - Bestehende Gewinnliste und Belohnungslogik bleiben erhalten.
