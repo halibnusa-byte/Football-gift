@@ -231,7 +231,7 @@ async function awardPrizeTo(uidTarget,prizeId,amount=1){
 }
 async function rollAndAward(targetUid,rareMult=1,source='Box',forceGalaxy=false){
  let prize=null;
- if(forceGalaxy||(eventState.active==='galaxy'&&Math.random()<0.00001)){
+ if(eventState.active==='galaxy'&&Math.random()<0.00001){
   
   let choices=['comeback','revenge'];if(!settings.footballTokenOwner)choices.push('football');
   prize=PRIZES.find(p=>p.id===choices[Math.floor(Math.random()*choices.length)]);
