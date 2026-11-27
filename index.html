@@ -294,7 +294,7 @@ async function enter(){
 function subscribe(){
  unsubs.forEach(f=>f());unsubs=[];
  unsubs.push(onValue(path('settings'),s=>{settings=s.val()||{};updateHeader();renderInventory();renderShop();renderRanking();}));
- unsubs.push(onValue(path('events'),s=>{eventState=s.val()||{};updateHeader();renderEventChallenge();}));
+ unsubs.push(onValue(path('events'),s=>{const previousActive=eventState.active,previousRun=eventState.runId;eventState=s.val()||{};updateHeader();if(previousActive!==eventState.active||previousRun!==eventState.runId)renderEventChallenge();}));
  unsubs.push(onValue(path('players'),s=>{const all=s.val()||{};renderRanking(all);get(path('online')).then(o=>renderRoster(all,o.val()||{}));}));
  unsubs.push(onValue(path('online'),s=>{get(path('players')).then(p=>renderRoster(p.val()||{},s.val()||{}));renderWatchOptions(s.val()||{});}));
  unsubs.push(onValue(path('activity'),s=>{const a=Object.values(s.val()||{}).sort((x,y)=>(y.at||0)-(x.at||0)).slice(0,10);$('activity').innerHTML='';a.forEach(x=>{const d=document.createElement('div');d.className='item';d.textContent=x.text||'Aktivität';$('activity').append(d)})}));
