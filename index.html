@@ -95,9 +95,31 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 .cbcard{width:84px;height:120px;font-size:38px;border-radius:14px;background:linear-gradient(160deg,#f5d37a,#b8860b);color:#2a1d00;border:2px solid #fff3c4}
 .cbcard.show{font-size:15px;line-height:1.25;padding:6px;background:#fffbe8}
 .cbcard:disabled{opacity:1}
+
+/* THE COMEBACK ERA intro */
+#introScreen{position:fixed;inset:0;z-index:5000;background:#020805;display:flex;align-items:center;justify-content:center;padding:14px}
+#introScreen.hidden{display:none!important}
+#introInner{width:min(100%,1100px);text-align:center}
+#introVideo{display:block;width:100%;max-height:78vh;aspect-ratio:16/9;object-fit:contain;background:#000;border:1px solid #28583b;border-radius:14px;box-shadow:0 0 35px #31e87955}
+#introStart{display:none;margin:18px auto 0;min-width:190px;padding:15px 28px;font-size:18px;letter-spacing:1px}
+#introStart.ready{display:block}
+#introHint{min-height:20px;margin:10px 0 0;color:#a9bdaf;font-size:12px}
+
 </style>
 </head>
 <body>
+
+<div id="introScreen" aria-label="THE COMEBACK ERA Intro">
+  <div id="introInner">
+    <video id="introVideo" autoplay muted playsinline preload="auto">
+      <source src="assets/intro.mp4" type="video/mp4">
+      Dein Browser unterstützt dieses Video nicht.
+    </video>
+    <button id="introStart" type="button">STARTEN</button>
+    <p id="introHint">THE COMEBACK ERA · Intro wird abgespielt …</p>
+  </div>
+</div>
+
 <div id="ownerBanner" class="owner-banner hidden"><b id="ownerBannerLabel">OWNER:</b> <span id="ownerBannerText"></span></div>
 <header><h1>⚽ FOOTBALL GIFT CHALLENGE 🎁</h1><p>15 Boxen · 3 Öffnungen pro Runde · Jeder Spieler hat seine eigene Runde</p><div id="globalStatus" class="tag">Verbinde…</div></header>
 <main class="wrap">
@@ -166,6 +188,36 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 </div>
 </div>
 <div id="srvConfirm" class="lockpage" style="z-index:1100;background:#000d"><div class="lockbox"><p id="srvConfirmText"></p><div class="row"><button id="srvConfirmYes" class="danger"></button><button id="srvConfirmNo" class="secondary">ABBRECHEN</button></div></div></div>
+
+<script>
+(()=>{
+ const screen=document.getElementById('introScreen');
+ const video=document.getElementById('introVideo');
+ const start=document.getElementById('introStart');
+ const hint=document.getElementById('introHint');
+ if(!screen||!video||!start)return;
+ const reveal=()=>{
+   start.classList.add('ready');
+   hint.textContent='Bereit? Drücke STARTEN, um ins Spiel zu kommen.';
+ };
+ video.addEventListener('ended',reveal,{once:true});
+ video.addEventListener('error',()=>{
+   hint.textContent='Das Intro-Video konnte nicht geladen werden. Lege intro.mp4 in den Ordner assets.';
+   reveal();
+ },{once:true});
+ const play=video.play();
+ if(play&&typeof play.catch==='function')play.catch(()=>{
+   hint.textContent='Tippe auf das Video, um die Wiedergabe zu starten.';
+   video.controls=true;
+   video.addEventListener('ended',reveal,{once:true});
+ });
+ start.addEventListener('click',()=>{
+   screen.classList.add('hidden');
+   video.pause();
+ });
+})();
+</script>
+
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth,signInAnonymously,signOut,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
