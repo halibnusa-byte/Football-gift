@@ -13,6 +13,7 @@ checks = {
     "Galaxy Gift spawn chance is 0.001% only during Galaxy Event": "eventState.active==='galaxy'&&Math.random()<0.00001" in source and "if(forceGalaxy||" not in source,
     "15 gifts per round": "Array.from({length:15}" in source,
     "maximum three box opens": "opened.length>=3" in source,
+    "box opening is blocked when the current round cannot be saved": "async function saveRound(){if(!uid||!roundId)return false;" in source and "if(!await saveRound())" in source and source.index("if(!await saveRound())", source.index("async function openBox")) < source.index("runTransaction(path('players/'+uid+'/boxClaims/'+roundId)", source.index("async function openBox")),
     "Ocean event challenge panel is reachable": "available=['pirate'" in source and "'ocean','zombie'" in source,
     "Ocean loot is persisted": "players/'+uid+'/oceanLoot/'+run" in source,
     "Zombie loot is persisted": "players/'+uid+'/zombieLoot/'+run" in source,
