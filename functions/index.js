@@ -269,7 +269,7 @@ exports.sendGift = onCall({ region: "europe-west1" }, async (request) => {
   const players = playersSnapshot.val() || {};
   let targets;
   if (scope === "global") {
-    targets = Object.keys(players).filter((id) => id !== auth.uid);
+    targets = Object.keys(players);
     if (targets.length > 200) {
       throw new HttpsError("failed-precondition", "Zu viele Spieler für eine globale Aktion.");
     }
