@@ -22,6 +22,9 @@ if duplicates:
     raise SystemExit("Duplicate HTML IDs: " + ", ".join(duplicates))
 
 defined = set(parser.ids)
+# Some admin controls are intentionally created at runtime with innerHTML or .id assignments.
+generated = set(re.findall(r"\\bid=['\\\"]([^'\\\"]+)['\\\"]", html))
+generated.update(re.findall(r"\\.id\\s*=\\s*['\\\"]([^'\\\"]+)['\\\"]", html))
 patterns = (
     r"\$\(\s*(['\"])(.*?)\1\s*\)",
     r"document\.getElementById\(\s*(['\"])(.*?)\1\s*\)",
@@ -30,8 +33,8 @@ references = set()
 for pattern in patterns:
     references.update(match.group(2) for match in re.finditer(pattern, html))
 
-missing = sorted(references - defined)
+missing = sorted(references - defined - generated)
 if missing:
     raise SystemExit("JavaScript references missing HTML IDs: " + ", ".join(missing))
 
-print(f"DOM integrity passed: {len(defined)} unique IDs, {len(references)} literal references, no missing IDs.")
+print(f"DOM integrity passed: {len(defined)} static IDs, {len(generated - defined)} generated IDs, {len(references)} literal references, no missing IDs.")
