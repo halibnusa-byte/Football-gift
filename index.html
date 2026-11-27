@@ -150,7 +150,7 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 </nav>
 <div id="adminAbuseControl"><h3>🔥 ADMIN ABUSE · TIPPgeber</h3><p class="muted">Nur der Hauptadmin sieht die Hinweise. Der Tippgeber analysiert den Live-Chat und schlägt Aktionen vor, führt aber niemals selbst Aktionen aus.</p><button id="adminAbuseToggle" class="secondary">ADMIN ABUSE STARTEN</button><div id="adminAbuseStatus" class="hint"></div><div id="adminAbuseTips" class="list"></div></div>
 <div id="comebackAdminBox" class="hidden"><h3>🏆 COMEBACK ERA · Legendary Comeback Gift</h3><div class="muted">Vergibt einmalig an alle gespeicherten Teilnehmer des Comeback Admin Abuse ein Legendary Comeback Gift und den Titel OG COMEBACK PLAYER. Teilnehmer sind Spieler, die beim Start online sind oder während des aktiven Admin Abuse beitreten.</div><button id="cbGrant">COMEBACK GIFT AN TEILNEHMER VERGEBEN</button><div id="cbAdminMsg" class="hint"></div></div>
-<div id="serverControlBox" class="hidden"><h3>🔒 SERVER-KONTROLLE</h3><div id="srvStatus" class="srv unknown">STATUS WIRD GEPRÜFT …</div><div class="muted" id="srvMeta"></div><div class="row"><button id="srvLock" class="danger">SERVER SPERREN</button><button id="srvUnlock">SERVER FREIGEBEN</button></div><div id="srvMsg" class="hint"></div></div>
+<div id="serverControlBox" class="hidden"><h3>🎮 SPIEL-KONTROLLE</h3><div id="srvStatus" class="srv unknown">STATUS WIRD GEPRÜFT …</div><div class="muted" id="srvMeta"></div><div class="row"><button id="srvLock" class="danger">SPIEL BEENDEN</button><button id="srvUnlock">SPIEL STARTEN</button></div><div id="srvMsg" class="hint"></div></div>
 <h3 id="admin-roles" class="admin-section-title">🔐 Rollen & Zugang</h3><h3>Admin-Code ändern</h3><input id="newAdminCode" type="password" placeholder="Neuer Admin-Code"><button id="changeAdminCode">Admin-Code speichern</button>
 <h3>Besonderen Spieler (dauerhaft 2× Glück)</h3><input id="specialName" placeholder="Spielername"><input id="newSpecialCode" type="password" placeholder="Code des besonderen Spielers"><button id="setSpecial">Besonderen Spieler speichern</button>
 <h3>Viertel-Admin</h3><p class="muted">Kann Hacker, Einhorn, Galaxy, Diamond und Roboter starten sowie Ankündigungen senden. Es reicht, einen Code festzulegen.</p><input id="quarterCode" type="password" placeholder="Viertel-Admin-Code (mind. 4 Zeichen)"><button id="saveQuarter">VIERTEL-ADMIN-CODE SPEICHERN</button><h3>Halb-Admins – maximal 2</h3><p class="muted">Dürfen Glück bis 50× einstellen und Magic Cube, Hacker, Einhorn, Galaxy, Diamond, Roboter und School starten. Jeder braucht nur einen eigenen Code.</p><div class="row"><input id="halfCode1" type="password" placeholder="Halb-Admin-Code 1"></div><div class="row"><input id="halfCode2" type="password" placeholder="Halb-Admin-Code 2"></div><button id="saveHalves">HALB-ADMIN-CODES SPEICHERN</button><h3>Message Man – maximal 2 Spieler</h3><p class="muted">Trage bis zu zwei Spielernamen und ihre eigenen Zugangscodes ein. Sie geben den Code anschließend selbst im Rollenfeld ein.</p>
@@ -181,7 +181,7 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <div id="lockPage" class="lockpage" role="alertdialog" aria-live="assertive">
 <div class="lockbox">
 <div class="brand">⚽ FOOTBALL GIFT CHALLENGE 🎁</div>
-<div id="lockLocked" class="hidden"><h2>SERVER GESPERRT 🔒</h2><p>Football Gift Challenge ist momentan geschlossen. Der Hauptadmin arbeitet an einem riesigen Update. Wir sehen uns beim Comeback!</p><div class="soon">COMING BACK SOON...</div></div>
+<div id="lockLocked" class="hidden"><h2>SPIEL BEENDET 🔒</h2><p>Football Gift Challenge wurde vom Hauptadmin beendet. Wir sehen uns wieder, wenn das Spiel gestartet wird!</p><div class="soon">WARTET AUF DEN HAUPTADMIN</div></div>
 <div id="lockChecking"><h2>⏳</h2><p>Serverstatus wird geprüft …</p></div>
 <div id="lockError" class="hidden"><h2>⚠️</h2><p><b>SERVERSTATUS KANN NICHT ÜBERPRÜFT WERDEN. BITTE VERSUCHE ES ERNEUT.</b></p><button id="lockRetry">ERNEUT PRÜFEN</button></div>
 <details class="lockadmin"><summary>Hauptadmin-Zugang</summary><input id="lockAdminCode" type="password" autocomplete="off" placeholder="Hauptadmin-Code"><button class="secondary" id="lockAdminBtn">ANMELDEN</button><div id="lockAdminMsg" class="hint"></div></details>
@@ -225,7 +225,6 @@ import {getDatabase,ref,get,set,update,remove,onValue,runTransaction,push,server
 
 const firebaseConfig={apiKey:'AIzaSyAXt8wqnPyRYGXrbq8ZWtCl4uQT83V0Nso',authDomain:'football-gift-challange.firebaseapp.com',databaseURL:'https://football-gift-challange-default-rtdb.europe-west1.firebasedatabase.app',projectId:'football-gift-challange',storageBucket:'football-gift-challange.firebasestorage.app',messagingSenderId:'935406041054',appId:'1:935406041054:web:efc64818b9364fd2d2cf4f'};
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getDatabase(app),$=id=>document.getElementById(id);
-const EXPIRY=new Date('2026-11-28T14:30:00+01:00');
 const PRIZES=[
 {id:'deinewahl',name:'Deine-Wahl-Token',emoji:'👑',chance:.0001,rank:1},
 {id:'revenge',name:'Revenge Token',emoji:'🔥',chance:.00025,rank:2},
@@ -303,7 +302,7 @@ function renderBoxes(){
  const g=$('boxGrid');g.innerHTML='';
  boxes.forEach((b,i)=>{
   const btn=document.createElement('button');btn.className='gift'+(b.rare?' rare':'')+(opened.includes(i)?' opened':'');
-  btn.disabled=opened.includes(i)||opened.length>=3||Date.now()>EXPIRY.getTime();
+  btn.disabled=opened.includes(i)||opened.length>=3||(serverState!=='open'&&!isOwner);
   const ev=eventState.active;let icon=b.opened?'✓':b.galaxy?'🌌':b.rare?(rareType?.emoji||'✨'):(EVENT_INFO[ev]?.[1]||'🎁'); if(ev==='elephant'&&!b.opened)icon='🐘🎁';
   if(ev==='hacker'&&!b.opened)icon='0101';if(ev==='spiderman'&&!b.opened)icon='🕸️🎁';if(ev==='cocacola'&&!b.opened)icon='🥤🎁';if(ev==='plants'&&!b.opened)icon='🌿🎁';
   btn.textContent=icon;const sm=document.createElement('small');sm.textContent='BOX '+(i+1);btn.append(sm);btn.onclick=()=>openBox(i);g.append(btn);
@@ -332,7 +331,8 @@ async function saveRound(extra={}){
  try{await update(path('players/'+uid),{lastBoxes:boxes.map((b,i)=>({opened:opened.includes(i),rare:b.rare,galaxy:b.galaxy,blitz:b.blitz})),lastRareType:rareType?.id||null,lastRoundId:roundId,opensThisRound:opened.length,roundUpdated:Date.now(),...extra});return true;}catch(e){return false;}
 }
 async function openBox(i){
- if(opened.length>=3||opened.includes(i)||Date.now()>EXPIRY.getTime()||!roundId)return;
+ if(serverState!=='open'&&!isOwner){$('result').textContent='Das Spiel ist momentan vom Hauptadmin beendet.';return;}
+ if(opened.length>=3||opened.includes(i)||!roundId)return;
  if(!await saveRound()){$('result').textContent='Deine Runde konnte nicht sicher gespeichert werden. Prüfe deine Verbindung und versuche es erneut.';return;}
  let claim;
  try{
@@ -1195,10 +1195,10 @@ async function ownerAutoRole(){
  $('roleCode').value=ownerCode;await roleCheck();$('roleCode').value='';
 }
 function askServerChange(lockIt){
- if(role!=='admin'||!isOwner)return msg('srvMsg','Nur der Hauptadmin darf den Server steuern.');
+ if(role!=='admin'||!isOwner)return msg('srvMsg','Nur der Hauptadmin darf das Spiel beenden oder starten.');
  pendingLock=lockIt;
- $('srvConfirmText').textContent=lockIt?'Möchtest du wirklich alle Spieler außer dir aus Football Gift Challenge ausschließen?':'Möchtest du Football Gift Challenge wieder für alle Spieler öffnen?';
- $('srvConfirmYes').textContent=lockIt?'JA, SERVER SPERREN':'JA, SERVER FREIGEBEN';
+ $('srvConfirmText').textContent=lockIt?'Möchtest du Football Gift Challenge jetzt beenden? Alle Spieler außer dir werden ausgeschlossen.':'Möchtest du Football Gift Challenge jetzt wieder für alle Spieler starten?';
+ $('srvConfirmYes').textContent=lockIt?'JA, SPIEL BEENDEN':'JA, SPIEL STARTEN';
  $('srvConfirm').classList.add('on');
 }
 async function applyServerChange(){
@@ -1206,7 +1206,7 @@ async function applyServerChange(){
  if(lockIt===null||role!=='admin'||!isOwner)return;
  try{
   await set(path('serverControl'),{locked:lockIt,updatedAt:serverTimestamp(),updatedBy:name||'Hauptadmin',updatedByUid:uid});
-  msg('srvMsg',lockIt?'Server gesperrt. Nur du hast jetzt Zugang.':'Server freigegeben. Alle Spieler dürfen wieder beitreten.');
+  msg('srvMsg',lockIt?'Spiel beendet. Nur du hast weiterhin Zugang.':'Spiel gestartet. Alle Spieler dürfen wieder beitreten.');
  }catch(e){
   const denied=/permission/i.test(e?.message||'');
   msg('srvMsg','Serverstatus konnte nicht geändert werden: '+(denied?'Keine Berechtigung (Firebase-Regeln prüfen).':(e?.message||e))+' Bitte versuche es erneut.');
@@ -1262,7 +1262,7 @@ $('logoutBtn').onclick=async()=>{if(uid)await remove(path('online/'+uid));unsubs
 $('awardPrize').innerHTML='';PRIZES.concat([{id:'diamondGift',name:'Diamond-Geschenk'}]).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;$('awardPrize').append(o)});
 setInterval(()=>{if(uid){update(path('online/'+uid),{name,at:Date.now()}).catch(()=>{});updateHeader();}},30000);
 window.addEventListener('beforeunload',()=>{if(uid)remove(path('online/'+uid));});
-if(Date.now()>EXPIRY.getTime()){$('globalStatus').textContent='SPIEL BEENDET';$('loginMsg').textContent='Das Spiel ist seit dem 28.11.2026 um 14:30 Uhr beendet.';$('joinBtn').disabled=true;}
+
 </script>
 </body>
 </html>
