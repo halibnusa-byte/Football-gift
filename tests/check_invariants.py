@@ -19,6 +19,8 @@ checks = {
     "Legendary Comeback Gift requires active Admin Abuse": "if(settings.adminAbuseActive!==true)return msg('cbAdminMsg'" in source,
     "random recipient is limited to main-admin Admin Abuse": "scope==='random'" in source and "settings.adminAbuseActive!==true" in source and "id!==uid" in source,
     "Skibidi unlock occurs only when stopping the event": "const skibidiDone=eventState.active==='skibidi'" in source and "if(NEW_EVENT_TYPES.includes(type))" not in source,
+    "Power Hours follow the confirmed schedule and use max rather than multiplication": "o.weekday==='Sat'||(m>=900&&m<1020)" in source and "Math.max(settings.luckEnabled" in source,
+    "main-admin global luck is capped at 5x": 'id="adminLuck" type="number" min="1" max="5"' in source and "if(v>5)return msg('adminMsg'" in source,
     "Shop balance is transaction-based": "players/'+uid+'/shopBalance" in source and "runTransaction" in source,
 }
 
