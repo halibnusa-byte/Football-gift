@@ -16,6 +16,7 @@ checks = {
     "Zombie event has five serum choices": "for(let i=0;i<5;i++)" in source and "SERUM '+(i+1)" in source,
     "LaserTag uses Three.js": "three.module.js" in source and "renderLaserTag3D" in source,
     "all thirty-four standard events have bespoke mini-games": "async function renderThemedEventMiniGame" in source and all(f"{name}:{{mode:" in source for name in ("pirate","carnival","ninja","toy","crystal","wildwest","bakery","comic","safari","cyber","wizard","moon","arcade","samurai","stoneage","masquerade","science","luxury","rainbow","timemachine","multiverse","football","dinosaur","candy","castle","space","ghost","winter","egypt","superhero","racing","dragon","music","mystery")),
+    "event challenge random outcomes persist per player and event run": "eventChallengeData/"+type+"/"+run in source and "const challengeSecret=secretTx.snapshot.val()" in source and "const safe=Number(challengeSecret.mapSafe)" in source and "const keeper=Number(challengeSecret.keeper)" in source,
     "Legendary Comeback Gift requires active Admin Abuse": "if(settings.adminAbuseActive!==true)return msg('cbAdminMsg'" in source,
     "random recipient is limited to main-admin Admin Abuse": "scope==='random'" in source and "settings.adminAbuseActive!==true" in source and "id!==uid" in source,
     "Skibidi unlock occurs only when stopping the event": "const skibidiDone=eventState.active==='skibidi'" in source and "if(NEW_EVENT_TYPES.includes(type))" not in source,
