@@ -350,6 +350,11 @@ async function buyShopItem(id){
   await update(path('players/'+uid),{shopItems:inv});player.shopBalance=tx.snapshot.val();player.shopItems=inv;renderShop();msg('shopStatus',item.name+' gekauft!');
  }catch(e){msg('shopStatus','Kauf fehlgeschlagen: '+e.message);}
 }
+async function consumeShopItem(id){
+ const tx=await runTransaction(path('players/'+uid+'/shopItems/'+id),v=>{const n=Number(v)||0;return n>0?n-1:undefined;});
+ if(!tx.committed)return false;
+ player.shopItems=player.shopItems||{};player.shopItems[id]=Number(tx.snapshot.val())||0;renderShop();return true;
+}
 function renderInventory(){
  const inv=player?.inventory||{};$('tokenCount').textContent=Object.values(inv).reduce((a,b)=>a+Number(b||0),0);
  $('inventory').innerHTML='';
@@ -495,15 +500,15 @@ async function renderEventChallenge(){
  if(type==='unicorn'){
   const b=document.createElement('button');b.textContent='🪅 PINATA EINMAL SCHLAGEN';b.onclick=async()=>{b.disabled=true;if(!await claim()){status.textContent='Schon benutzt.';return;}if(Math.random()<.5)await win('Die Pinata spuckt aus');else result.textContent='🪅 Niete!';status.textContent='Dein Schlag ist verbraucht.';};body.append(b);
  }else if(type==='cube'){
-  const q=document.createElement('p');q.textContent='Rätsel: Ich habe sechs Seiten und farbige Felder. Was bin ich?';const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT';b.onclick=async()=>{b.disabled=true;if(!await claim())return;if(['zauberwürfel','zauberwurfel','rubik cube','rubiks cube'].includes(inp.value.trim().toLowerCase()))await win('Richtig gelöst');else result.textContent='Falsch – keine Belohnung.';inp.disabled=true;};body.append(q,inp,b);
+  const q=document.createElement('p');q.textContent='Rätsel: Ich habe sechs Seiten und farbige Felder. Was bin ich?';const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT';b.onclick=async()=>{b.disabled=true;if(!await claim())return;if(['zauberwürfel','zauberwurfel','rubik cube','rubiks cube'].includes(inp.value.trim().toLowerCase()))await win('Richtig gelöst');else if(Number(player.shopItems?.magic_remix||0)>0&&confirm('MAGIC REMIX verwenden und noch einmal versuchen?')){if(await consumeShopItem('magic_remix')){result.textContent='🧊 MAGIC REMIX aktiviert – ein neuer Versuch!';b.disabled=false;inp.disabled=false;inp.value='';return;}}else result.textContent='Falsch – keine Belohnung.';inp.disabled=true;};body.append(q,inp,b);
  }else if(type==='time'){
   renderTimeTravel(body,result,status,claim,win);
  }else if(type==='school'){
   const q=document.createElement('p');q.textContent='Wie viele Spieler einer Mannschaft stehen normalerweise gleichzeitig auf dem Fußballfeld?';const inp=document.createElement('input');inp.placeholder='Antwort als Zahl';const b=document.createElement('button');b.textContent='ANTWORT ABSENDEN';b.onclick=async()=>{b.disabled=true;if(await claim()){if(inp.value.trim()==='11')await win('Richtig');else result.textContent='Falsch – kein Geschenk.';}};body.append(q,inp,b);
  }else if(type==='lava'){
-  const q=document.createElement('p');q.textContent='Wähle genau eine Lava-Kiste:';body.append(q);for(let i=1;i<=3;i++){const b=document.createElement('button');b.className='secondary';b.textContent='🌋 Kiste '+i;b.onclick=async()=>{body.querySelectorAll('button').forEach(x=>x.disabled=true);if(await claim()){if(Math.random()<1/3)await win('Kiste geöffnet');else result.textContent='🌋 Niete!';}};body.append(b)}
+  const q=document.createElement('p');q.textContent='Wähle genau eine Lava-Kiste:';body.append(q);for(let i=1;i<=3;i++){const b=document.createElement('button');b.className='secondary';b.textContent='🌋 Kiste '+i;b.onclick=async()=>{body.querySelectorAll('button').forEach(x=>x.disabled=true);if(await claim()){if(Math.random()<1/3)await win('Kiste geöffnet');else if(Number(player.shopItems?.lava_shield||0)>0&&confirm('LAVA SHIELD verwenden und dich einmal retten?')){if(await consumeShopItem('lava_shield'))await win('LAVA SHIELD hat dich gerettet');else result.textContent='🌋 Niete!';}else result.textContent='🌋 Niete!';}};body.append(b)}
  }else if(type==='alien'){
-  const q=document.createElement('p');q.textContent='Welcher Planet wird auch der Rote Planet genannt?';const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT ABSENDEN';b.onclick=async()=>{b.disabled=true;if(await claim()){if(inp.value.trim().toLowerCase()==='mars')await win('Rätsel gelöst');else result.textContent='Falsch – kein Geschenk.';}};body.append(q,inp,b);
+  const q=document.createElement('p');q.textContent='Welcher Planet wird auch der Rote Planet genannt?';const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT ABSENDEN';b.onclick=async()=>{b.disabled=true;if(await claim()){if(inp.value.trim().toLowerCase()==='mars')await win('Rätsel gelöst');else result.textContent='Falsch – kein Geschenk.';}};body.append(q,inp,b);if(Number(player.shopItems?.alien_radar||0)>0){const hint=document.createElement('p');hint.className='hint';hint.textContent='👽 Dein Alien Radar zeigt: Der gesuchte Planet ist Mars.';body.append(hint);}
  }else if(type==='skibidi'){
   const stages=[['Noob-Glücksrad',100],['Glücksrad',500],['Boss-Glücksrad',1000],['Hacker-Glücksrad',1500],['Divine-Glücksrad',2000]];
   if(!await claim()){status.textContent='Du hast deinen Bosskampf in diesem Event bereits benutzt.';body.append(status);return;}
@@ -571,7 +576,7 @@ async function renderEventChallenge(){
   const g=games[type],q=document.createElement('p');q.textContent=g.q;body.append(q);let used=false;
   if(type==='racing'){const b=document.createElement('button');b.textContent='START';let count=0;b.onclick=async()=>{if(used)return;count++;b.textContent='Noch '+(5-count)+'…';if(count>=5){used=true;b.disabled=true;if(await claim()){if(Math.random()<.65)await win('Rennen geschafft');else result.textContent='🏎️ Knapp verloren – Niete.';}}};body.append(b);status.textContent='Ein Klick zählt pro Tastendruck. Fünf Klicks beenden die Challenge.';}
   else{g.a.forEach((v,i)=>{const b=document.createElement('button');b.className='secondary';b.textContent=v;b.onclick=async()=>{if(used)return;used=true;body.querySelectorAll('button').forEach(x=>x.disabled=true);if(!await claim())return;const correct=g.correct===null?Math.random()<.5:i===g.correct;if(correct)await win('Challenge geschafft');else result.textContent='Diesmal keine Belohnung.';};body.append(b);});}
-  if(type==='multiverse'||type==='candy'||type==='superhero'||type==='dragon'||type==='mystery')status.textContent='Bei dieser Auswahl entscheidet das Event-Glück über die Belohnung.';
+  if(type==='multiverse'||type==='candy'||type==='superhero'||type==='dragon'||type==='mystery')status.textContent='Bei dieser Auswahl entscheidet das Event-Glück über die Belohnung.';if(type==='ocean'&&Number(player.shopItems?.pearl_radar||0)>0)status.textContent='🦪 Pearl Radar: Die richtige Antwort ist '+g.a[g.correct]+'.';if(type==='zombie'&&Number(player.shopItems?.zombie_detector||0)>0)status.textContent='🧟 Zombie Detector: Die sichere Antwort ist '+g.a[g.correct]+'.';
  }else if(type==='godzilla'){
   renderGodzilla(body,result,status,claim,win);
  }
