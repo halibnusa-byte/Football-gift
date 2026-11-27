@@ -1,0 +1,25 @@
+name: Validate Firebase backend scaffold
+
+on:
+  push:
+    branches:
+      - secure-main-migration-2026-11-27
+  pull_request:
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install backend dependencies
+        working-directory: functions
+        run: npm install
+      - name: Check function syntax
+        working-directory: functions
+        run: npm run lint
+      - name: Run security regression checks
+        working-directory: functions
+        run: npm test

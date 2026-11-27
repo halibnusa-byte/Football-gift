@@ -167,9 +167,10 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth,signInAnonymously,signOut,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {getDatabase,ref,get,set,update,remove,onValue,runTransaction,push,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+import {getFunctions,httpsCallable} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 
 const firebaseConfig={apiKey:'AIzaSyAXt8wqnPyRYGXrbq8ZWtCl4uQT83V0Nso',authDomain:'football-gift-challange.firebaseapp.com',databaseURL:'https://football-gift-challange-default-rtdb.europe-west1.firebasedatabase.app',projectId:'football-gift-challange',storageBucket:'football-gift-challange.firebasestorage.app',messagingSenderId:'935406041054',appId:'1:935406041054:web:efc64818b9364fd2d2cf4f'};
-const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getDatabase(app),$=id=>document.getElementById(id);
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getDatabase(app),functions=getFunctions(app,'europe-west1'),$=id=>document.getElementById(id);
 const EXPIRY=new Date('2026-11-28T14:30:00+01:00');
 const PRIZES=[
 {id:'deinewahl',name:'Deine-Wahl-Token',emoji:'👑',chance:.0001,rank:1},
@@ -337,25 +338,24 @@ async function watch(){
   const b=s.val()||[];$('liveScreen').innerHTML='<b>LIVE – '+b.filter(x=>x.opened).length+' von 3 Boxen geöffnet</b><div class="tvgrid">'+Array.from({length:15},(_,i)=>{const x=b[i]||{};return '<div class="tvbox '+(x.opened?'open ':'')+(x.rare?'rare':'')+'">'+(x.opened?'✓':x.rare?'✨':'🎁')+'</div>'}).join('')+'</div>';
  });
 }
-async function roleRefresh(){const a=await get(path('admin/codeHash'));show('firstAdminSetup',!a.exists());}
+async function roleRefresh(){show('firstAdminSetup',false);}
 async function roleCheck(){
  const code=String($('roleCode').value||'').trim();
  if(!code)return msg('roleMsg','Bitte deinen Zugangscode eingeben.');
  try{
-  const h=await hash(code);
-  const [admin,special,mm,quarterSnap,halfSnap]=await Promise.all([
-   get(path('admin/codeHash')),get(path('admin/special')),get(path('admin/messageManCodes/'+h)),
-   get(path('admin/quarterAdmins')),get(path('admin/halfAdmins'))
-  ]);
-  const qaMap=quarterSnap.val()||{},haMap=halfSnap.val()||{};
-  const qa=qaMap[h],ha=haMap[h];
-  if(admin.exists()&&admin.val()===h){role='admin';roleName='';show('adminPanel',true);show('rosterPanel',true);show('specialPanel',false);show('messageManPanel',false);show('giftControls',true);show('giftLocked',false);msg('roleMsg','Hauptadmin erkannt.');updateHeader();return;}
-  if(special.exists()&&special.val().uid===uid&&special.val().codeHash===h){role='special';roleName=special.val().name||name;show('specialPanel',true);show('adminPanel',false);show('rosterPanel',false);show('messageManPanel',false);show('giftControls',true);show('giftLocked',false);msg('roleMsg','Besonderer Spieler erkannt – 2× Glück.');updateHeader();return;}
-  if(qa){role='quarterAdmin';roleName='';show('adminPanel',true);show('rosterPanel',false);show('specialPanel',false);show('messageManPanel',false);show('giftControls',true);show('giftLocked',false);applyRolePanelPermissions();msg('roleMsg','Viertel-Admin erkannt.');updateHeader();return;}
-  if(ha){role='halfAdmin';roleName='';show('adminPanel',true);show('rosterPanel',false);show('specialPanel',false);show('messageManPanel',false);show('giftControls',true);show('giftLocked',false);applyRolePanelPermissions();msg('roleMsg','Halb-Admin erkannt.');updateHeader();return;}
-  if(mm.exists()&&mm.val().uid===uid){role='messageMan';roleName=mm.val().name||name;show('adminPanel',false);show('rosterPanel',false);show('specialPanel',false);show('messageManPanel',true);show('gamePanel',false);show('inventoryPanel',false);show('livePanel',false);show('rankingPanel',false);show('giftPanel',false);msg('roleMsg','Message Man aktiviert.');updateHeader();return;}
-  role='normal';roleName='';msg('roleMsg','Dieser Code ist nicht vergeben oder stimmt nicht.');
- }catch(e){msg('roleMsg','Rollenprüfung fehlgeschlagen: '+(e?.message||e));}
+  const result=await httpsCallable(functions,'redeemRoleCode')({code});
+  await auth.currentUser.getIdToken(true);
+  const claims=(await auth.currentUser.getIdTokenResult(true)).claims||{};
+  role=claims.mainAdmin?'admin':claims.halfAdmin?'halfAdmin':claims.quarterAdmin?'quarterAdmin':claims.special?'special':claims.messageMan?'messageMan':'normal';
+  roleName=String(result.data?.roleName||'');
+  show('adminPanel',['admin','halfAdmin','quarterAdmin'].includes(role));
+  show('rosterPanel',role==='admin');show('specialPanel',role==='special');show('messageManPanel',role==='messageMan');
+  show('giftControls',['admin','halfAdmin','quarterAdmin','special'].includes(role));show('giftLocked',!['admin','halfAdmin','quarterAdmin','special'].includes(role));
+  if(role==='messageMan'){show('gamePanel',false);show('inventoryPanel',false);show('livePanel',false);show('rankingPanel',false);show('giftPanel',false);}
+  if(role==='halfAdmin'||role==='quarterAdmin')applyRolePanelPermissions();
+  isOwner=role==='admin';msg('roleMsg',role==='admin'?'Hauptadmin erkannt.':role==='halfAdmin'?'Halb-Admin erkannt.':role==='quarterAdmin'?'Viertel-Admin erkannt.':role==='special'?'Besonderer Spieler erkannt – 2× Glück.':role==='messageMan'?'Message Man aktiviert.':'Rolle nicht erkannt.');
+  updateHeader();applyServerState();
+ }catch(e){role='normal';roleName='';isOwner=false;msg('roleMsg','Rollenprüfung fehlgeschlagen: '+(e?.message||e));updateHeader();}
 }
 function applyRolePanelPermissions(){
  const mainOnly=['changeAdminCode','newAdminCode','setSpecial','specialName','newSpecialCode','saveQuarter','quarterName','quarterCode','saveHalves','halfName1','halfCode1','halfName2','halfCode2','saveMessageMen','messageMan1','messageMan2','messageManCode1','messageManCode2','spawnBlitz','resetPlayer','resetScope','resetTarget','awardBtn','awardScope','awardTarget','awardPrize','awardAmount','awardPublic','saveEventOdds','blitzChance','spiderChance','spiderLuck','colaChance','colaLuck','vineChance','plantLuck','elephantChance','saveDiamondChance','diamondChance','serverControlBox','spawnGalaxy','galaxyScope','galaxyTarget','galaxyAmount','galaxyPublic','oceanOn','zombieOn','multiverseOn','footballOn','dinosaurOn','candyOn','castleOn','spaceOn','ghostOn','winterOn','egyptOn','superheroOn','racingOn','dragonOn','musicOn','mysteryOn'];
@@ -409,13 +409,15 @@ async function grantTokens(){
  }catch(e){msg('adminMsg',e.message)}
 }
 async function startEvent(type){
- const quarter=['hacker','unicorn','galaxy','diamond','robot'];const half=['cube','hacker','unicorn','galaxy','diamond','robot','school'];if(role==='quarterAdmin'&&!quarter.includes(type))return msg('adminMsg','Dieses Event darfst du als Viertel-Admin nicht starten.');if(role==='halfAdmin'&&!half.includes(type))return msg('adminMsg','Dieses Event darfst du als Halb-Admin nicht starten.');if(!['admin','quarterAdmin','halfAdmin'].includes(role))return msg('adminMsg','Keine Berechtigung.');
- const now=Date.now();const completed={...(settings.completedEvents||{})};
- if(NEW_EVENT_TYPES.includes(type)){completed[type]=true;await update(path('settings'),{completedEvents:completed});}
- if(type==='lasertag')await set(path('events/laserPlayers'),{});await set(path('events'),{active:type,startedAt:now,runId:String(now)});
- msg('adminMsg',(EVENT_INFO[type]?.[0]||type)+' gestartet.');
+ if(!['admin','quarterAdmin','halfAdmin'].includes(role))return msg('adminMsg','Keine Berechtigung.');
+ try{await httpsCallable(functions,'setActiveEvent')({type});msg('adminMsg',(EVENT_INFO[type]?.[0]||type)+' gestartet.');}
+ catch(e){msg('adminMsg','Event konnte nicht gestartet werden: '+(e?.message||e));}
 }
-async function stopEvent(){const completed={...(settings.completedEvents||{})};if(eventState.active==='skibidi'){completed.skibidi=true;await update(path('settings'),{completedEvents:completed});}await set(path('events'),{active:null,startedAt:Date.now(),runId:String(Date.now())});msg('adminMsg','Event gestoppt. Neue Tokens sind nach dem Skibidi-Event jetzt freigeschaltet.');}
+async function stopEvent(){
+ if(!['admin','halfAdmin'].includes(role))return msg('adminMsg','Keine Berechtigung.');
+ try{await httpsCallable(functions,'setActiveEvent')({type:null});msg('adminMsg','Event gestoppt.');}
+ catch(e){msg('adminMsg','Event konnte nicht gestoppt werden: '+(e?.message||e));}
+}
 async function adminAnnouncement(){
  const textValue=$('announcementText').value.trim();if(!textValue)return msg('adminMsg','Bitte eine Nachricht schreiben.');
  if(!['admin','quarterAdmin','halfAdmin'].includes(role))return msg('adminMsg','Keine Berechtigung.');const targets=await resolveTargets($('announcementScope').value,$('announcementTarget').value),a={text:textValue,at:Date.now(),sender:role==='admin'?'OWNER':(roleName||name)};
@@ -658,12 +660,12 @@ async function lockAdminLogin(){
  if(!code)return msg('lockAdminMsg','Bitte Code eingeben.');
  try{
   if(!auth.currentUser)await signInAnonymously(auth);
-  const h=await hash(code),u=auth.currentUser.uid;
-  await set(path('adminProof/'+u),h);
-  const s=await get(path('admin/codeHash'));
-  if(s.exists()&&s.val()===h){isOwner=true;ownerCode=code;$('lockAdminCode').value='';msg('lockAdminMsg','');msg('loginMsg','Hauptadmin erkannt. Gib deinen Namen ein und tritt bei.');applyServerState();}
-  else{isOwner=false;remove(path('adminProof/'+u)).catch(()=>{});msg('lockAdminMsg','Code falsch.');}
- }catch(e){isOwner=false;msg('lockAdminMsg','Code falsch oder Server nicht erreichbar.');}
+  await httpsCallable(functions,'redeemRoleCode')({code});
+  await auth.currentUser.getIdToken(true);
+  const claims=(await auth.currentUser.getIdTokenResult(true)).claims||{};
+  if(claims.mainAdmin===true){isOwner=true;ownerCode=code;$('lockAdminCode').value='';msg('lockAdminMsg','');msg('loginMsg','Hauptadmin erkannt. Gib deinen Namen ein und tritt bei.');applyServerState();}
+  else{isOwner=false;msg('lockAdminMsg','Dieser Code ist kein Hauptadmin-Code.');}
+ }catch(e){isOwner=false;msg('lockAdminMsg','Anmeldung fehlgeschlagen: '+(e?.message||e));}
 }
 async function ownerAutoRole(){
  if(!isOwner||!ownerCode)return;
@@ -680,21 +682,13 @@ async function applyServerChange(){
  const lockIt=pendingLock;pendingLock=null;$('srvConfirm').classList.remove('on');
  if(lockIt===null||role!=='admin'||!isOwner)return;
  try{
-  await set(path('serverControl'),{locked:lockIt,updatedAt:serverTimestamp(),updatedBy:name||'Hauptadmin',updatedByUid:uid});
+  await httpsCallable(functions,'setServerControl')({locked:lockIt,updatedBy:name||'Hauptadmin'});
   msg('srvMsg',lockIt?'Server gesperrt. Nur du hast jetzt Zugang.':'Server freigegeben. Alle Spieler dürfen wieder beitreten.');
  }catch(e){
   const denied=/permission/i.test(e?.message||'');
   msg('srvMsg','Serverstatus konnte nicht geändert werden: '+(denied?'Keine Berechtigung (Firebase-Regeln prüfen).':(e?.message||e))+' Bitte versuche es erneut.');
  }
 }
-const roleCheckInner=roleCheck;
-roleCheck=async function(){
- const code=String($('roleCode').value||'').trim();
- await roleCheckInner();
- if(role==='admin'&&code){try{await set(path('adminProof/'+uid),await hash(code));ownerCode=code;}catch(e){}}
- isOwner=role==='admin';
- applyServerState();
-};
 $('lockRetry').onclick=()=>{if(!auth.currentUser)signInAnonymously(auth).catch(()=>{});startServerWatch();};
 $('lockAdminBtn').onclick=lockAdminLogin;
 $('lockAdminCode').addEventListener('keydown',e=>{if(e.key==='Enter')lockAdminLogin()});
@@ -715,7 +709,7 @@ $('nextRound').onclick=()=>{if(opened.length===3){buildRound();$('result').textC
   target.scrollIntoView({behavior:'smooth',block:'start'});
  }));
 
-$('roleLogin').onclick=()=>{role='normal';roleName='';roleCheck();};$('claimAdmin').onclick=async()=>{const v=$('initialAdminCode').value;if(v.length<8)return msg('roleMsg','Mindestens 8 Zeichen.');const a=await get(path('admin/codeHash'));if(a.exists())return msg('roleMsg','Admin wurde bereits eingerichtet.');await set(path('admin/codeHash'),await hash(v));$('roleCode').value=v;$('initialAdminCode').value='';await roleCheck();};
+$('roleLogin').onclick=()=>{role='normal';roleName='';roleCheck();};$('claimAdmin').onclick=()=>msg('roleMsg','Die Ersteinrichtung wird sicher über Firebase Secret Manager durch den Projektverantwortlichen vorgenommen.');
 $('roleLogout').onclick=()=>{role='normal';roleName='';['adminPanel','specialPanel','messageManPanel','rosterPanel'].forEach(x=>show(x,false));show('giftControls',false);show('giftLocked',true);show('gamePanel',true);show('inventoryPanel',true);show('livePanel',true);show('rankingPanel',true);show('rosterPanel',true);updateHeader();msg('roleMsg','Rolle abgemeldet.')};
 $('changeAdminCode').onclick=adminSaveCode;$('saveQuarter').onclick=()=>registerAdminRole('quarter').catch(e=>msg('adminMsg',e.message));$('saveHalves').onclick=()=>registerAdminRole('half').catch(e=>msg('adminMsg',e.message));$('setSpecial').onclick=saveSpecial;$('saveMessageMen').onclick=saveMessageMen;
 $('saveLuck').onclick=async()=>{const v=Number($('adminLuck').value);if(!Number.isFinite(v)||v<1)return msg('adminMsg','Bitte eine Zahl ab 1 eingeben.');if(role==='halfAdmin'){if(v>50)return msg('adminMsg','Halb-Admins dürfen maximal 50× einstellen.');await update(path('settings/roleLuck'),{[uid]:v});msg('adminMsg','Dein Glück wurde auf '+v+'× gesetzt.');return;}if(role!=='admin')return msg('adminMsg','Keine Berechtigung.');await update(path('settings'),{luckMultiplier:v,luckEnabled:$('adminLuckOn').value==='true'});msg('adminMsg','Globales Glück gespeichert: '+v+'×.');};
