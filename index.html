@@ -455,7 +455,7 @@ async function resolveTargets(scope,targetName){
  const all=(await get(path('players'))).val()||{};
  if(scope==='global')return Object.entries(all);
  if(scope==='random'){
-  if(role!=='admin'||settings.adminAbuseActive!==true)throw new Error('Zufällige Empfängerauswahl ist nur für den Hauptadmin während Admin Abuse verfügbar.');
+  if(role!=='admin'||!isOwner||settings.adminAbuseActive!==true)throw new Error('Zufällige Empfängerauswahl ist nur für den Hauptadmin während Admin Abuse verfügbar.');
   const online=(await get(path('online'))).val()||{};
   const candidates=Object.keys(online).filter(id=>id!==uid&&all[id]).map(id=>[id,all[id]]);
   if(!candidates.length)throw new Error('Es ist kein anderer Spieler online.');
