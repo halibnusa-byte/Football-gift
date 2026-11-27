@@ -4,6 +4,7 @@ const { getDatabase } = require("firebase-admin/database");
 const { getAuth } = require("firebase-admin/auth");
 const { defineSecret } = require("firebase-functions/params");
 const crypto = require("node:crypto");
+const { PRIZES } = require("./comeback");
 
 // Server-only role map stored in Google Secret Manager.
 const roleCodeMapSecret = defineSecret("ROLE_CODE_MAP");
@@ -136,4 +137,98 @@ exports.setServerControl = onCall({ region: "europe-west1" }, async (request) =>
     updatedByUid: auth.uid,
   });
   return { locked, updatedBy: user.uid };
+});
+
+
+// Main-admin manual token grants are performed by the trusted backend.
+exports.grantAdminTokens = onCall({ region: "europe-west1" }, async (request) => {
+  requireRole(request, ["mainAdmin"]);
+  const data = request.data || {};
+  const prizeId = typeof data.prizeId === "string" ? data.prizeId : "";
+  const scope = data.scope;
+  const amount = Number(data.amount);
+  const targetName = typeof data.targetName === "string" ? data.targetName.trim().slice(0, 24) : "";
+  const isPublic = data.public === true;
+  const allowedIds = new Set([...PRIZES.map((prize) => prize.id), "diamondGift"]);
+
+  if (!allowedIds.has(prizeId)) {
+    throw new HttpsError("invalid-argument", "Dieses Geschenk ist nicht verfügbar.");
+  }
+  if (!Number.isInteger(amount) || amount < 1 || amount > 50) {
+    throw new HttpsError("invalid-argument", "Die Menge muss zwischen 1 und 50 liegen.");
+  }
+  if (scope !== "single" && scope !== "global") {
+    throw new HttpsError("invalid-argument", "Ungültiger Vergabebereich.");
+  }
+  if (prizeId === "football" && (scope !== "single" || amount !== 1)) {
+    throw new HttpsError("failed-precondition", "Der Football Token kann nur einmal an einen einzelnen Spieler vergeben werden.");
+  }
+
+  const playersSnapshot = await db.ref("players").get();
+  const players = playersSnapshot.val() || {};
+  let targets;
+  if (scope === "global") {
+    targets = Object.keys(players);
+    if (targets.length > 200) {
+      throw new HttpsError("failed-precondition", "Zu viele Spieler für eine globale Aktion. Bitte in kleinere Gruppen aufteilen.");
+    }
+  } else {
+    if (!targetName) throw new HttpsError("invalid-argument", "Bitte einen Spielernamen eingeben.");
+    const normalized = targetName.toLowerCase();
+    const found = Object.entries(players).find(([, player]) =>
+      String(player && player.name || "").trim().toLowerCase() === normalized
+    );
+    if (!found) throw new HttpsError("not-found", "Spieler nicht gefunden.");
+    targets = [found[0]];
+  }
+
+  let footballReserved = false;
+  const targetUid = targets[0];
+  if (prizeId === "football") {
+    const ownerTx = await db.ref("settings/footballTokenOwner").transaction((current) => {
+      if (current !== null && current !== undefined) return;
+      return targetUid;
+    });
+    if (!ownerTx.committed) {
+      throw new HttpsError("already-exists", "Der Football Token wurde bereits im gesamten Spiel vergeben.");
+    }
+    footballReserved = true;
+  }
+
+  let granted = 0;
+  try {
+    for (const uid of targets) {
+      const playerRef = db.ref("players/" + uid);
+      const tx = await playerRef.transaction((current) => {
+        if (!current) return;
+        const inventory = { ...(current.inventory || {}) };
+        if (prizeId === "football" && Number(inventory.football || 0) > 0) return;
+        inventory[prizeId] = (Number(inventory[prizeId]) || 0) + amount;
+        const firstWon = { ...(current.firstWon || {}) };
+        if (!firstWon[prizeId]) firstWon[prizeId] = Date.now();
+        return {
+          ...current,
+          inventory,
+          firstWon,
+          totalWins: (Number(current.totalWins) || 0) + amount,
+        };
+      });
+      if (tx.committed) granted += 1;
+      else if (prizeId === "football") throw new Error("Der Spieler besitzt den Football Token bereits.");
+    }
+  } catch (error) {
+    if (footballReserved) {
+      await db.ref("settings/footballTokenOwner").transaction((current) => current === targetUid ? null : undefined);
+    }
+    throw new HttpsError("aborted", error.message || "Die Token-Vergabe ist fehlgeschlagen.");
+  }
+
+  if (isPublic) {
+    await db.ref("activity").push({
+      name: "OWNER",
+      text: "Owner hat Tokens vergeben.",
+      at: Date.now(),
+    }).catch(() => {});
+  }
+  return { granted, prizeId, amount };
 });
