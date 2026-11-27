@@ -95,9 +95,31 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 .cbcard{width:84px;height:120px;font-size:38px;border-radius:14px;background:linear-gradient(160deg,#f5d37a,#b8860b);color:#2a1d00;border:2px solid #fff3c4}
 .cbcard.show{font-size:15px;line-height:1.25;padding:6px;background:#fffbe8}
 .cbcard:disabled{opacity:1}
+
+/* THE COMEBACK ERA intro */
+#introScreen{position:fixed;inset:0;z-index:5000;background:#020805;display:flex;align-items:center;justify-content:center;padding:14px}
+#introScreen.hidden{display:none!important}
+#introInner{width:min(100%,1100px);text-align:center}
+#introVideo{display:block;width:100%;max-height:78vh;aspect-ratio:16/9;object-fit:contain;background:#000;border:1px solid #28583b;border-radius:14px;box-shadow:0 0 35px #31e87955}
+#introStart{display:none;margin:18px auto 0;min-width:190px;padding:15px 28px;font-size:18px;letter-spacing:1px}
+#introStart.ready{display:block}
+#introHint{min-height:20px;margin:10px 0 0;color:#a9bdaf;font-size:12px}
+
 </style>
 </head>
 <body>
+
+<div id="introScreen" aria-label="THE COMEBACK ERA Intro">
+  <div id="introInner">
+    <video id="introVideo" autoplay muted playsinline preload="auto">
+      <source src="assets/intro.mp4" type="video/mp4">
+      Dein Browser unterstützt dieses Video nicht.
+    </video>
+    <button id="introStart" type="button">STARTEN</button>
+    <p id="introHint">THE COMEBACK ERA · Intro wird abgespielt …</p>
+  </div>
+</div>
+
 <div id="ownerBanner" class="owner-banner hidden"><b id="ownerBannerLabel">OWNER:</b> <span id="ownerBannerText"></span></div>
 <header><h1>⚽ FOOTBALL GIFT CHALLENGE 🎁</h1><p>15 Boxen · 3 Öffnungen pro Runde · Jeder Spieler hat seine eigene Runde</p><div id="globalStatus" class="tag">Verbinde…</div></header>
 <main class="wrap">
@@ -109,10 +131,12 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <section class="panel" id="gamePanel"><div class="row"><div><h2>🎁 Deine 15 Geschenkboxen</h2><div class="muted" id="roundText">Öffne 3 Boxen.</div></div><span class="tag" id="rareLabel">Normale Runde</span></div><div class="grid" id="boxGrid"></div><div class="result" id="result">Wähle eine Box!</div><button class="secondary" id="nextRound" disabled>Boxen neu mischen</button></section>
 <section class="panel hidden" id="eventChallengePanel"><h2 id="eventChallengeTitle">🎪 Event</h2><p class="muted" id="eventChallengeDescription"></p><div class="event-challenge" id="eventChallengeBody"></div></section>
 <section class="panel" id="inventoryPanel"><h2>🎒 Deine Sammlung</h2><div class="list" id="inventory"></div></section>
+<section class="panel" id="shopPanel"><h2>🛍️ COMEBACK-SHOP</h2><p class="muted">Für jede geöffnete Geschenkbox bekommst du dauerhaft 1 Shop-Punkt. Punkte werden beim Kauf abgezogen und nicht zurückgesetzt.</p><div class="status">Dein Guthaben: <strong id="shopBalance">0</strong> Punkte</div><div class="list" id="shopItems"></div><div id="shopStatus" class="hint"></div></section>
+<section class="panel" id="chatPanel"><h2>💬 Live-Chat</h2><p class="muted">Schreibe mit allen Spielern. Du kannst eigene Nachrichten löschen und Nachrichten melden.</p><div id="chatMessages" class="list" aria-live="polite"></div><div class="row"><input id="chatInput" maxlength="240" placeholder="Nachricht schreiben…"><button id="chatSend">SENDEN</button></div><div id="chatStatus" class="hint"></div></section>
 <section class="panel" id="livePanel"><h2>📺 Live-Übertragung</h2><p class="muted">Wähle einen Spieler, der online ist. Angezeigt werden nur seine Boxen – keine Sammlung und keine Glückswerte.</p><div class="row"><select id="watchPlayer"><option value="">Spieler auswählen…</option></select><button class="secondary" id="watchBtn">LIVE ANSEHEN</button></div><div id="liveScreen" class="status">Noch keine Übertragung ausgewählt.</div><div class="list" id="activity"></div></section>
 <section class="panel" id="rankingPanel"><h2>🏆 Rangliste der Geschenke</h2><div class="list" id="ranking"></div></section>
 <section class="panel hidden" id="rosterPanel"><h2>👥 Spielerübersicht</h2><p class="muted">Online- und Offline-Spieler. Der Hauptadmin sieht die Namen.</p><div class="roster" id="playerRoster">Wird geladen …</div></section>
-<section class="panel" id="giftPanel"><h2>🎁 Geschenk weitergeben</h2><div id="giftLocked" class="status">Für diese Funktion brauchst du eine entsprechende Rolle.</div><div id="giftControls" class="hidden"><div class="row"><select id="giftScope"><option value="single">Einzelner Spieler</option><option value="global">Alle Spieler</option></select><input id="giftTarget" placeholder="Spielername (bei einzeln)"></div><select id="giftPrize"></select><input id="giftAmount" type="number" min="1" max="20" value="1"><label><input id="giftPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="giftBtn">GESCHENK SENDEN</button><div id="giftMsg" class="hint"></div></div></section>
+<section class="panel" id="giftPanel"><h2>🎁 Geschenk weitergeben</h2><div id="giftLocked" class="status">Für diese Funktion brauchst du eine entsprechende Rolle.</div><div id="giftControls" class="hidden"><div class="row"><select id="giftScope"><option value="single">Einzelner Spieler</option><option value="random">Zufälliger Online-Spieler (Admin Abuse)</option><option value="global">Alle Spieler</option></select><input id="giftTarget" placeholder="Spielername (bei einzeln)"></div><select id="giftPrize"></select><input id="giftAmount" type="number" min="1" max="20" value="1"><label><input id="giftPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="giftBtn">GESCHENK SENDEN</button><div id="giftMsg" class="hint"></div></div></section>
 <section class="panel" id="rolePanel"><h2>🔐 Rollen-Zugang</h2><p class="muted">Admin, besonderer Spieler, Halb-Admin, Viertel-Admin oder Message Man: Einfach den persönlichen Code eingeben.</p><input id="roleCode" type="password" autocomplete="off" placeholder="Dein Zugangscode"><div class="row"><button id="roleLogin">Code prüfen</button><button class="secondary" id="roleLogout">Rolle abmelden</button></div><div id="firstAdminSetup" class="notice hidden"><b>Ersteinrichtung:</b> Es gibt noch keinen Admin-Code. Lege den Hauptadmin-Code fest. Der erste Nutzer, der dies einrichtet, wird Hauptadmin.<input id="initialAdminCode" type="password" placeholder="Hauptadmin-Code (mind. 8 Zeichen)"><button id="claimAdmin">Hauptadmin einrichten</button></div><div id="roleMsg" class="hint"></div></section>
 <section class="panel hidden" id="messageManPanel"><h2>💬 Message Man</h2><p class="muted">Diese Rolle darf nur Nachrichten schreiben und hat keine Admin-Rechte.</p><textarea id="messageManText" rows="2" maxlength="240" placeholder="Deine Nachricht"></textarea><button id="messageManSend">NACHRICHT SENDEN</button><div id="messageManStatus" class="hint"></div></section>
 <section class="panel hidden" id="adminPanel"><h2>👑 Hauptadmin-Panel</h2><div class="notice">Kostenlose Firebase-Client-Lösung: Admin-Codes und Zufall können von technisch versierten Nutzern manipuliert werden. Für echte Sicherheit wäre ein eigener vertrauenswürdiger Server nötig. Die Admin-Oberfläche ist kein sicherer Schutz vor Manipulation.</div>
@@ -124,14 +148,15 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <button type="button" class="admin-nav-btn" data-target="admin-settings">⚙️ Event-Werte</button>
 <button type="button" class="admin-nav-btn" data-target="admin-actions">🎁 Aktionen</button>
 </nav>
-<div id="comebackAdminBox" class="hidden"><h3>🏆 COMEBACK ERA · Legendary Comeback Gift</h3><div class="muted">Vergibt einmalig an alle aktuell online befindlichen Spieler (= Teilnehmer am Comeback Admin Abuse) ein Legendary Comeback Gift und den Titel OG COMEBACK PLAYER. Wer es schon bekommen hat, wird übersprungen.</div><button id="cbGrant">COMEBACK GIFT AN TEILNEHMER VERGEBEN</button><div id="cbAdminMsg" class="hint"></div></div>
-<div id="serverControlBox" class="hidden"><h3>🔒 SERVER-KONTROLLE</h3><div id="srvStatus" class="srv unknown">STATUS WIRD GEPRÜFT …</div><div class="muted" id="srvMeta"></div><div class="row"><button id="srvLock" class="danger">SERVER SPERREN</button><button id="srvUnlock">SERVER FREIGEBEN</button></div><div id="srvMsg" class="hint"></div></div>
+<div id="adminAbuseControl"><h3>🔥 ADMIN ABUSE · TIPPgeber</h3><p class="muted">Nur der Hauptadmin sieht die Hinweise. Der Tippgeber analysiert den Live-Chat und schlägt Aktionen vor, führt aber niemals selbst Aktionen aus.</p><button id="adminAbuseToggle" class="secondary">ADMIN ABUSE STARTEN</button><div id="adminAbuseStatus" class="hint"></div><div id="adminAbuseTips" class="list"></div></div>
+<div id="comebackAdminBox" class="hidden"><h3>🏆 COMEBACK ERA · Legendary Comeback Gift</h3><div class="muted">Vergibt einmalig an alle gespeicherten Teilnehmer des Comeback Admin Abuse ein Legendary Comeback Gift und den Titel OG COMEBACK PLAYER. Teilnehmer sind Spieler, die beim Start online sind oder während des aktiven Admin Abuse beitreten.</div><button id="cbGrant">COMEBACK GIFT AN TEILNEHMER VERGEBEN</button><div id="cbAdminMsg" class="hint"></div></div>
+<div id="serverControlBox" class="hidden"><h3>🎮 SPIEL-KONTROLLE</h3><div id="srvStatus" class="srv unknown">STATUS WIRD GEPRÜFT …</div><div class="muted" id="srvMeta"></div><div class="row"><button id="srvLock" class="danger">SPIEL BEENDEN</button><button id="srvUnlock">SPIEL STARTEN</button></div><div id="srvMsg" class="hint"></div></div>
 <h3 id="admin-roles" class="admin-section-title">🔐 Rollen & Zugang</h3><h3>Admin-Code ändern</h3><input id="newAdminCode" type="password" placeholder="Neuer Admin-Code"><button id="changeAdminCode">Admin-Code speichern</button>
 <h3>Besonderen Spieler (dauerhaft 2× Glück)</h3><input id="specialName" placeholder="Spielername"><input id="newSpecialCode" type="password" placeholder="Code des besonderen Spielers"><button id="setSpecial">Besonderen Spieler speichern</button>
 <h3>Viertel-Admin</h3><p class="muted">Kann Hacker, Einhorn, Galaxy, Diamond und Roboter starten sowie Ankündigungen senden. Es reicht, einen Code festzulegen.</p><input id="quarterCode" type="password" placeholder="Viertel-Admin-Code (mind. 4 Zeichen)"><button id="saveQuarter">VIERTEL-ADMIN-CODE SPEICHERN</button><h3>Halb-Admins – maximal 2</h3><p class="muted">Dürfen Glück bis 50× einstellen und Magic Cube, Hacker, Einhorn, Galaxy, Diamond, Roboter und School starten. Jeder braucht nur einen eigenen Code.</p><div class="row"><input id="halfCode1" type="password" placeholder="Halb-Admin-Code 1"></div><div class="row"><input id="halfCode2" type="password" placeholder="Halb-Admin-Code 2"></div><button id="saveHalves">HALB-ADMIN-CODES SPEICHERN</button><h3>Message Man – maximal 2 Spieler</h3><p class="muted">Trage bis zu zwei Spielernamen und ihre eigenen Zugangscodes ein. Sie geben den Code anschließend selbst im Rollenfeld ein.</p>
 <div class="row"><input id="messageMan1" placeholder="Spielername 1"><input id="messageManCode1" placeholder="Code 1"></div><div class="row"><input id="messageMan2" placeholder="Spielername 2"><input id="messageManCode2" placeholder="Code 2"></div><button id="saveMessageMen">MESSAGE-MAN-CODES SPEICHERN</button>
-<h3 id="admin-luck" class="admin-section-title">🍀 Glücks-Einstellungen</h3><h3>Globales Glück</h3><div class="row"><input id="adminLuck" type="number" min="1" step="any" value="1" placeholder="Multiplikator"><select id="adminLuckOn"><option value="false">Aus</option><option value="true">Ein</option></select></div><p class="muted">Jeder Wert ab 1× ist erlaubt. Sehr hohe Werte können die Gewinnchance stark erhöhen. Der Wert wird allen Spielern angezeigt.</p><button id="saveLuck">GLÜCK SPEICHERN</button>
-<h3 id="admin-events" class="admin-section-title">🎪 Event-Steuerung</h3><h3>Events starten</h3><p class="muted">Zusätzlich zu den bisherigen Events sind 16 neue Events eingebaut. In dieser Version läuft jeweils ein Event gleichzeitig; ein weiteres Starten ersetzt das aktuell aktive Event.</p><div class="row"><button id="galaxyOn">🌌 Galaxy</button><button id="diamondOn" class="secondary">💎 Diamond</button><button id="eventsOff" class="danger">Events stoppen</button></div>
+<h3 id="admin-luck" class="admin-section-title">🍀 Glücks-Einstellungen</h3><h3>Globales Glück</h3><div class="row"><input id="adminLuck" type="number" min="1" max="5" step="1" value="1" placeholder="Multiplikator"><select id="adminLuckOn"><option value="false">Aus</option><option value="true">Ein</option></select></div><p class="muted">Der Hauptadmin kann das globale Glück von 1× bis 5× einstellen. Während Power Hours gilt mindestens 2×; Multiplikatoren werden nicht miteinander multipliziert.</p><button id="saveLuck">GLÜCK SPEICHERN</button>
+<h3 id="admin-events" class="admin-section-title">🎪 Event-Steuerung</h3><div id="expandedEventButtons" class="row"></div><h3>Events starten</h3><p class="muted">Zusätzlich zu den bisherigen Events sind 16 neue Events eingebaut. In dieser Version läuft jeweils ein Event gleichzeitig; ein weiteres Starten ersetzt das aktuell aktive Event.</p><div class="row"><button id="galaxyOn">🌌 Galaxy</button><button id="diamondOn" class="secondary">💎 Diamond</button><button id="eventsOff" class="danger">Events stoppen</button></div>
 <div class="row"><button id="hackerOn">💻 Hacker</button><button id="unicornOn">🦄 Einhorn</button><button id="robotOn">🤖 Roboter</button></div>
 <div class="row"><button id="cubeOn">🧊 Zauberwürfel</button><button id="skibidiOn">🚽 Skibidi Toilet</button></div>
 <div class="row"><button id="godzillaOn">🦖 Godzilla vs. Kong</button><button id="timeOn">⏳ Time Travel</button></div>
@@ -142,10 +167,10 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <div class="row"><button id="winterOn">❄️ Winter</button><button id="egyptOn">🐪 Egypt</button><button id="superheroOn">🦸 Superhero</button></div>
 <div class="row"><button id="racingOn">🏎️ Racing</button><button id="dragonOn">🐉 Dragon</button><button id="musicOn">🎵 Music</button><button id="mysteryOn">🎭 Mystery</button></div>
 <h3>YouTube-Eventvideo</h3><label>Video gehört zu diesem Event</label><select id="videoEvent"><option value="godzilla">Godzilla vs. Kong</option><option value="spiderman">Spider-Man</option><option value="cocacola">Coca-Cola</option><option value="plants">Pflanzen</option><option value="lasertag">LaserTag</option><option value="blitz">Blitz</option></select><input id="godzillaUrl" placeholder="YouTube-Link"><div class="row"><input id="godzillaPause" type="number" min="5" value="45" placeholder="Abstimmung nach Sekunden"><input id="godzillaEnd" type="number" min="10" value="120" placeholder="Video-Ende (Sekunden)"></div><select id="godzillaWinner"><option value="godzilla">Godzilla gewinnt</option><option value="kong">Kong gewinnt</option></select><button id="saveGodzillaVideo">VIDEO-EINSTELLUNGEN SPEICHERN</button>
-<h3 id="admin-settings" class="admin-section-title">⚙️ Event-Einstellungen</h3><h3>Event-Chancen & Glück</h3><div class="row"><label>Blitz-Chance %<input id="blitzChance" type="number" step="0.001" value="1.5"></label><label>Spider-Man-Chance %<input id="spiderChance" type="number" step="0.001" value="1"></label></div><div class="row"><label>Spider-Man Glück ×<input id="spiderLuck" type="number" value="5"></label><label>Coca-Cola Chance %<input id="colaChance" type="number" step="0.001" value="1"></label></div><div class="row"><label>Coca-Cola Glück ×<input id="colaLuck" type="number" value="5"></label><label>Ranken-Chance %<input id="vineChance" type="number" step="0.001" value="1"></label></div><div class="row"><label>Pflanzen Glück ×<input id="plantLuck" type="number" value="5"></label><label>Elefanten-Truhe %<input id="elephantChance" type="number" step="0.0001" value="0.001"></label></div><button id="saveEventOdds">EVENT-WERTE SPEICHERN</button><h3>Blitz-Einschlag manuell auslösen</h3><p class="muted">„Eigener Raum“ bedeutet hier deinen eigenen Spielerraum. Es gibt in dieser Web-App keine getrennten echten Server.</p><div class="row"><select id="blitzScope"><option value="self">Eigener Spielerraum</option><option value="single">Einzelner Spieler</option><option value="global">Global – alle Spieler</option></select><input id="blitzTarget" placeholder="Spielername (einzeln)"></div><button id="spawnBlitz">⚡ BLITZ EINSCHLAGEN LASSEN</button><h3>Diamond-Geschenk</h3><label>Spawnchance während Diamond Event (%)</label><input id="diamondChance" type="number" min="0" max="100" step="0.001" value="0.1"><button id="saveDiamondChance">CHANCE SPEICHERN</button><p class="muted">Galaxy-Geschenk: 0,001 % pro Box und nur während Galaxy Event. Admin kann Galaxy-Truhen zusätzlich manuell spawnen.</p>
+<h3 id="admin-settings" class="admin-section-title">⚙️ Event-Einstellungen</h3><h3>Event-Chancen & Glück</h3><div class="row"><label>Blitz-Chance %<input id="blitzChance" type="number" step="0.001" value="1.5"></label><label>Spider-Man-Chance %<input id="spiderChance" type="number" step="0.001" value="1"></label></div><div class="row"><label>Spider-Man Glück ×<input id="spiderLuck" type="number" value="5"></label><label>Coca-Cola Chance %<input id="colaChance" type="number" step="0.001" value="1"></label></div><div class="row"><label>Coca-Cola Glück ×<input id="colaLuck" type="number" value="5"></label><label>Ranken-Chance %<input id="vineChance" type="number" step="0.001" value="1"></label></div><div class="row"><label>Pflanzen Glück ×<input id="plantLuck" type="number" value="5"></label><label>Elefanten-Truhe %<input id="elephantChance" type="number" step="0.0001" value="0.001"></label></div><button id="saveEventOdds">EVENT-WERTE SPEICHERN</button><h3>Blitz-Einschlag manuell auslösen</h3><p class="muted">„Eigener Raum“ bedeutet hier deinen eigenen Spielerraum. Es gibt in dieser Web-App keine getrennten echten Server.</p><div class="row"><select id="blitzScope"><option value="self">Eigener Spielerraum</option><option value="single">Einzelner Spieler</option><option value="random">Zufälliger Online-Spieler (Admin Abuse)</option><option value="global">Global – alle Spieler</option></select><input id="blitzTarget" placeholder="Spielername (einzeln)"></div><button id="spawnBlitz">⚡ BLITZ EINSCHLAGEN LASSEN</button><h3>Diamond-Geschenk</h3><label>Spawnchance während Diamond Event (%)</label><input id="diamondChance" type="number" min="0" max="100" step="0.001" value="0.1"><button id="saveDiamondChance">CHANCE SPEICHERN</button><p class="muted">Galaxy-Geschenk: 0,001 % pro Box und nur während Galaxy Event. Admin kann Galaxy-Truhen zusätzlich manuell spawnen.</p>
 <h3 id="admin-actions" class="admin-section-title">🎁 Admin-Aktionen</h3><h3>Owner Announcement</h3><textarea id="announcementText" rows="2" maxlength="240" placeholder="Deine Nachricht…"></textarea><div class="row"><select id="announcementScope"><option value="global">Alle Spieler</option><option value="single">Einzelner Spieler</option></select><input id="announcementTarget" placeholder="Spielername (einzeln)"></div><label><input id="announcementPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="sendAnnouncement">ANNOUNCEMENT SENDEN</button>
-<h3>Galaxy-Truhen spawnen</h3><div class="row"><select id="galaxyScope"><option value="global">Alle Spieler</option><option value="single">Einzelner Spieler</option></select><input id="galaxyTarget" placeholder="Spielername (einzeln)"></div><input id="galaxyAmount" type="number" min="1" max="100" value="1"><label><input id="galaxyPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="spawnGalaxy">🌌 GALAXY-TRUHEN SPAWNEN</button>
-<h3>Tokens vergeben</h3><div class="row"><select id="awardScope"><option value="single">Einzelner Spieler</option><option value="global">Alle Spieler</option></select><input id="awardTarget" placeholder="Spielername (einzeln)"></div><select id="awardPrize"></select><input id="awardAmount" type="number" min="1" max="50" value="1"><label><input id="awardPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="awardBtn">TOKEN VERGEBEN</button>
+<h3>Galaxy-Truhen spawnen</h3><div class="row"><select id="galaxyScope"><option value="global">Alle Spieler</option><option value="single">Einzelner Spieler</option><option value="random">Zufälliger Online-Spieler (Admin Abuse)</option></select><input id="galaxyTarget" placeholder="Spielername (einzeln)"></div><input id="galaxyAmount" type="number" min="1" max="100" value="1"><label><input id="galaxyPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="spawnGalaxy">🌌 GALAXY-TRUHEN SPAWNEN</button>
+<h3>Tokens vergeben</h3><div class="row"><select id="awardScope"><option value="single">Einzelner Spieler</option><option value="random">Zufälliger Online-Spieler (Admin Abuse)</option><option value="global">Alle Spieler</option></select><input id="awardTarget" placeholder="Spielername (einzeln)"></div><select id="awardPrize"></select><input id="awardAmount" type="number" min="1" max="50" value="1"><label><input id="awardPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="awardBtn">TOKEN VERGEBEN</button>
 <h3>Alles zurücksetzen</h3><select id="resetScope"><option value="global">Alle Spieler</option><option value="single">Einzelner Spieler</option></select><input id="resetTarget" placeholder="Spielername (einzeln)"><button class="danger" id="resetPlayer">ALLES ZURÜCKSETZEN</button><div id="adminMsg" class="hint"></div>
 </section>
 <section class="panel hidden" id="specialPanel"><h2>⭐ Besonderer Spieler</h2><p class="muted">Dauerhaft 2× Glück. Du kannst nur Geschenke verschenken, die du selbst besitzt.</p></section>
@@ -156,26 +181,56 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <div id="lockPage" class="lockpage" role="alertdialog" aria-live="assertive">
 <div class="lockbox">
 <div class="brand">⚽ FOOTBALL GIFT CHALLENGE 🎁</div>
-<div id="lockLocked" class="hidden"><h2>SERVER GESPERRT 🔒</h2><p>Football Gift Challenge ist momentan geschlossen. Der Hauptadmin arbeitet an einem riesigen Update. Wir sehen uns beim Comeback!</p><div class="soon">COMING BACK SOON...</div></div>
+<div id="lockLocked" class="hidden"><h2>SPIEL BEENDET 🔒</h2><p>Football Gift Challenge wurde vom Hauptadmin beendet. Wir sehen uns wieder, wenn das Spiel gestartet wird!</p><div class="soon">WARTET AUF DEN HAUPTADMIN</div></div>
 <div id="lockChecking"><h2>⏳</h2><p>Serverstatus wird geprüft …</p></div>
 <div id="lockError" class="hidden"><h2>⚠️</h2><p><b>SERVERSTATUS KANN NICHT ÜBERPRÜFT WERDEN. BITTE VERSUCHE ES ERNEUT.</b></p><button id="lockRetry">ERNEUT PRÜFEN</button></div>
 <details class="lockadmin"><summary>Hauptadmin-Zugang</summary><input id="lockAdminCode" type="password" autocomplete="off" placeholder="Hauptadmin-Code"><button class="secondary" id="lockAdminBtn">ANMELDEN</button><div id="lockAdminMsg" class="hint"></div></details>
 </div>
 </div>
 <div id="srvConfirm" class="lockpage" style="z-index:1100;background:#000d"><div class="lockbox"><p id="srvConfirmText"></p><div class="row"><button id="srvConfirmYes" class="danger"></button><button id="srvConfirmNo" class="secondary">ABBRECHEN</button></div></div></div>
+
+<script>
+(()=>{
+ const screen=document.getElementById('introScreen');
+ const video=document.getElementById('introVideo');
+ const start=document.getElementById('introStart');
+ const hint=document.getElementById('introHint');
+ if(!screen||!video||!start)return;
+ const reveal=()=>{
+   start.classList.add('ready');
+   hint.textContent='Bereit? Drücke STARTEN, um ins Spiel zu kommen.';
+ };
+ video.addEventListener('ended',reveal,{once:true});
+ video.addEventListener('error',()=>{
+   hint.textContent='Das Intro-Video konnte nicht geladen werden. Lege intro.mp4 in den Ordner assets.';
+   reveal();
+ },{once:true});
+ const play=video.play();
+ if(play&&typeof play.catch==='function')play.catch(()=>{
+   hint.textContent='Tippe auf das Video, um die Wiedergabe zu starten.';
+   video.controls=true;
+   video.addEventListener('ended',reveal,{once:true});
+ });
+ start.addEventListener('click',()=>{
+   screen.classList.add('hidden');
+   video.pause();
+ });
+})();
+</script>
+
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth,signInAnonymously,signOut,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {getDatabase,ref,get,set,update,remove,onValue,runTransaction,push,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+import {getDatabase,ref,get,set,update,remove,onValue,runTransaction,push,serverTimestamp,onDisconnect} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
 const firebaseConfig={apiKey:'AIzaSyAXt8wqnPyRYGXrbq8ZWtCl4uQT83V0Nso',authDomain:'football-gift-challange.firebaseapp.com',databaseURL:'https://football-gift-challange-default-rtdb.europe-west1.firebasedatabase.app',projectId:'football-gift-challange',storageBucket:'football-gift-challange.firebasestorage.app',messagingSenderId:'935406041054',appId:'1:935406041054:web:efc64818b9364fd2d2cf4f'};
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getDatabase(app),$=id=>document.getElementById(id);
-const EXPIRY=new Date('2026-11-28T14:30:00+01:00');
 const PRIZES=[
 {id:'deinewahl',name:'Deine-Wahl-Token',emoji:'👑',chance:.0001,rank:1},
 {id:'revenge',name:'Revenge Token',emoji:'🔥',chance:.00025,rank:2},
 {id:'comeback',name:'Comeback-Token',emoji:'🔁',chance:.0005,rank:3},
 {id:'doublegoal',name:'Double Goal Token',emoji:'⚽',chance:.0005,rank:3},
+{id:'footballLoser',name:'Football Loser Token',emoji:'🏴',chance:.00075,rank:4},
 {id:'selfretter',name:'Selbst-Retter-Token',emoji:'🧤',chance:.001,rank:5},
 {id:'freistoss',name:'Freistoß-Token',emoji:'🟥',chance:.0015,rank:6},
 {id:'football',name:'Football Token',emoji:'🏆',chance:.002,rank:7},
@@ -188,9 +243,9 @@ const PRIZES=[
 const RARE=[{id:'bronze',name:'Bronze',mult:2,p:.70,emoji:'🥉'},{id:'silver',name:'Silber',mult:3,p:.20,emoji:'🥈'},{id:'gold',name:'Gold',mult:4,p:.08,emoji:'🥇'},{id:'diamond',name:'Diamond',mult:5,p:.02,emoji:'💎'}];
 const NEW_EVENT_TYPES=['skibidi'];
 const EVENT_INFO={
-galaxy:['🌌 Galaxy','🌌'],diamond:['💎 Diamond','💎'],hacker:['💻 Hacker','0101'],unicorn:['🦄 Einhorn','🦄'],robot:['🤖 Roboter','🤖'],cube:['🧊 Zauberwürfel','🧊'],skibidi:['🚽 Skibidi Toilet','🚽'],godzilla:['🦖 Godzilla vs. Kong','🦖'],time:['⏳ Time Travel','⏳'],school:['🏫 School','🎒'],lava:['🌋 Lava','🌋'],alien:['👾 Alien Invasion','👾'],blitz:['⚡ Blitz Event','⚡'],lasertag:['🔫 LaserTag Event','🔫'],spiderman:['🕷️ Spider-Man Event','🕸️'],cocacola:['🥤 Coca-Cola Event','🥤'],plants:['🌿 Pflanzen Event','🌿'],elephant:['🐘 Elefanten Event','🐘'],ocean:['🌊 Ocean Event','🌊'],zombie:['🧟 Zombie Event','🧟'],multiverse:['🌌 Multiverse Event','🌌'],football:['⚽ Football Event','⚽'],dinosaur:['🦖 Dinosaur Event','🦖'],candy:['🍬 Candy Event','🍬'],castle:['🏰 Castle Event','🏰'],space:['🚀 Space Event','🚀'],ghost:['👻 Ghost Event','👻'],winter:['❄️ Winter Event','❄️'],egypt:['🐪 Egypt Event','🐪'],superhero:['🦸 Superhero Event','🦸'],racing:['🏎️ Racing Event','🏎️'],dragon:['🐉 Dragon Event','🐉'],music:['🎵 Music Event','🎵'],mystery:['🎭 Mystery Event','🎭']
+galaxy:['🌌 Galaxy','🌌'],diamond:['💎 Diamond','💎'],hacker:['💻 Hacker','0101'],unicorn:['🦄 Einhorn','🦄'],robot:['🤖 Roboter','🤖'],cube:['🧊 Zauberwürfel','🧊'],skibidi:['🚽 Skibidi Toilet','🚽'],godzilla:['🦖 Godzilla vs. Kong','🦖'],time:['⏳ Time Travel','⏳'],school:['🏫 School','🎒'],lava:['🌋 Lava','🌋'],alien:['👾 Alien Invasion','👾'],blitz:['⚡ Blitz Event','⚡'],lasertag:['🔫 LaserTag Event','🔫'],spiderman:['🕷️ Spider-Man Event','🕸️'],cocacola:['🥤 Coca-Cola Event','🥤'],plants:['🌿 Pflanzen Event','🌿'],elephant:['🐘 Elefanten Event','🐘'],ocean:['🌊 Ocean Event','🌊'],zombie:['🧟 Zombie Event','🧟'],multiverse:['🌌 Multiverse Event','🌌'],football:['⚽ Football Event','⚽'],dinosaur:['🦖 Dinosaur Event','🦖'],candy:['🍬 Candy Event','🍬'],castle:['🏰 Castle Event','🏰'],space:['🚀 Space Event','🚀'],ghost:['👻 Ghost Event','👻'],winter:['❄️ Winter Event','❄️'],egypt:['🐪 Egypt Event','🐪'],superhero:['🦸 Superhero Event','🦸'],racing:['🏎️ Racing Event','🏎️'],dragon:['🐉 Dragon Event','🐉'],music:['🎵 Music Event','🎵'],mystery:['🎭 Mystery Event','🎭'],pirate:["🏴‍☠️ Pirate Event","🗺️"],carnival:["🎪 Carnival Event","🎟️"],ninja:["🥷 Ninja Event","🥷"],toy:["🧸 Toy Event","🧸"],crystal:["💎 Crystal Event","🔮"],wildwest:["🤠 Wild West Event","🤠"],bakery:["🥐 Bakery Event","🧁"],comic:["💥 Comic Event","💥"],safari:["🦁 Safari Event","🦁"],cyber:["🖥️ Cyber Event","🖥️"],wizard:["🧙 Wizard Event","🪄"],moon:["🌙 Moon Event","🌙"],arcade:["🕹️ Arcade Event","🕹️"],samurai:["⚔️ Samurai Event","⚔️"],stoneage:["🪨 Stone Age Event","🪨"],masquerade:["🎭 Masquerade Event","🎭"],science:["🧪 Science Event","🧪"],luxury:["👑 Luxury Event","👑"],rainbow:["🌈 Rainbow Event","🌈"],timemachine:["⏰ Time Machine Event","⏰"]
 };
-let uid=null,name='',player={},role='normal',roleName='',settings={},eventState={},boxes=[],opened=[],rareType=null,unsubs=[],watchUnsub=null,bannerTimer=null,challengeTimer=null;
+let uid=null,name='',player={},role='normal',roleName='',settings={},eventState={},boxes=[],opened=[],rareType=null,roundId=null,unsubs=[],watchUnsub=null,bannerTimer=null,challengeTimer=null;
 const path=p=>ref(db,p),clean=s=>String(s||'').trim().replace(/[.#$\[\]/]/g,'').slice(0,24);
 const show=(id,on)=>$(id)?.classList.toggle('hidden',!on),msg=(id,t)=>{if($(id))$(id).textContent=t};
 const hash=async s=>{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')};
@@ -198,9 +253,9 @@ const isPower=()=>{const a=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Ber
 const luck=()=>Math.max(settings.luckEnabled?Number(settings.luckMultiplier||1):1,role==='special'?2:1,isPower()?2:1,role==='halfAdmin'?Math.min(50,Number(settings.roleLuck?.[uid]||1)):1);
 const newTokensUnlocked=()=>settings.completedEvents?.skibidi===true;
 const prizeById=id=>PRIZES.find(p=>p.id===id)||({id:'diamondGift',name:'Diamond-Geschenk',emoji:'💎',chance:0});
-function activePrizeList(){return PRIZES.filter(p=>(newTokensUnlocked()||!['deinewahl','doublegoal','selfretter','freistoss','comeback'].includes(p.id))&&!(p.id==='penalty'&&player.inventory?.penalty)&&!(p.id==='football'&&settings.footballTokenOwner));}
-function weightedPrize(mult=1){
- let list=activePrizeList(),weights=list.map(p=>p.chance*mult),sum=weights.reduce((a,b)=>a+b,0);
+function activePrizeList(){return PRIZES.filter(p=>(newTokensUnlocked()||!['deinewahl','doublegoal','footballLoser','selfretter','freistoss','comeback'].includes(p.id))&&!(p.id==='penalty'&&player.inventory?.penalty)&&!(p.id==='football'&&settings.footballTokenOwner));}
+function weightedPrize(mult=1,sourceList=activePrizeList()){
+ let list=sourceList,weights=list.map(p=>p.chance*mult),sum=weights.reduce((a,b)=>a+b,0);
  if(sum>100)weights=weights.map(x=>x*100/sum);
  let r=Math.random()*100;
  for(let i=0;i<list.length;i++){r-=weights[i];if(r<0)return list[i]}
@@ -209,7 +264,7 @@ function weightedPrize(mult=1){
 function rarePick(){let r=Math.random();for(const x of RARE){r-=x.p;if(r<0)return x}return RARE[0]}
 function randomGift(){
  const list=activePrizeList().filter(p=>p.id!=='football');
- return weightedPrize(1);
+ return weightedPrize(1,list);
 }
 async function awardPrizeTo(uidTarget,prizeId,amount=1){
  if(prizeId==='football'){
@@ -227,7 +282,7 @@ async function awardPrizeTo(uidTarget,prizeId,amount=1){
 }
 async function rollAndAward(targetUid,rareMult=1,source='Box',forceGalaxy=false){
  let prize=null;
- if(forceGalaxy||(eventState.active==='galaxy'&&Math.random()<0.00001)){
+ if(eventState.active==='galaxy'&&Math.random()<0.00001){
   
   let choices=['comeback','revenge'];if(!settings.footballTokenOwner)choices.push('football');
   prize=PRIZES.find(p=>p.id===choices[Math.floor(Math.random()*choices.length)]);
@@ -247,7 +302,7 @@ function renderBoxes(){
  const g=$('boxGrid');g.innerHTML='';
  boxes.forEach((b,i)=>{
   const btn=document.createElement('button');btn.className='gift'+(b.rare?' rare':'')+(opened.includes(i)?' opened':'');
-  btn.disabled=opened.includes(i)||opened.length>=3||Date.now()>EXPIRY.getTime();
+  btn.disabled=opened.includes(i)||opened.length>=3||(serverState!=='open'&&!isOwner);
   const ev=eventState.active;let icon=b.opened?'✓':b.galaxy?'🌌':b.rare?(rareType?.emoji||'✨'):(EVENT_INFO[ev]?.[1]||'🎁'); if(ev==='elephant'&&!b.opened)icon='🐘🎁';
   if(ev==='hacker'&&!b.opened)icon='0101';if(ev==='spiderman'&&!b.opened)icon='🕸️🎁';if(ev==='cocacola'&&!b.opened)icon='🥤🎁';if(ev==='plants'&&!b.opened)icon='🌿🎁';
   btn.textContent=icon;const sm=document.createElement('small');sm.textContent='BOX '+(i+1);btn.append(sm);btn.onclick=()=>openBox(i);g.append(btn);
@@ -255,19 +310,52 @@ function renderBoxes(){
  $('opens').textContent=opened.length+' / 3';$('roundText').textContent=opened.length>=3?'Runde abgeschlossen – neu mischen!':'Du kannst noch '+(3-opened.length)+' Box(en) öffnen.';
  $('nextRound').disabled=opened.length!==3;$('rareLabel').textContent=rareType?rareType.name+'-Box ist dabei!':'Normale Runde';
 }
-function buildRound(){
- opened=[];rareType=null;boxes=Array.from({length:15},(_,i)=>({id:i,rare:false,galaxy:false,opened:false}));
+async function buildRound(){
+ opened=[];rareType=null;roundId=Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,9);boxes=Array.from({length:15},(_,i)=>({id:i,rare:false,galaxy:false,opened:false}));
  if(Math.random()<.01){rareType=rarePick();const i=Math.floor(Math.random()*15);boxes[i].rare=true;boxes[i].rareType=rareType.id;}
- const pendingBlitz=Number(player.pendingBlitz||0);if(pendingBlitz>0){const i=Math.floor(Math.random()*15);boxes[i].blitz=true;player.pendingBlitz=pendingBlitz-1;update(path('players/'+uid),{pendingBlitz:player.pendingBlitz}).catch(()=>{});}
- const pending=Number(player.pendingGalaxy||0);if(pending>0){const i=boxes.findIndex(b=>!b.rare);if(i>=0){boxes[i].galaxy=true;player.pendingGalaxy=pending-1;update(path('players/'+uid),{pendingGalaxy:player.pendingGalaxy}).catch(()=>{});}}
- renderBoxes();saveRound();
+ const pendingBlitz=Math.max(0,Number(player.pendingBlitz)||0),pendingGalaxy=Math.max(0,Number(player.pendingGalaxy)||0),patch={};
+ if(pendingBlitz>0){const i=Math.floor(Math.random()*15);boxes[i].blitz=true;patch.pendingBlitz=pendingBlitz-1;}
+ if(pendingGalaxy>0){const i=boxes.findIndex(b=>!b.rare);if(i>=0){boxes[i].galaxy=true;patch.pendingGalaxy=pendingGalaxy-1;}}
+ renderBoxes();
+ if(!await saveRound(patch)){
+  boxes.forEach(b=>{delete b.blitz;delete b.galaxy;});renderBoxes();
+  $('result').textContent='Die neue Runde konnte nicht sicher gespeichert werden. Deine vorgemerkten Boni bleiben erhalten. Bitte Verbindung prüfen und erneut versuchen.';
+  return false;
+ }
+ if(Object.hasOwn(patch,'pendingBlitz'))player.pendingBlitz=patch.pendingBlitz;
+ if(Object.hasOwn(patch,'pendingGalaxy'))player.pendingGalaxy=patch.pendingGalaxy;
+ return true;
 }
-async function saveRound(){if(!uid)return;await update(path('players/'+uid),{lastBoxes:boxes.map((b,i)=>({opened:opened.includes(i),rare:b.rare,galaxy:b.galaxy,blitz:b.blitz})),lastRareType:rareType?.id||null,opensThisRound:opened.length,roundUpdated:Date.now()}).catch(()=>{})}
+async function saveRound(extra={}){
+ if(!uid||!roundId)return false;
+ try{await update(path('players/'+uid),{lastBoxes:boxes.map((b,i)=>({opened:opened.includes(i),rare:b.rare,galaxy:b.galaxy,blitz:b.blitz})),lastRareType:rareType?.id||null,lastRoundId:roundId,opensThisRound:opened.length,roundUpdated:Date.now(),...extra});return true;}catch(e){return false;}
+}
 async function openBox(i){
- if(opened.length>=3||opened.includes(i)||Date.now()>EXPIRY.getTime())return;
- opened.push(i);boxes[i].opened=true;renderBoxes();$('result').textContent='Die Box wird geöffnet…';
- await rollAndAward(uid,(boxes[i].rare?rareType.mult:1)*(boxes[i].blitz?10:1),'Box',!!boxes[i].galaxy);if(boxes[i].blitz)$('result').textContent='⚡ BLITZ! 10× Glück! '+$('result').textContent;
- await saveRound();renderInventory();renderRanking();
+ if(serverState!=='open'&&!isOwner){$('result').textContent='Das Spiel ist momentan vom Hauptadmin beendet.';return;}
+ if(opened.length>=3||opened.includes(i)||!roundId)return;
+ if(!await saveRound()){$('result').textContent='Deine Runde konnte nicht sicher gespeichert werden. Prüfe deine Verbindung und versuche es erneut.';return;}
+ let claim;
+ try{
+  claim=await runTransaction(path('players/'+uid+'/boxClaims/'+roundId),v=>{
+   const state=v&&typeof v==='object'?v:{opened:{},count:0};
+   const claimed={...(state.opened||{})},count=Number(state.count)||0;
+   if(claimed[String(i)]||count>=3)return;
+   claimed[String(i)]=true;
+   return {opened:claimed,count:count+1};
+  });
+ }catch(e){$('result').textContent='Die Box konnte nicht geöffnet werden. Prüfe deine Verbindung und versuche es erneut.';return;}
+ if(!claim.committed){$('result').textContent='Diese Box wurde bereits geöffnet oder du hast deine 3 Boxen für diese Runde schon genutzt.';return;}
+ opened.push(i);boxes[i].opened=true;renderBoxes();
+ const roundSaved=await saveRound();
+ try{
+  const credit=await runTransaction(path('players/'+uid+'/shopBalance'),v=>(Number(v)||0)+1);
+  if(credit.committed){player.shopBalance=credit.snapshot.val();renderShop();}
+ }catch(e){msg('shopStatus','Shop-Punkt konnte nicht gespeichert werden.');}
+ $('result').textContent='Die Box wird geöffnet…';
+ await rollAndAward(uid,(boxes[i].rare?rareType.mult:1)*(boxes[i].blitz?10:1),'Box',!!boxes[i].galaxy);
+ if(boxes[i].blitz)$('result').textContent='⚡ BLITZ! 10× Glück! '+$('result').textContent;
+ if(!roundSaved)$('result').textContent+=' (Die Öffnung ist sicher registriert; die Rundendarstellung wird beim nächsten Laden abgeglichen.)';
+ renderInventory();renderRanking();
 }
 async function enter(){
  if(serverState!=='open'&&!isOwner){applyServerState();return msg('loginMsg',serverState==='locked'?'Server gesperrt.':LOCK_ERR);}
@@ -277,46 +365,104 @@ async function enter(){
   const snap=await get(path('players/'+uid));player=snap.val()||{name,inventory:{},firstWon:{},totalWins:0,created:Date.now()};
   player.name=name;await update(path('players/'+uid),{name,created:player.created||Date.now()});
   await set(path('online/'+uid),{name,at:Date.now()});
+  const abuseState=(await get(path('settings'))).val()||{};
+  if(abuseState.adminAbuseActive===true&&abuseState.adminAbuseRunId)await set(path('players/'+uid+'/adminAbuseParticipation/'+abuseState.adminAbuseRunId),{name,joinedAt:Date.now()});
   show('loginPanel',false);show('app',true);$('hello').textContent='Willkommen, '+name+'!';
   if(Array.isArray(player.lastBoxes)&&player.lastBoxes.length===15){
     boxes=player.lastBoxes.map((b,i)=>({...b,id:i,opened:!!b.opened}));opened=boxes.filter(b=>b.opened).map(b=>b.id);
     rareType=boxes.some(b=>b.rare)?RARE.find(r=>r.id===player.lastRareType)||RARE[0]:null;
-  }else buildRound();
-  renderBoxes();subscribe();watchComeback();renderInventory();renderRanking();await addActivity('ist dem Spiel beigetreten');await roleRefresh();await ownerAutoRole();applyServerState();
+    roundId=player.lastRoundId||('legacy_'+String(player.roundUpdated||Date.now()));
+    // Reconcile the display with the server-side atomic claim ledger after refresh or a failed round save.
+    const claimSnap=await get(path('players/'+uid+'/boxClaims/'+roundId));
+    const claimState=claimSnap.val()||{};
+    const claimedIds=Object.keys(claimState.opened||{}).map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<15);
+    claimedIds.forEach(id=>{if(!opened.includes(id))opened.push(id);boxes[id].opened=true;});
+    if(!player.lastRoundId||claimedIds.length)await saveRound();
+  }else await buildRound();
+  renderBoxes();subscribe();watchComeback();renderInventory();renderShop();renderRanking();await addActivity('ist dem Spiel beigetreten');await roleRefresh();await ownerAutoRole();applyServerState();
  }catch(e){msg('loginMsg','Verbindung fehlgeschlagen: '+e.message)}
 }
 function subscribe(){
  unsubs.forEach(f=>f());unsubs=[];
- unsubs.push(onValue(path('settings'),s=>{settings=s.val()||{};updateHeader();renderInventory();renderRanking();}));
- unsubs.push(onValue(path('events'),s=>{eventState=s.val()||{};updateHeader();renderEventChallenge();}));
+ unsubs.push(onValue(path('settings'),s=>{settings=s.val()||{};updateHeader();renderInventory();renderShop();renderRanking();}));
+ unsubs.push(onValue(path('events'),s=>{const previousActive=eventState.active,previousRun=eventState.runId;eventState=s.val()||{};updateHeader();if(previousActive!==eventState.active||previousRun!==eventState.runId)renderEventChallenge();}));
  unsubs.push(onValue(path('players'),s=>{const all=s.val()||{};renderRanking(all);get(path('online')).then(o=>renderRoster(all,o.val()||{}));}));
  unsubs.push(onValue(path('online'),s=>{get(path('players')).then(p=>renderRoster(p.val()||{},s.val()||{}));renderWatchOptions(s.val()||{});}));
  unsubs.push(onValue(path('activity'),s=>{const a=Object.values(s.val()||{}).sort((x,y)=>(y.at||0)-(x.at||0)).slice(0,10);$('activity').innerHTML='';a.forEach(x=>{const d=document.createElement('div');d.className='item';d.textContent=x.text||'Aktivität';$('activity').append(d)})}));
- unsubs.push(onValue(path('players/'+uid),s=>{if(s.exists()){player=s.val();renderInventory();}}));
+ unsubs.push(onValue(path('players/'+uid),s=>{if(s.exists()){player=s.val();renderInventory();renderShop();}}));
  unsubs.push(onValue(path('announcements/global'),s=>{if(s.exists())showAnnouncement(s.val())}));
  unsubs.push(onValue(path('announcements/users/'+uid),s=>{if(s.exists())showAnnouncement(s.val())}));
- unsubs.push(onValue(path('messages'),s=>{const arr=Object.values(s.val()||{}).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,5);if(role==='admin')msg('adminMsg','Letzte Nachricht: '+(arr[0]?.name||'')+' – '+(arr[0]?.text||''));}));
+ unsubs.push(onValue(path('messages'),s=>{const data=s.val()||{};renderChat(data);renderAdminAbuseTips(data);const arr=Object.values(data).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,5);if(role==='admin')msg('adminMsg','Letzte Nachricht: '+(arr[0]?.name||'')+' – '+(arr[0]?.text||''));}));
 }
 function showAnnouncement(a){if(!a?.text||a.targetUid&&a.targetUid!==uid)return;$('ownerBannerLabel').textContent=(a.sender||'OWNER')+':';$('ownerBannerText').textContent=a.text;show('ownerBanner',true);clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>show('ownerBanner',false),3000);}
 function updateHeader(){
  const ev=eventState.active;document.body.classList.toggle('power',isPower()&&!ev);
+ if($('adminAbuseToggle')){$('adminAbuseToggle').textContent=settings.adminAbuseActive?'ADMIN ABUSE BEENDEN':'ADMIN ABUSE STARTEN';$('adminAbuseStatus').textContent=settings.adminAbuseActive?'Aktiv · Live-Chat wird ausgewertet.':'Inaktiv';}
  Object.keys(EVENT_INFO).forEach(k=>document.body.classList.toggle('event-'+k,ev===k));
  $('powerLabel').textContent=isPower()?'AKTIV':'Inaktiv';$('luckLabel').textContent=luck()+'×'+(settings.luckEnabled?' (global)':'');
  $('eventLabel').textContent=EVENT_INFO[ev]?.[0]||'Keins aktiv';$('globalStatus').textContent='ONLINE · '+(EVENT_INFO[ev]?.[0]||'Normalbetrieb')+' · Glück '+luck()+'×';
  $('playerMeta').textContent=role==='special'?'Besonderer Spieler · 2× Glück':role==='admin'?'Hauptadmin':role==='quarterAdmin'?'Viertel-Admin · '+(roleName||name):role==='halfAdmin'?'Halb-Admin · '+(roleName||name):role==='messageMan'?'Message Man':'Spieler';
- renderBoxes();renderServerControl();renderComeback();
+ renderBoxes();renderServerControl();renderComeback();ensureShopAdmin();
+}
+const DEFAULT_SHOP=[
+{id:'magic_remix',name:'MAGIC REMIX',description:'Erlaubt einen neuen Versuch beim Zauberwürfel.',price:12,emoji:'🧊'},
+{id:'lava_shield',name:'LAVA SHIELD',description:'Schützt dich einmal bei einer Lava-Entscheidung.',price:15,emoji:'🛡️'},
+{id:'alien_radar',name:'ALIEN RADAR',description:'Hilft dir bei einer Alien-Invasion.',price:10,emoji:'👽'},
+{id:'pearl_radar',name:'PEARL RADAR',description:'Hilft bei der Schatzsuche im Ocean-Event.',price:10,emoji:'🦪'},
+{id:'zombie_detector',name:'ZOMBIE DETECTOR',description:'Hilft dir beim Erkennen der sicheren Wahl.',price:14,emoji:'🧟'},
+{id:'golden_report_card',name:'GOLDENE ZEUGNISNOTE',description:'Erlaubt dir eine zweite Antwort im School-Event.',price:13,emoji:'📘'}
+];
+function currentShopCatalog(){const saved=Array.isArray(settings.shopCatalog)?settings.shopCatalog:[];const ids=new Set(saved.map(p=>p.id)),removed=new Set(settings.shopRemovedDefaults||[]);return [...DEFAULT_SHOP.filter(p=>!ids.has(p.id)&&!removed.has(p.id)),...saved];}
+let shopAdminDraw=()=>{};
+function ensureShopAdmin(){
+ if(role!=='admin')return;
+ if($('shopAddProduct')){shopAdminDraw();return;}
+ const adminShop=document.createElement('div');
+ adminShop.innerHTML='<h3>🛍️ Shop-Verwaltung</h3><p class="muted">Produkte, Preise und Angebote verwalten. Änderungen werden für alle gespeichert.</p><div class="row"><input id="shopNewName" placeholder="Produktname"><input id="shopNewPrice" type="number" min="0" placeholder="Preis"></div><input id="shopNewDesc" placeholder="Beschreibung"><button id="shopAddProduct">PRODUKT HINZUFÜGEN</button><div id="shopAdminList" class="list"></div>';
+ $('adminPanel').append(adminShop);
+ const draw=()=>{const list=$('shopAdminList');if(!list)return;list.innerHTML='';currentShopCatalog().forEach(p=>{const line=document.createElement('div');line.className='item';const label=document.createElement('span');label.textContent=p.name+' · '+p.price+' Punkte';const price=document.createElement('input');price.type='number';price.min='0';price.value=String(p.price);price.placeholder='Preis';const offer=document.createElement('input');offer.type='number';offer.min='0';offer.placeholder='Angebotspreis';offer.value=p.offerPrice==null?'':String(p.offerPrice);const minutes=document.createElement('input');minutes.type='number';minutes.min='0';minutes.placeholder='Angebot Minuten';const save=document.createElement('button');save.textContent='PREIS / ANGEBOT SPEICHERN';save.onclick=async()=>{const base=Math.floor(Number(price.value)),op=offer.value.trim()===''?null:Math.floor(Number(offer.value)),mins=Math.floor(Number(minutes.value)||0);if(!Number.isFinite(base)||base<0||op!==null&&(!Number.isFinite(op)||op<0))return msg('adminMsg','Bitte gültige Preise eingeben.');const arr=currentShopCatalog().map(x=>x.id===p.id?{...x,price:base,offerPrice:op,offerUntil:op!==null&&mins>0?Date.now()+mins*60000:0}:x);await update(path('settings'),{shopCatalog:arr});msg('adminMsg','Preis und Angebot gespeichert.');};const toggle=document.createElement('button');toggle.textContent=p.active===false?'AKTIVIEREN':'DEAKTIVIEREN';toggle.onclick=async()=>{const arr=currentShopCatalog().map(x=>x.id===p.id?{...x,active:x.active===false}:x);await update(path('settings'),{shopCatalog:arr});};const del=document.createElement('button');del.className='danger';del.textContent='LÖSCHEN';del.onclick=async()=>{const arr=currentShopCatalog().filter(x=>x.id!==p.id),removed=[...(settings.shopRemovedDefaults||[])];if(DEFAULT_SHOP.some(x=>x.id===p.id)&&!removed.includes(p.id))removed.push(p.id);await update(path('settings'),{shopCatalog:arr,shopRemovedDefaults:removed});};line.append(label,price,offer,minutes,save,toggle,del);list.append(line);});};
+ shopAdminDraw=draw;
+ $('shopAddProduct').onclick=async()=>{const n=$('shopNewName').value.trim(),price=Math.floor(Number($('shopNewPrice').value)),desc=$('shopNewDesc').value.trim();if(!n||!Number.isFinite(price)||price<0)return msg('adminMsg','Name und gültiger Preis fehlen.');const arr=[...currentShopCatalog(),{id:'custom_'+Date.now(),name:n,description:desc,price,emoji:'⭐',active:true}];await update(path('settings'),{shopCatalog:arr});$('shopNewName').value='';$('shopNewPrice').value='';$('shopNewDesc').value='';msg('adminMsg','Shop-Produkt gespeichert.');draw();};
+ draw();
+}
+function renderShop(){
+ const bal=Number(player?.shopBalance||0);$('shopBalance').textContent=String(bal);
+ const host=$('shopItems');if(!host)return;host.innerHTML='';
+ currentShopCatalog().forEach(item=>{
+  const row=document.createElement('div');row.className='item';
+  const offerActive=Number(item.offerUntil)>Date.now()&&Number(item.offerPrice)>=0;const displayPrice=offerActive?Number(item.offerPrice):Number(item.price);const title=document.createElement('strong');title.textContent=item.emoji+' '+item.name+' · '+displayPrice+' Punkte'+(offerActive?' · ANGEBOT':'');
+  const desc=document.createElement('div');desc.className='muted';desc.textContent=item.description||'';
+  const owned=Number(player?.shopItems?.[item.id]||0);
+  const b=document.createElement('button');b.textContent='KAUFEN';b.disabled=bal<displayPrice||item.active===false;b.onclick=()=>buyShopItem(item.id);
+  row.append(title,desc,b);if(owned){const tag=document.createElement('div');tag.className='hint';tag.textContent='Besitzt: '+owned;row.insertBefore(tag,b);}host.append(row);
+ });
+}
+async function buyShopItem(id){
+ const item=currentShopCatalog().find(x=>x.id===id);if(!item||item.active===false)return;
+ try{
+  const offerActive=Number(item.offerUntil)>Date.now()&&Number(item.offerPrice)>=0;const price=Math.max(0,Math.floor(offerActive?Number(item.offerPrice):Number(item.price)||0));
+  const tx=await runTransaction(path('players/'+uid+'/shopBalance'),v=>{v=Number(v)||0;return v>=price?v-price:undefined;});
+  if(!tx.committed)return msg('shopStatus','Du hast nicht genug Punkte.');
+  const inv={...(player.shopItems||{})};inv[id]=(Number(inv[id])||0)+1;
+  await update(path('players/'+uid),{shopItems:inv});player.shopBalance=tx.snapshot.val();player.shopItems=inv;renderShop();msg('shopStatus',item.name+' gekauft!');
+ }catch(e){msg('shopStatus','Kauf fehlgeschlagen: '+e.message);}
+}
+async function consumeShopItem(id){
+ const tx=await runTransaction(path('players/'+uid+'/shopItems/'+id),v=>{const n=Number(v)||0;return n>0?n-1:undefined;});
+ if(!tx.committed)return false;
+ player.shopItems=player.shopItems||{};player.shopItems[id]=Number(tx.snapshot.val())||0;renderShop();return true;
 }
 function renderInventory(){
  const inv=player?.inventory||{};$('tokenCount').textContent=Object.values(inv).reduce((a,b)=>a+Number(b||0),0);
  $('inventory').innerHTML='';
- const list=PRIZES.filter(p=>(newTokensUnlocked()||!['deinewahl','doublegoal','selfretter','freistoss','comeback'].includes(p.id))).concat([{id:'diamondGift',name:'Diamond-Geschenk',emoji:'💎'}]);
+ const list=PRIZES.filter(p=>(newTokensUnlocked()||!['deinewahl','doublegoal','footballLoser','selfretter','freistoss','comeback'].includes(p.id))).concat([{id:'diamondGift',name:'Diamond-Geschenk',emoji:'💎'}]);
  list.forEach(p=>{const n=Number(inv[p.id]||0);if(n){const d=document.createElement('div');d.className='item';d.textContent=p.emoji+' '+p.name;const b=document.createElement('b');b.textContent='×'+n;d.append(b);$('inventory').append(d)}});
  if(!$('inventory').children.length)$('inventory').textContent='Noch keine Geschenke gewonnen.';
  $('giftPrize').innerHTML='';list.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name+' (×'+(inv[p.id]||0)+')';$('giftPrize').append(o)});
 }
 function renderRanking(all){
  all=all||{};$('ranking').innerHTML='';
- const list=PRIZES.filter(p=>(newTokensUnlocked()||!['deinewahl','doublegoal','selfretter','freistoss','comeback'].includes(p.id))).concat([{id:'diamondGift',name:'Diamond-Geschenk',emoji:'💎',rank:0}]).sort((a,b)=>(a.rank||0)-(b.rank||0));
+ const list=PRIZES.filter(p=>(newTokensUnlocked()||!['deinewahl','doublegoal','footballLoser','selfretter','freistoss','comeback'].includes(p.id))).concat([{id:'diamondGift',name:'Diamond-Geschenk',emoji:'💎',rank:0}]).sort((a,b)=>(a.rank||0)-(b.rank||0));
  list.forEach(p=>{
   const owners=Object.entries(all).map(([id,x])=>({name:x.name||'Unbekannt',count:Number(x.inventory?.[p.id]||0),first:Number(x.firstWon?.[p.id]||0)})).filter(x=>x.count>0).sort((a,b)=>(a.first||0)-(b.first||0));
   const d=document.createElement('div');d.className='item';const left=document.createElement('span');left.textContent=p.emoji+' '+p.name;const right=document.createElement('b');right.textContent=owners.length?owners.map(x=>x.name+' ×'+x.count).join(' · '):'Noch niemand';d.append(left,right);$('ranking').append(d);
@@ -364,7 +510,7 @@ function applyRolePanelPermissions(){
  const halfEvents=['cubeOn',...quarterEvents,'schoolOn'];
  ['cubeOn','hackerOn','unicornOn','galaxyOn','diamondOn','robotOn','schoolOn','godzillaOn','timeOn','lavaOn','alienOn','blitzOn','laserOn','spiderOn','colaOn','plantsOn','elephantOn','skibidiOn'].forEach(id=>{const el=$(id);if(!el)return;const allowed=role==='admin'||(role==='quarterAdmin'&&quarterEvents.includes(id))||(role==='halfAdmin'&&halfEvents.includes(id));el.classList.toggle('hidden',!allowed);});
  ['eventsOff','saveLuck','adminLuck','adminLuckOn','announcementText','announcementScope','announcementTarget','announcementPublic','sendAnnouncement','godzillaUrl','godzillaPause','godzillaEnd','godzillaWinner','videoEvent','saveGodzillaVideo'].forEach(id=>{const el=$(id);if(el)el.classList.toggle('hidden',role==='quarterAdmin'&&['eventsOff','saveLuck','adminLuck','adminLuckOn','godzillaUrl','godzillaPause','godzillaEnd','godzillaWinner','videoEvent','saveGodzillaVideo'].includes(id));});
- const luckInput=$('adminLuck');if(luckInput){luckInput.max=role==='halfAdmin'?'50':'1000000';if(role==='halfAdmin')luckInput.value=String(settings.roleLuck?.[uid]||1);}
+ const luckInput=$('adminLuck');if(luckInput){luckInput.max=role==='halfAdmin'?'50':'5';if(role==='halfAdmin')luckInput.value=String(settings.roleLuck?.[uid]||1);}
  const title=$('adminPanel')?.querySelector('h2');if(title)title.textContent=role==='admin'?'👑 Hauptadmin-Panel':role==='halfAdmin'?'🛡️ Halb-Admin-Panel':'🛡️ Viertel-Admin-Panel';
 }
 
@@ -386,7 +532,15 @@ async function saveMessageMen(){
  $('messageManCode1').value='';$('messageManCode2').value='';msg('adminMsg','Message-Man-Codes gespeichert. Die Spieler können ihren Code selbst eingeben.');
 }
 async function resolveTargets(scope,targetName){
- const all=(await get(path('players'))).val()||{};if(scope==='global')return Object.entries(all);
+ const all=(await get(path('players'))).val()||{};
+ if(scope==='global')return Object.entries(all);
+ if(scope==='random'){
+  if(role!=='admin'||!isOwner||settings.adminAbuseActive!==true)throw new Error('Zufällige Empfängerauswahl ist nur für den Hauptadmin während Admin Abuse verfügbar.');
+  const online=(await get(path('online'))).val()||{};
+  const candidates=Object.keys(online).filter(id=>id!==uid&&all[id]).map(id=>[id,all[id]]);
+  if(!candidates.length)throw new Error('Es ist kein anderer Spieler online.');
+  return [candidates[Math.floor(Math.random()*candidates.length)]];
+ }
  const n=clean(targetName).toLowerCase();if(!n)throw new Error('Bitte einen Spielernamen eingeben.');
  const f=Object.entries(all).find(([id,p])=>(p.name||'').toLowerCase()===n);if(!f)throw new Error('Spieler nicht gefunden.');return [f];
 }
@@ -396,7 +550,7 @@ async function sendGift(){
   if(id==='football'&&($('giftScope').value==='global'||settings.footballTokenOwner||amount!==1))throw new Error('Football Token kann nur einmal im gesamten Spiel vergeben werden. Wähle einen einzelnen Spieler und Menge 1.');
   if(role==='special'){if(targets.length!==1||targets[0][0]===uid)throw new Error('Wähle einen anderen einzelnen Spieler.');if(Number(player.inventory?.[id]||0)<amount)throw new Error('Du besitzt nicht genug davon.');const inv={...(player.inventory||{})};inv[id]-=amount;await update(path('players/'+uid),{inventory:inv});}
   for(const [idTarget] of targets)await awardPrizeTo(idTarget,id,amount);
-  msg('giftMsg','Geschenk erfolgreich gesendet.');if(role==='admin'&&$('giftPublic').checked)await addActivity('Owner hat Geschenke verteilt.');renderInventory();
+  msg('giftMsg',$('giftScope').value==='random'?'Zufällig ausgewählt: '+(targets[0][1].name||'Spieler')+'. Geschenk gesendet.':'Geschenk erfolgreich gesendet.');if(role==='admin'&&$('giftPublic').checked)await addActivity('Owner hat Geschenke verteilt.');renderInventory();
  }catch(e){msg('giftMsg',e.message)}
 }
 async function grantTokens(){
@@ -405,17 +559,16 @@ async function grantTokens(){
   const id=$('awardPrize').value,amount=Math.max(1,Math.min(50,Number($('awardAmount').value)||1)),targets=await resolveTargets($('awardScope').value,$('awardTarget').value);
   if(id==='football'&&($('awardScope').value==='global'||settings.footballTokenOwner||amount!==1))throw new Error('Football Token darf nur einmal insgesamt und nur an einen einzelnen Spieler vergeben werden.');
   for(const [target] of targets)await awardPrizeTo(target,id,amount);
-  msg('adminMsg','Token an '+targets.length+' Spieler vergeben.');if($('awardPublic').checked)await addActivity('Owner hat Tokens vergeben.');
+  msg('adminMsg',$('awardScope').value==='random'?'Zufällig ausgewählt: '+(targets[0][1].name||'Spieler')+'. Token vergeben.':'Token an '+targets.length+' Spieler vergeben.');if($('awardPublic').checked)await addActivity('Owner hat Tokens vergeben.');
  }catch(e){msg('adminMsg',e.message)}
 }
 async function startEvent(type){
  const quarter=['hacker','unicorn','galaxy','diamond','robot'];const half=['cube','hacker','unicorn','galaxy','diamond','robot','school'];if(role==='quarterAdmin'&&!quarter.includes(type))return msg('adminMsg','Dieses Event darfst du als Viertel-Admin nicht starten.');if(role==='halfAdmin'&&!half.includes(type))return msg('adminMsg','Dieses Event darfst du als Halb-Admin nicht starten.');if(!['admin','quarterAdmin','halfAdmin'].includes(role))return msg('adminMsg','Keine Berechtigung.');
- const now=Date.now();const completed={...(settings.completedEvents||{})};
- if(NEW_EVENT_TYPES.includes(type)){completed[type]=true;await update(path('settings'),{completedEvents:completed});}
+ const now=Date.now();
  if(type==='lasertag')await set(path('events/laserPlayers'),{});await set(path('events'),{active:type,startedAt:now,runId:String(now)});
  msg('adminMsg',(EVENT_INFO[type]?.[0]||type)+' gestartet.');
 }
-async function stopEvent(){const completed={...(settings.completedEvents||{})};if(eventState.active==='skibidi'){completed.skibidi=true;await update(path('settings'),{completedEvents:completed});}await set(path('events'),{active:null,startedAt:Date.now(),runId:String(Date.now())});msg('adminMsg','Event gestoppt. Neue Tokens sind nach dem Skibidi-Event jetzt freigeschaltet.');}
+async function stopEvent(){const completed={...(settings.completedEvents||{})};const skibidiDone=eventState.active==='skibidi';if(skibidiDone){completed.skibidi=true;await update(path('settings'),{completedEvents:completed});settings.completedEvents=completed;}await set(path('events'),{active:null,startedAt:Date.now(),runId:String(Date.now())});msg('adminMsg',skibidiDone?'Skibidi-Event beendet. Die freigeschalteten Tokens sind jetzt verfügbar.':'Event gestoppt.');}
 async function adminAnnouncement(){
  const textValue=$('announcementText').value.trim();if(!textValue)return msg('adminMsg','Bitte eine Nachricht schreiben.');
  if(!['admin','quarterAdmin','halfAdmin'].includes(role))return msg('adminMsg','Keine Berechtigung.');const targets=await resolveTargets($('announcementScope').value,$('announcementTarget').value),a={text:textValue,at:Date.now(),sender:role==='admin'?'OWNER':(roleName||name)};
@@ -426,7 +579,7 @@ async function spawnGalaxy(){
  if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Galaxy-Truhen spawnen.');
  const amount=Math.max(1,Math.min(100,Number($('galaxyAmount').value)||1)),targets=await resolveTargets($('galaxyScope').value,$('galaxyTarget').value);
  for(const [id,p] of targets)await update(path('players/'+id),{pendingGalaxy:Number(p.pendingGalaxy||0)+amount});
- if($('galaxyPublic').checked)await addActivity('Owner hat Galaxy-Truhen gespawnt.');msg('adminMsg','Galaxy-Truhe(n) vorgemerkt. Sie erscheinen in der nächsten Runde.');
+ if($('galaxyPublic').checked)await addActivity('Owner hat Galaxy-Truhen gespawnt.');msg('adminMsg',$('galaxyScope').value==='random'?'Zufällig ausgewählt: '+(targets[0][1].name||'Spieler')+'. Galaxy-Truhe(n) erscheinen in der nächsten Runde.':'Galaxy-Truhe(n) vorgemerkt. Sie erscheinen in der nächsten Runde.')
 }
 async function resetData(){
  if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Spieler zurücksetzen.');
@@ -436,31 +589,186 @@ async function resetData(){
  if(scope==='global'){await remove(path('settings/footballTokenOwner'));await update(path('settings'),{completedEvents:{}});}else if(settings.footballTokenOwner===targets[0][0]){await remove(path('settings/footballTokenOwner'));}
  msg('adminMsg','Zurückgesetzt: '+targets.length+' Spieler.');
 }
+async 
+async function renderThemedEventMiniGame(type,run,body,result,status,claim,win){
+ const configs={
+  pirate:{mode:'map',title:'🗺️ SCHATZKARTE',prompt:'Finde das X auf der Schatzkarte. Du hast genau einen Versuch.'},
+  carnival:{mode:'reaction',title:'🎪 JAHRMARKT-REAKTION',prompt:'Warte auf das grüne Signal und tippe dann so schnell wie möglich!'},
+  ninja:{mode:'sequence',title:'🥷 NINJA-MERKTEST',prompt:'Merke dir die Ninja-Zeichen und wiederhole ihre Reihenfolge.',symbols:['🥷','🌙','⭐'],sequence:[1,0,2]},
+  toy:{mode:'order',title:'🧸 SPIELZEUG ZUSAMMENBAUEN',prompt:'Setze das Spielzeug in der richtigen Reihenfolge zusammen.',symbols:['🛞 Räder','🧩 Körper','🚗 Fertig'],sequence:[1,0,2]},
+  crystal:{mode:'quiz',title:'💎 KRISTALL-PRÜFUNG',prompt:'Welcher Kristall ist für seine violette Farbe bekannt?',symbols:['Amethyst','Rubin','Smaragd'],correct:0},
+  wildwest:{mode:'reaction',title:'🤠 WILDER-WESTEN-DUELL',prompt:'Warte auf LOS! Tippe nicht vorher.'},
+  bakery:{mode:'order',title:'🥐 BACKSTUBE',prompt:'Bringe die Schritte in die richtige Reihenfolge.',symbols:['🔥 Backen','🥣 Teig mischen','🍞 Servieren'],sequence:[1,0,2]},
+  comic:{mode:'order',title:'💥 COMIC-STORY',prompt:'Ordne die drei Comic-Bilder: Anfang, Überraschung, Ende.',symbols:['🏁 Ende','📖 Anfang','💥 Überraschung'],sequence:[1,2,0]},
+  safari:{mode:'quiz',title:'🦁 SAFARI-SPUR',prompt:'Welches Tier ist besonders gut an das Leben in der Savanne angepasst?',symbols:['Giraffe','Eisbär','Pinguin'],correct:0},
+  cyber:{mode:'sequence',title:'🖥️ CYBER-CODE',prompt:'Merke dir die Ziffernfolge und tippe sie nach.',symbols:['0','1','0','1'],sequence:[1,0,1,0]},
+  wizard:{mode:'order',title:'🧙 ZAUBERTRANK',prompt:'Mische die Zutaten in der angezeigten Reihenfolge.',symbols:['✨ Zauberstaub','🌙 Mondwasser','🧪 Trank'],sequence:[1,0,2]},
+  moon:{mode:'order',title:'🌙 MONDPHASEN',prompt:'Ordne den Ablauf: Neumond, Halbmond, Vollmond.',symbols:['🌕 Vollmond','🌑 Neumond','🌓 Halbmond'],sequence:[1,2,0]},
+  arcade:{mode:'reaction',title:'🕹️ ARCADE-REAKTION',prompt:'Warte auf START und tippe dann so schnell du kannst!'},
+  samurai:{mode:'sequence',title:'🥷 SAMURAI-MERKTEST',prompt:'Merke dir die Schwert-Kombination und wiederhole sie.',symbols:['⚔️','🛡️','🌸'],sequence:[0,2,1]},
+  stoneage:{mode:'order',title:'🪨 STEINZEIT-WERKSTATT',prompt:'Wähle die Schritte zum Werkzeug in der richtigen Reihenfolge.',symbols:['🪵 Griff befestigen','🪨 Stein auswählen','🛠️ Werkzeug fertig'],sequence:[1,0,2]},
+  masquerade:{mode:'quiz',title:'🎭 MASKENBALL',prompt:'Welches Detail gehört typischerweise zu einer Maske für einen Maskenball?',symbols:['Augenausschnitte','Schwimmflossen','Autoreifen'],correct:0},
+  science:{mode:'order',title:'🧪 LABOR-CHALLENGE',prompt:'Ordne die Schritte eines einfachen Experiments.',symbols:['📊 Ergebnis notieren','🧫 Versuch durchführen','❓ Frage stellen'],sequence:[2,1,0]},
+  luxury:{mode:'sequence',title:'👑 LUXUS-MEMORY',prompt:'Merke dir die Edelstein-Reihenfolge und wiederhole sie.',symbols:['💎','👑','✨'],sequence:[2,0,1]},
+  rainbow:{mode:'sequence',title:'🌈 REGENBOGEN-MEMORY',prompt:'Merke dir die Farben und tippe sie in derselben Reihenfolge.',symbols:['🔴','🟡','🔵'],sequence:[0,2,1]},
+  timemachine:{mode:'order',title:'⏰ ZEITMASCHINE',prompt:'Ordne die Ereignisse vom ältesten zum neuesten.',symbols:['📱 Smartphone-Zeit','🏰 Mittelalter','🚂 Eisenbahn-Zeit'],sequence:[1,2,0]},
+  multiverse:{mode:'pick',title:'🌌 MULTIVERSUM-PORTALE',prompt:'Wähle eines der drei Universen. Nur ein Portal führt zum Geschenk.'},
+  football:{mode:'goal',title:'⚽ ELFMETER-CHALLENGE',prompt:'Der Torwart deckt eine Ecke ab. Wähle eine der anderen beiden Ecken.'},
+  dinosaur:{mode:'quiz',title:'🦖 DINOSAURIER-WISSEN',prompt:'Welcher Dinosaurier war ein Pflanzenfresser?',symbols:['Triceratops','Tyrannosaurus Rex','Velociraptor'],correct:0},
+  candy:{mode:'pick',title:'🍬 CANDY-BOX',prompt:'Wähle eine Süßigkeiten-Überraschung.'},
+  castle:{mode:'sequence',title:'🏰 ZUGBRÜCKEN-CODE',prompt:'Merke dir das Muster der Burgwachen und wiederhole es.',symbols:['🛡️','🔑','🏰'],sequence:[2,1,0]},
+  space:{mode:'quiz',title:'🚀 WELTRAUM-TEST',prompt:'Welcher Planet ist der größte in unserem Sonnensystem?',symbols:['Mars','Jupiter','Venus'],correct:1},
+  ghost:{mode:'sequence',title:'👻 GEISTER-MUSTER',prompt:'Merke dir die Geisterzeichen und tippe sie erneut.',symbols:['👻','🌙','✨'],sequence:[0,2,1]},
+  winter:{mode:'quiz',title:'❄️ WINTER-WISSEN',prompt:'Bei welcher Temperatur gefriert Wasser ungefähr?',symbols:['0 °C','20 °C','50 °C'],correct:0},
+  egypt:{mode:'order',title:'🐪 PYRAMIDEN-BAU',prompt:'Ordne die Schritte vom Fundament bis zur Spitze.',symbols:['🔺 Spitze','🧱 Fundament','🪨 Mittlere Steine'],sequence:[1,2,0]},
+  superhero:{mode:'reaction',title:'🦸 HELDEN-ALARM',prompt:'Die Stadt braucht Hilfe! Warte auf den Alarm und reagiere.'},
+  racing:{mode:'reaction',title:'🏎️ STARTSIGNAL-RENNEN',prompt:'Warte auf das Startsignal und tippe sofort.'},
+  dragon:{mode:'pick',title:'🐉 DRACHEN-EI',prompt:'Wähle eines der drei Dracheneier.'},
+  music:{mode:'sequence',title:'🎵 RHYTHMUS-MERKTEST',prompt:'Merke dir den Beat und wiederhole ihn.',symbols:['👏','⏸️','👏'],sequence:[0,1,0]},
+  mystery:{mode:'pick',title:'🎭 GEHEIMNISVOLLE TÜREN',prompt:'Hinter einer Tür wartet dein Geschenk. Wähle eine!'}
+ };
+ const cfg=configs[type];if(!cfg)return false;
+ const secretRef=path('players/'+uid+'/eventChallengeData/'+type+'/'+run);
+ const generated={mapSafe:Math.floor(Math.random()*9),pickSafe:Math.floor(Math.random()*3),keeper:Math.floor(Math.random()*3)};
+ const secretTx=await runTransaction(secretRef,v=>v||generated);
+ const challengeSecret=secretTx.snapshot.val()||generated;
+ const heading=document.createElement('h3');heading.textContent=cfg.title;body.append(heading);
+ const prompt=document.createElement('p');prompt.textContent=cfg.prompt;body.append(prompt);
+ const board=document.createElement('div');board.className='row';board.style.cssText='display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0';body.append(board);
+ let started=false,finished=false,progress=0,sequenceTimer=null;
+ const makeButton=(label,fn)=>{const b=document.createElement('button');b.className='secondary';b.textContent=label;b.onclick=fn;board.append(b);return b;};
+ const disable=()=>board.querySelectorAll('button').forEach(b=>b.disabled=true);
+ async function begin(){if(started)return true;started=true;if(!await claim()){finished=true;disable();status.textContent='Dein Versuch für dieses Event wurde bereits benutzt.';return false;}return true;}
+ async function finish(ok,label){
+  if(finished)return;finished=true;disable();
+  if(ok)await win(label||'Event-Challenge geschafft');
+  else result.textContent='❌ Nicht geschafft – dein Versuch ist verbraucht.';
+  status.textContent='Die Challenge ist beendet.';
+ }
+ if(cfg.mode==='map'){
+  const safe=Number(challengeSecret.mapSafe);
+  for(let i=0;i<9;i++){const n=i;makeButton('🟫 '+(i+1),async()=>{if(!await begin())return;await finish(n===safe,n===safe?'Schatz gefunden!':'');});}
+ }else if(cfg.mode==='pick'){
+  const safe=Number(challengeSecret.pickSafe);
+  const labels=type==='multiverse'?['💎 Kristallwelt','🤖 Roboterwelt','🐉 Drachenwelt']:type==='candy'?['🍭 Lolli','🍫 Schokolade','🍬 Bonbons']:type==='dragon'?['🔥 Feuerdrache','❄️ Eisdrache','⚡ Sturmdrache']:['🚪 Tür 1','🚪 Tür 2','🚪 Tür 3'];
+  labels.forEach((label,i)=>makeButton(label,async()=>{if(!await begin())return;await finish(i===safe,'Die richtige Wahl getroffen!');}));
+ }else if(cfg.mode==='goal'){
+  const keeper=Number(challengeSecret.keeper),lanes=['⬅️ LINKS','⬆️ MITTE','➡️ RECHTS'];
+  lanes.forEach((label,i)=>makeButton(label,async()=>{if(!await begin())return;await finish(i!==keeper,'TOOOR! Elfmeter verwandelt!');}));
+ }else if(cfg.mode==='reaction'){
+  let armed=false,readyAt=0,timer=null;
+  const b=makeButton('BEREIT',()=>{});
+  b.onclick=async()=>{
+   if(finished)return;
+   if(!armed){if(!await begin())return;armed=true;b.disabled=true;b.textContent='⏳ WARTEN …';timer=setTimeout(()=>{if(finished)return;readyAt=Date.now();b.disabled=false;b.textContent='🟢 JETZT!';},900+Math.floor(Math.random()*1900));return;}
+   if(!readyAt){clearTimeout(timer);await finish(false,'');return;}
+   const delay=Date.now()-readyAt;await finish(delay<=900,'Perfekte Reaktion!');
+  };
+  status.textContent='Zu frühes Tippen zählt als Fehlversuch. Nach dem Signal hast du 0,9 Sekunden.';
+ }else if(cfg.mode==='quiz'){
+  cfg.symbols.forEach((v,i)=>makeButton(v,async()=>{if(!await begin())return;await finish(i===cfg.correct,'Richtig beantwortet!');}));
+ }else{
+  const symbols=cfg.symbols,seq=cfg.sequence;
+  const reveal=document.createElement('div');reveal.className='hint';reveal.textContent=seq.map(i=>symbols[i]).join('  →  ');body.append(reveal);
+  const buttons=[];
+  symbols.forEach((v,i)=>buttons.push(makeButton(v,async()=>{
+   if(finished||reveal.dataset.ready!=='yes')return;
+   if(!await begin())return;
+   if(i!==seq[progress]){await finish(false,'');return;}
+   progress++;status.textContent='Richtig! '+progress+' / '+seq.length;
+   if(progress===seq.length)await finish(true,'Reihenfolge geschafft!');
+  })));
+  buttons.forEach(b=>b.disabled=true);
+  sequenceTimer=setTimeout(()=>{if(finished)return;reveal.textContent='Jetzt bist du dran!';reveal.dataset.ready='yes';buttons.forEach(b=>b.disabled=false);},2400);
+  status.textContent='Schau dir die Reihenfolge an. Danach wird sie ausgeblendet.';
+ }
+ return true;
+}
+
 async function renderEventChallenge(){
- const type=eventState.active,available=['unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type);
+ const type=eventState.active,available=['pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine','unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type);
  show('eventChallengePanel',available);if(!available||!uid)return;
  const body=$('eventChallengeBody');body.innerHTML='';$('eventChallengeTitle').textContent=EVENT_INFO[type]?.[0]||'Event';
  const descriptions={unicorn:'Wähle deinen Einhorn-Drop. Jeder Spieler kann pro Event einmal eine Belohnung erhalten.',cube:'Löse das Rätsel. Ein Versuch pro Event.',skibidi:'Klicke dich durch fünf Boss-Stufen. Jeder Boss hat einen eigenen Timer von zwei Minuten.',godzilla:'Sieh den Videoclip. Er stoppt mitten im Kampf. Danach tippst du einmal auf Godzilla oder Kong.',time:'Wähle einmal Vergangenheit, Gegenwart oder Zukunft.',school:'Beantworte die Schulfrage. Richtig: normales Geschenk. Falsch: nichts.',lava:'Wähle eine von drei Lava-Kisten. Ein Versuch.',alien:'Löse das Alien-Rätsel. Ein Versuch.',ocean:'Wähle eine Schatztruhe aus dem Ozean.',zombie:'Beantworte die Zombie-Frage.',multiverse:'Wähle dein Universum.',football:'Beantworte die Fußballfrage.',dinosaur:'Erkenne den Dinosaurier.',candy:'Wähle eine Süßigkeiten-Überraschung.',castle:'Löse das Burg-Rätsel.',space:'Wähle einen Planeten.',ghost:'Löse das Geister-Rätsel.',winter:'Beantworte die Winterfrage.',egypt:'Löse das Pyramiden-Rätsel.',superhero:'Wähle deine Helden-Mission.',racing:'Starte dein kurzes Reaktionsrennen.',dragon:'Wähle einen Drachentyp.',music:'Erkenne die Musikrichtung anhand eines Rhythmus-Musters.',mystery:'Wähle eine geheimnisvolle Tür.'};
- $('eventChallengeDescription').textContent=descriptions[type]||'Event-Aktion';
+ $('eventChallengeDescription').textContent=descriptions[type]||EVENT_INFO[type]?.[0]+' – '+({pirate:"Finde die richtige Schatzinsel.",carnival:"Wähle ein Jahrmarkt-Spiel.",ninja:"Prüfe deine Ninja-Reaktion.",toy:"Setze das Spielzeug richtig zusammen.",crystal:"Wähle den passenden Kristall.",wildwest:"Löse die Wildwest-Aufgabe.",bakery:"Wähle die richtige Backzutat.",comic:"Entscheide, wie die Comicgeschichte weitergeht.",safari:"Ordne das Tier seinem Lebensraum zu.",cyber:"Knacke den kleinen Code.",wizard:"Wähle den passenden Zauberspruch.",moon:"Finde die richtige Mond-Antwort.",arcade:"Schaffe die Arcade-Challenge.",samurai:"Wähle den richtigen Weg.",stoneage:"Löse die Steinzeit-Aufgabe.",masquerade:"Erkenne die richtige Maske.",science:"Beantworte die Laborfrage.",luxury:"Wähle das Luxus-Geheimnis.",rainbow:"Merke dir die Farbreihenfolge.",timemachine:"Ordne die Ereignisse zeitlich."}[type]||'Event-Aktion');
  const result=document.createElement('div');result.className='challenge-result';const status=document.createElement('div');status.className='hint';
  const run=String(eventState.runId||eventState.startedAt||'x');
  const claimPath='players/'+uid+'/eventClaims/'+type+'/'+run;
  async function claim(){const token=String(Date.now())+Math.random();const tx=await runTransaction(path(claimPath),v=>v||{token,at:Date.now()});return tx.committed&&tx.snapshot.val()?.token===token;}
  async function win(label){const prize=await rollAndAward(uid,1,'Event');result.textContent=prize?label+' – '+prize.name+'!':label+' – Niete!';await addActivity('hat am '+(EVENT_INFO[type]?.[0]||'Event')+' teilgenommen.');}
+ function addRadarButton(id,label,reveal){if(Number(player.shopItems?.[id]||0)<=0)return;const radar=document.createElement('button');radar.className='secondary';radar.textContent=label;radar.onclick=async()=>{radar.disabled=true;if(await consumeShopItem(id)){status.textContent=reveal;}else{radar.disabled=false;status.textContent='Der Radar konnte nicht verwendet werden.';}};body.append(radar);}
  const already=await get(path(claimPath));if(already.exists()){status.textContent='Du hast deine einmalige Aktion in diesem Event bereits benutzt.';body.append(status);return;}
  if(type==='unicorn'){
   const b=document.createElement('button');b.textContent='🪅 PINATA EINMAL SCHLAGEN';b.onclick=async()=>{b.disabled=true;if(!await claim()){status.textContent='Schon benutzt.';return;}if(Math.random()<.5)await win('Die Pinata spuckt aus');else result.textContent='🪅 Niete!';status.textContent='Dein Schlag ist verbraucht.';};body.append(b);
  }else if(type==='cube'){
-  const q=document.createElement('p');q.textContent='Rätsel: Ich habe sechs Seiten und farbige Felder. Was bin ich?';const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT';b.onclick=async()=>{b.disabled=true;if(!await claim())return;if(['zauberwürfel','zauberwurfel','rubik cube','rubiks cube'].includes(inp.value.trim().toLowerCase()))await win('Richtig gelöst');else result.textContent='Falsch – keine Belohnung.';inp.disabled=true;};body.append(q,inp,b);
+  const q=document.createElement('p');q.textContent='Rätsel: Ich habe sechs Seiten und farbige Felder. Was bin ich?';const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT';let claimed=false,remixUsed=false;b.onclick=async()=>{
+   if(b.disabled)return;
+   if(!claimed){b.disabled=true;if(!await claim()){status.textContent='Dein Versuch wurde bereits benutzt.';return;}claimed=true;b.disabled=false;}
+   const answer=inp.value.trim().toLowerCase();
+   if(['zauberwürfel','zauberwurfel','rubik cube','rubiks cube'].includes(answer)){b.disabled=true;inp.disabled=true;await win('Richtig gelöst');}
+   else if(!remixUsed&&Number(player.shopItems?.magic_remix||0)>0&&confirm('MAGIC REMIX verwenden und noch einmal versuchen?')){
+    if(await consumeShopItem('magic_remix')){remixUsed=true;result.textContent='🧊 MAGIC REMIX aktiviert – ein zweiter Versuch!';inp.value='';inp.focus();}
+    else{b.disabled=true;inp.disabled=true;result.textContent='MAGIC REMIX konnte nicht verwendet werden.';}
+   }else{b.disabled=true;inp.disabled=true;result.textContent='Falsch – keine Belohnung.';}
+  };body.append(q,inp,b);
  }else if(type==='time'){
-  const q=document.createElement('p');q.textContent='Wähle deine Zeitreise:';body.append(q);
-  ['Vergangenheit','Gegenwart','Zukunft'].forEach(v=>{const b=document.createElement('button');b.className='secondary';b.textContent=v;b.onclick=async()=>{body.querySelectorAll('button').forEach(x=>x.disabled=true);if(await claim()){if(Math.random()<.45)await win('Zeitreise erfolgreich');else result.textContent='⏳ Niete – keine Belohnung.';}};body.append(b)});
+  renderTimeTravel(body,result,status,claim,win);
  }else if(type==='school'){
-  const q=document.createElement('p');q.textContent='Wie viele Spieler einer Mannschaft stehen normalerweise gleichzeitig auf dem Fußballfeld?';const inp=document.createElement('input');inp.placeholder='Antwort als Zahl';const b=document.createElement('button');b.textContent='ANTWORT ABSENDEN';b.onclick=async()=>{b.disabled=true;if(await claim()){if(inp.value.trim()==='11')await win('Richtig');else result.textContent='Falsch – kein Geschenk.';}};body.append(q,inp,b);
+  const q=document.createElement('p');q.textContent='Wie viele Spieler einer Mannschaft stehen normalerweise gleichzeitig auf dem Fußballfeld?';const inp=document.createElement('input');inp.placeholder='Antwort als Zahl';const b=document.createElement('button');b.textContent='ANTWORT ABSENDEN';let claimed=false;b.onclick=async()=>{if(!claimed){b.disabled=true;if(!await claim()){status.textContent='Dein Versuch wurde bereits benutzt.';return;}claimed=true;b.disabled=false;}if(inp.value.trim()==='11'){b.disabled=true;inp.disabled=true;await win('Richtig');}else if(Number(player.shopItems?.golden_report_card||0)>0&&confirm('📘 GOLDENE ZEUGNISNOTE verwenden und deine Antwort einmal neu prüfen?')){if(await consumeShopItem('golden_report_card')){result.textContent='📘 Goldene Zeugnisnote aktiviert – du darfst deine Antwort einmal ändern.';status.textContent='Ein zweiter Antwortversuch ist freigeschaltet.';inp.value='';inp.focus();}else{b.disabled=true;inp.disabled=true;result.textContent='Falsch – kein Geschenk.';}}else{b.disabled=true;inp.disabled=true;result.textContent='Falsch – kein Geschenk.';}};body.append(q,inp,b);
  }else if(type==='lava'){
-  const q=document.createElement('p');q.textContent='Wähle genau eine Lava-Kiste:';body.append(q);for(let i=1;i<=3;i++){const b=document.createElement('button');b.className='secondary';b.textContent='🌋 Kiste '+i;b.onclick=async()=>{body.querySelectorAll('button').forEach(x=>x.disabled=true);if(await claim()){if(Math.random()<1/3)await win('Kiste geöffnet');else result.textContent='🌋 Niete!';}};body.append(b)}
+  const q=document.createElement('p');q.textContent='Wähle genau eine Lava-Kiste:';body.append(q);for(let i=1;i<=3;i++){const b=document.createElement('button');b.className='secondary';b.textContent='🌋 Kiste '+i;b.onclick=async()=>{body.querySelectorAll('button').forEach(x=>x.disabled=true);if(await claim()){if(Math.random()<1/3)await win('Kiste geöffnet');else if(Number(player.shopItems?.lava_shield||0)>0&&confirm('LAVA SHIELD verwenden und dich einmal retten?')){if(await consumeShopItem('lava_shield'))await win('LAVA SHIELD hat dich gerettet');else result.textContent='🌋 Niete!';}else result.textContent='🌋 Niete!';}};body.append(b)}
  }else if(type==='alien'){
-  const q=document.createElement('p');q.textContent='Welcher Planet wird auch der Rote Planet genannt?';const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT ABSENDEN';b.onclick=async()=>{b.disabled=true;if(await claim()){if(inp.value.trim().toLowerCase()==='mars')await win('Rätsel gelöst');else result.textContent='Falsch – kein Geschenk.';}};body.append(q,inp,b);
+  const q=document.createElement('p');q.textContent='Welcher Planet wird auch der Rote Planet genannt?';const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT ABSENDEN';b.onclick=async()=>{b.disabled=true;if(await claim()){if(inp.value.trim().toLowerCase()==='mars')await win('Rätsel gelöst');else result.textContent='Falsch – kein Geschenk.';}};body.append(q,inp,b);addRadarButton('alien_radar','👽 ALIEN RADAR VERWENDEN','👽 Alien Radar: Der gesuchte Planet ist Mars.');
+ }else if(type==='ocean'){
+  const intro=document.createElement('p');intro.textContent='Öffne bis zu drei Schatztruhen. Vielleicht findest du einen Schatz oder sogar den goldenen Hai!';body.append(intro);
+  const chestStatus=document.createElement('div');chestStatus.className='hint';body.append(chestStatus);
+  const lootRef=path('players/'+uid+'/oceanLoot/'+run);
+  const generated={chests:Array.from({length:3},()=>({golden:false,gift:Math.random()<0.55}))};
+  if(Math.random()<0.06)generated.chests[Math.floor(Math.random()*3)]={golden:true,gift:true};
+  const lootTx=await runTransaction(lootRef,v=>v||generated);
+  const loot=lootTx.snapshot.val()||generated;
+  const radar=document.createElement('button');radar.className='secondary';radar.textContent='🦪 PEARL RADAR VERWENDEN';
+  radar.onclick=async()=>{radar.disabled=true;if(await consumeShopItem('pearl_radar')){const target=loot.chests.findIndex(c=>c.golden);const fallback=loot.chests.findIndex(c=>c.gift);chestStatus.textContent=target>=0?'🦈 Pearl Radar: Der goldene Hai ist bei Schatztruhe '+(target+1)+'!':fallback>=0?'🦪 Pearl Radar: Bei Schatztruhe '+(fallback+1)+' liegt ein Geschenk.':'🫧 Der Radar findet heute keinen Schatz.';}else{radar.disabled=false;chestStatus.textContent='Kein Pearl Radar im Inventar.';}};
+  if(Number(player.shopItems?.pearl_radar||0)>0)body.append(radar);
+  let openedChests=0;
+  for(let n=1;n<=3;n++){
+   const chest=document.createElement('button');chest.className='secondary';chest.textContent='🫧 SCHATZTRUHE '+n;
+   chest.onclick=async()=>{
+    chest.disabled=true;
+    const token=String(Date.now())+Math.random();
+    const tx=await runTransaction(path('players/'+uid+'/eventClaims/ocean/'+run+'/chest_'+n),v=>v||{token,at:Date.now()});
+    if(!tx.committed||tx.snapshot.val()?.token!==token){chestStatus.textContent='Diese Schatztruhe wurde bereits geöffnet.';return;}
+    openedChests++;chest.textContent='📭 TRUHE '+n+' GEÖFFNET';
+    const reward=loot.chests[n-1]||{gift:false,golden:false};
+    if(reward.golden)chestStatus.textContent='🦈 DER GOLDENE HAI!';else if(reward.gift)chestStatus.textContent='🎁 Du hast einen Schatz gefunden!';else chestStatus.textContent='🫧 Nur Luftblasen – Niete!';
+    if(reward.gift)await win(reward.golden?'Goldener Hai entdeckt':'Schatz gefunden');
+    if(openedChests>=3){chestStatus.textContent+=' Alle drei Truhen sind geöffnet.';body.querySelectorAll('button').forEach(x=>{if(x!==radar)x.disabled=true;});}
+   };
+   body.append(chest);
+  }
+  status.textContent='Drei Truhen pro Spieler und Event-Runde. Deine Truhen-Inhalte bleiben beim Neuladen gleich.';
+ }else if(type==='zombie'){
+  const intro=document.createElement('p');intro.textContent='🧟 Die Stadt ist verlassen. Fünf Impfstoff-Fläschchen stehen bereit – aber nur eines ist das sichere Serum. Wähle genau eins!';body.append(intro);
+  const vialStatus=document.createElement('div');vialStatus.className='hint';body.append(vialStatus);
+  const lootRef=path('players/'+uid+'/zombieLoot/'+run);
+  const lootTx=await runTransaction(lootRef,v=>v||{safe:Math.floor(Math.random()*5),createdAt:Date.now()});
+  const loot=lootTx.snapshot.val()||{safe:0};
+  const detector=document.createElement('button');detector.className='secondary';detector.textContent='🧟 ZOMBIE DETECTOR VERWENDEN';
+  detector.onclick=async()=>{detector.disabled=true;if(await consumeShopItem('zombie_detector')){vialStatus.textContent='📡 Der Zombie Detector findet das sichere Serum bei Fläschchen '+(Number(loot.safe)+1)+'.';}else{detector.disabled=false;vialStatus.textContent='Du hast keinen Zombie Detector im Inventar.';}};
+  if(Number(player.shopItems?.zombie_detector||0)>0)body.append(detector);
+  const vialRow=document.createElement('div');vialRow.style.cssText='display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:12px 0';
+  for(let i=0;i<5;i++){
+   const vial=document.createElement('button');vial.className='secondary';vial.style.cssText='min-height:84px;padding:8px 3px;font-size:12px';vial.textContent='🧪\nSERUM '+(i+1);
+   vial.onclick=async()=>{
+    vialRow.querySelectorAll('button').forEach(x=>x.disabled=true);
+    if(!await claim()){vialStatus.textContent='Dein Versuch wurde bereits benutzt.';return;}
+    if(i===Number(loot.safe)){vial.textContent='✅\nSICHER';await win('Serum gefunden – Stadt gerettet');}
+    else{vial.textContent='❌\nLEER';vialStatus.textContent='Das Fläschchen war leer. Diesmal keine Belohnung.';for(let j=0;j<5;j++)if(j!==i)vialRow.children[j].textContent='🔒\nVERSCHLOSSEN';}
+    status.textContent='Dein Serum-Versuch für diese Event-Runde ist beendet.';
+   };
+   vialRow.append(vial);
+  }
+  body.append(vialRow);status.textContent='Fünf Fläschchen, ein sicheres Serum. Der Zombie Detector kann dir den richtigen Platz zeigen.';
  }else if(type==='skibidi'){
   const stages=[['Noob-Glücksrad',100],['Glücksrad',500],['Boss-Glücksrad',1000],['Hacker-Glücksrad',1500],['Divine-Glücksrad',2000]];
   if(!await claim()){status.textContent='Du hast deinen Bosskampf in diesem Event bereits benutzt.';body.append(status);return;}
@@ -472,20 +780,9 @@ async function renderEventChallenge(){
   hit.onclick=async()=>{if(finished)return;hp=Math.max(0,hp-10);if(hp===0){if(stage===4){finished=true;clearInterval(timer);hit.disabled=true;await win('Divine-Glücksrad gewonnen');return;}stage++;hp=stages[stage][1];seconds=120;}draw();};
   body.append(info,bar,hit);draw();status.textContent='Jeder Klick zieht 10 HP ab. Jede Stufe hat zwei Minuten.';
  }else if(type==='lasertag'){
-  const skins=['🔴 Rot','🔵 Blau','🟢 Grün','🟡 Gelb','🟣 Lila'];const colors=['#ff4545','#45a4ff','#54e477','#ffe34a','#c78aff'];
-  const elapsed=Math.max(0,Date.now()-Number(eventState.startedAt||Date.now()));const prep=Math.max(0,30000-elapsed),remaining=Math.max(0,300000-elapsed);
-  const intro=document.createElement('p');intro.textContent=prep>0?'Wähle in den ersten 30 Sekunden deinen Skin. Danach beginnt die Runde.':'LaserTag läuft – tippe auf FEUERN, um Punkte zu sammeln.';body.append(intro);
-  const skinSel=document.createElement('select');skins.forEach((x,i)=>{const o=document.createElement('option');o.value=i;o.textContent=x;skinSel.append(o)});body.append(skinSel);
-  const choose=document.createElement('button');choose.textContent='SKIN AUSWÄHLEN';body.append(choose);
-  const fire=document.createElement('button');fire.textContent='🔫 FEUERN';fire.disabled=prep>0;body.append(fire);
-  const board=document.createElement('div');board.className='status';body.append(board);
-  const arenaRef=path('events/laserPlayers');
-  choose.onclick=async()=>{await set(path('events/laserPlayers/'+uid),{name:'Spieler',skin:Number(skinSel.value),score:0,joinedAt:Date.now(),spectator:false});intro.textContent='Skin ausgewählt: '+skins[Number(skinSel.value)]+'.';};
-  if(!eventState.laserTimerStarted){/* Timer wird aus dem gemeinsamen Eventstart abgeleitet. */}
-  const unsub=onValue(arenaRef,snap=>{const arr=Object.entries(snap.val()||{}).map(([id,v])=>({...v,id})).sort((a,b)=>(b.score||0)-(a.score||0));board.innerHTML='<b>LIVE-RANGLISTE</b><br>'+arr.slice(0,10).map((x,i)=>(i+1)+'. '+skins[x.skin||0]+' – '+(x.score||0)+' Punkte').join('<br>')+'<br><br>Restzeit: '+Math.ceil(Math.max(0,300000-(Date.now()-Number(eventState.startedAt||Date.now())))/1000)+' Sek.';});
-  fire.onclick=async()=>{if(Date.now()-Number(eventState.startedAt||Date.now())<30000)return;const mine=(await get(path('events/laserPlayers/'+uid))).val()||{skin:Math.floor(Math.random()*5),score:0};await update(path('events/laserPlayers/'+uid),{name:'Spieler',skin:mine.skin??Math.floor(Math.random()*5),score:Number(mine.score||0)+1});result.textContent='Treffer! +1 Punkt';};
-  status.textContent='Gemeinsame Browser-Arena: 30 Sekunden Skin-Auswahl, danach 5 Minuten. Bei Gleichstand gilt Golden Point; Top 3 erhalten eine Belohnung nach Event-Ende. Das ist eine gemeinsame Punkte-Arena, keine echte 3D-Teleport-Lobby.';
-  const finish=setInterval(async()=>{if(Date.now()-Number(eventState.startedAt||Date.now())>=330000){clearInterval(finish);const arr=Object.entries((await get(arenaRef)).val()||{}).sort((a,b)=>(b[1].score||0)-(a[1].score||0));for(const [id] of arr.slice(0,3)){const prize=weightedPrize(1);if(prize)await awardPrizeTo(id,prize.id,1);}status.textContent='LaserTag beendet – Top 3 wurden belohnt.';}},2000);
+  await renderLaserTag3D(body,result,status,eventState);
+ }else if(['pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type)){
+  await renderThemedEventMiniGame(type,run,body,result,status,claim,win).catch(e=>{status.textContent='Challenge konnte nicht geladen werden: '+(e?.message||e);});
  }else if(['ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type)){
   const games={
    ocean:{q:'Welche dieser Kreaturen lebt im Meer?',a:['Delfin','Kamel','Adler'],correct:0},
@@ -503,18 +800,189 @@ async function renderEventChallenge(){
    racing:{q:'Tippe so schnell wie möglich fünfmal auf START!',a:['START'],correct:null},
    dragon:{q:'Wähle deinen Drachen:',a:['Feuerdrache','Eisdrache','Sturmdrache'],correct:null},
    music:{q:'Welches Muster hat einen gleichmäßigen Beat?',a:['Klatsch – Pause – Klatsch – Pause','Nur lange Pause','Unregelmäßiges Durcheinander'],correct:0},
-   mystery:{q:'Hinter welcher Tür steckt dein Glück?',a:['Tür 1','Tür 2','Tür 3'],correct:null}
+   mystery:{q:'Hinter welcher Tür steckt dein Glück?',a:['Tür 1','Tür 2','Tür 3'],correct:null},
+   pirate:{q:'Was markiert den Schatz auf einer Karte?',a:['X','Herz','Stern'],correct:0},
+   carnival:{q:'Womit jongliert ein Artist?',a:['Bälle','Bücher','Schuhe'],correct:0},
+   ninja:{q:'Welches Tier bewegt sich besonders leise?',a:['Katze','Elefant','Hahn'],correct:0},
+   toy:{q:'Was lässt ein Spielzeugauto rollen?',a:['Räder','Flügel','Segel'],correct:0},
+   crystal:{q:'Was ist Quarz?',a:['Mineral','Planet','Instrument'],correct:0},
+   wildwest:{q:'Wie heißt ein großer Bauernhof im Wilden Westen?',a:['Ranch','Hafen','Schloss'],correct:0},
+   bakery:{q:'Was lässt Hefeteig aufgehen?',a:['Hefe','Eis','Salz allein'],correct:0},
+   comic:{q:'Wo steht gesprochener Text im Comic?',a:['Sprechblase','Fußnote','Landkarte'],correct:0},
+   safari:{q:'Welches Tier lebt in der Savanne?',a:['Giraffe','Eisbär','Pinguin'],correct:0},
+   cyber:{q:'Welche Dezimalzahl ist binär 1010?',a:['10','8','12'],correct:0},
+   wizard:{q:'Welche Zutat passt zu einem Fantasie-Zaubertrank?',a:['Mondstaub','Asphalt','Plastik'],correct:0},
+   moon:{q:'Warum leuchtet der Mond?',a:['Er reflektiert Sonnenlicht','Er ist eine Sonne','Er brennt'],correct:0},
+   arcade:{q:'Welche Taste wird oft zum Springen genutzt?',a:['Leertaste','Esc','Druck'],correct:0},
+   samurai:{q:'Aus welchem Land stammt die Samurai-Kultur?',a:['Japan','Kanada','Brasilien'],correct:0},
+   stoneage:{q:'Woraus bestanden viele Werkzeuge in der Steinzeit?',a:['Stein','Glasfaser','Aluminiumfolie'],correct:0},
+   masquerade:{q:'Was trägt man auf einem Maskenball?',a:['Maske','Flossen','Helm'],correct:0},
+   science:{q:'Welche Formel hat Wasser?',a:['H2O','CO2','O2'],correct:0},
+   luxury:{q:'Welches Material ist ein Edelmetall?',a:['Gold','Kreide','Holz'],correct:0},
+   rainbow:{q:'Was entsteht durch Sonnenlicht und Regentropfen?',a:['Regenbogen','Schneesturm','Nebel immer'],correct:0},
+   timemachine:{q:'Welche Reihenfolge ist zeitlich richtig?',a:['1900, 2000, 2020','2020, 1900, 2000','2000, 2020, 1900'],correct:0}
   };
   const g=games[type],q=document.createElement('p');q.textContent=g.q;body.append(q);let used=false;
   if(type==='racing'){const b=document.createElement('button');b.textContent='START';let count=0;b.onclick=async()=>{if(used)return;count++;b.textContent='Noch '+(5-count)+'…';if(count>=5){used=true;b.disabled=true;if(await claim()){if(Math.random()<.65)await win('Rennen geschafft');else result.textContent='🏎️ Knapp verloren – Niete.';}}};body.append(b);status.textContent='Ein Klick zählt pro Tastendruck. Fünf Klicks beenden die Challenge.';}
   else{g.a.forEach((v,i)=>{const b=document.createElement('button');b.className='secondary';b.textContent=v;b.onclick=async()=>{if(used)return;used=true;body.querySelectorAll('button').forEach(x=>x.disabled=true);if(!await claim())return;const correct=g.correct===null?Math.random()<.5:i===g.correct;if(correct)await win('Challenge geschafft');else result.textContent='Diesmal keine Belohnung.';};body.append(b);});}
-  if(type==='multiverse'||type==='candy'||type==='superhero'||type==='dragon'||type==='mystery')status.textContent='Bei dieser Auswahl entscheidet das Event-Glück über die Belohnung.';
+  if(type==='multiverse'||type==='candy'||type==='superhero'||type==='dragon'||type==='mystery')status.textContent='Bei dieser Auswahl entscheidet das Event-Glück über die Belohnung.';if(type==='ocean')addRadarButton('pearl_radar','🦪 PEARL RADAR VERWENDEN','🦪 Pearl Radar: Die richtige Antwort ist '+g.a[g.correct]+'.');if(type==='zombie')addRadarButton('zombie_detector','🧟 ZOMBIE DETECTOR VERWENDEN','🧟 Zombie Detector: Die sichere Antwort ist '+g.a[g.correct]+'.');
  }else if(type==='godzilla'){
   renderGodzilla(body,result,status,claim,win);
  }
  body.append(result,status);
 }
 function youtubeId(url){const m=String(url||'').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);return m?m[1]:'';}
+
+let laserUnsub=null,laserFrame=0,laserRenderer=null,laserKeys={},laserCleanup=null;
+async function renderLaserTag3D(body,result,status,ev){
+ if(laserCleanup){laserCleanup();laserCleanup=null;}
+ let THREE;
+ try{THREE=await import('https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js');}
+ catch(e){status.textContent='3D-Modul konnte nicht geladen werden. Prüfe deine Internetverbindung und lade das Event neu.';return;}
+ const startAt=Number(ev.startedAt||Date.now()),skinColors=[0xff4545,0x45a4ff,0x54e477,0xffe34a,0xc78aff];
+ const wrap=document.createElement('div');wrap.style.cssText='position:relative;width:100%;height:min(62vh,520px);min-height:320px;background:#07101d;border:1px solid #3568b2;border-radius:14px;overflow:hidden';
+ const canvasHost=document.createElement('div');canvasHost.style.cssText='width:100%;height:100%';wrap.append(canvasHost);body.append(wrap);
+ const overlay=document.createElement('div');overlay.style.cssText='position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:8px;pointer-events:none;color:white;text-shadow:0 2px 4px #000;font-weight:800';wrap.append(overlay);
+ const cross=document.createElement('div');cross.textContent='+';cross.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:30px;color:#b9edff;text-shadow:0 0 8px #29aaff;pointer-events:none';wrap.append(cross);
+ const scorePanel=document.createElement('div');scorePanel.style.cssText='position:absolute;left:10px;bottom:10px;max-width:min(230px,65%);padding:9px 11px;background:rgba(3,12,25,.82);border:1px solid #4779a8;border-radius:10px;color:#fff;font-size:12px;line-height:1.55;pointer-events:none;';scorePanel.innerHTML='<b>🏆 ARENA-RANGLISTE</b><div>Warte auf Spieler …</div>';wrap.append(scorePanel);
+ const hint=document.createElement('p');hint.className='hint';hint.textContent='PC: WASD bewegen, Maus zielen, Klick/Leertaste feuern. Handy: Steuerkreuz und FEUERN. Tippe auf ARENA AKTIVIEREN für Maussteuerung.';body.append(hint);
+ const controls=document.createElement('div');controls.style.cssText='display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px';
+ const activate=document.createElement('button');activate.textContent='ARENA AKTIVIEREN';activate.className='secondary';
+ const fire=document.createElement('button');fire.textContent='🔵 FEUERN';fire.style.background='linear-gradient(90deg,#1765a8,#38b9ff)';
+ const dpad=document.createElement('div');dpad.style.cssText='display:grid;grid-template-columns:repeat(3,46px);gap:4px;justify-content:center;width:100%;margin-top:8px';
+ const directions=[['',''],['↑','forward'],['',''],['←','left'],['↓','back'],['→','right']];
+ directions.forEach(([label,key])=>{const b=document.createElement('button');b.textContent=label||' ';b.className='secondary';b.style.padding='8px';b.style.touchAction='none';if(key){b.onpointerdown=e=>{e.preventDefault();laserKeys[key]=true};b.onpointerup=b.onpointercancel=b.onpointerleave=()=>laserKeys[key]=false;}dpad.append(b);});
+ controls.append(activate,fire,dpad);body.append(controls);
+ const scene=new THREE.Scene();scene.background=new THREE.Color(0x071426);scene.fog=new THREE.Fog(0x071426,18,65);
+ const camera=new THREE.PerspectiveCamera(72,1,.1,100);camera.position.set(0,1.7,8);
+ const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;canvasHost.append(renderer.domElement);laserRenderer=renderer;
+ const resize=()=>{const w=Math.max(1,canvasHost.clientWidth),h=Math.max(1,canvasHost.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};new ResizeObserver(resize).observe(canvasHost);resize();
+ scene.add(new THREE.HemisphereLight(0xb9dcff,0x15213c,2));const light=new THREE.DirectionalLight(0xffffff,2.2);light.position.set(8,15,7);light.castShadow=true;scene.add(light);
+ const floor=new THREE.Mesh(new THREE.PlaneGeometry(60,60),new THREE.MeshStandardMaterial({color:0x182b43,roughness:.85}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+ const grid=new THREE.GridHelper(60,30,0x3271a4,0x1d3858);grid.position.y=.015;scene.add(grid);
+ const matWall=new THREE.MeshStandardMaterial({color:0x24496e,metalness:.25,roughness:.55});
+ const colliders=[];function block(x,y,z,w,h,d){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),matWall);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);colliders.push({x,z,hw:w/2+.45,hz:d/2+.45});return m;}
+ block(0,2,-30,60,4,1);block(0,2,30,60,4,1);block(-30,2,0,1,4,60);block(30,2,0,1,4,60);
+ [[-10,-9,4,3,4],[9,-8,4,3,5],[-8,10,5,3,3],[10,10,4,3,4],[0,-17,6,3,2],[0,17,6,3,2],[-18,0,3,3,7],[18,0,3,3,7]].forEach(a=>block(a[0],a[3]/2,a[1],a[2],a[3],a[4]));
+ const avatars=new Map(),ray=new THREE.Raycaster();let yaw=0,pitch=0,x=0,z=8,lives=3,score=0,lastSync=0,lastShot=0,chosen=false,ended=false,raf=0,joined=false;
+ const arenaRef=path('events/laserPlayers');
+ const playerUrl=id=>id===uid?null:id;
+ function makeAvatar(id,p){
+  const group=new THREE.Group(),skinIndex=Math.max(0,Math.min(4,Number(p.skin)||0)),color=skinColors[skinIndex];
+  const armor=new THREE.MeshStandardMaterial({color,metalness:.48,roughness:.38,emissive:color,emissiveIntensity:.1});
+  const dark=new THREE.MeshStandardMaterial({color:0x17283d,metalness:.65,roughness:.35});
+  const visor=new THREE.MeshStandardMaterial({color:0x9deaff,metalness:.35,roughness:.18,emissive:0x238dcc,emissiveIntensity:.5});
+  const pale=new THREE.MeshStandardMaterial({color:0xe9f3ff,metalness:.12,roughness:.5});
+  const part=(geo,mat,x,y,z,sx=1,sy=1,sz=1)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;m.receiveShadow=true;group.add(m);return m;};
+  if(skinIndex===0){
+   part(new THREE.CapsuleGeometry(.4,.72,4,8),armor,0,1.05,0);
+   part(new THREE.SphereGeometry(.31,16,12),dark,0,1.78,0,1,1,.95);
+   part(new THREE.SphereGeometry(.23,16,12),visor,0,1.79,-.19,1.12,.62,.5);
+   part(new THREE.BoxGeometry(.24,.18,.48),dark,-.48,1.35,0);part(new THREE.BoxGeometry(.24,.18,.48),dark,.48,1.35,0);
+   part(new THREE.BoxGeometry(.16,.42,.18),armor,-.2,.35,0);part(new THREE.BoxGeometry(.16,.42,.18),armor,.2,.35,0);
+  }else if(skinIndex===1){
+   part(new THREE.BoxGeometry(.82,.9,.42),armor,0,1.05,0);
+   part(new THREE.CylinderGeometry(.3,.34,.48,8),dark,0,1.78,0);
+   part(new THREE.BoxGeometry(.48,.16,.12),visor,0,1.82,-.24);
+   part(new THREE.BoxGeometry(.32,.3,.5),armor,-.56,1.35,0);part(new THREE.BoxGeometry(.32,.3,.5),armor,.56,1.35,0);
+   part(new THREE.CylinderGeometry(.13,.16,.48,8),dark,-.22,.35,0);part(new THREE.CylinderGeometry(.13,.16,.48,8),dark,.22,.35,0);
+   part(new THREE.BoxGeometry(.22,.14,.12),visor,0,1.05,-.24);
+  }else if(skinIndex===2){
+   part(new THREE.CapsuleGeometry(.39,.8,4,8),armor,0,1.02,0);
+   part(new THREE.SphereGeometry(.3,16,12),armor,0,1.78,0);
+   part(new THREE.ConeGeometry(.13,.38,8),armor,0,2.1,0);
+   part(new THREE.BoxGeometry(.56,.22,.48),dark,0,1.42,0);
+   part(new THREE.BoxGeometry(.22,.38,.2),armor,-.49,1.32,0);part(new THREE.BoxGeometry(.22,.38,.2),armor,.49,1.32,0);
+   part(new THREE.BoxGeometry(.16,.46,.2),dark,-.2,.32,0);part(new THREE.BoxGeometry(.16,.46,.2),dark,.2,.32,0);
+  }else if(skinIndex===3){
+   part(new THREE.CapsuleGeometry(.32,.8,4,8),armor,0,1.02,0);
+   part(new THREE.SphereGeometry(.38,16,12),armor,0,1.82,0,1,.85,1.05);
+   part(new THREE.SphereGeometry(.13,12,8),visor,-.17,1.85,-.3,1,.6,.6);part(new THREE.SphereGeometry(.13,12,8),visor,.17,1.85,-.3,1,.6,.6);
+   part(new THREE.ConeGeometry(.07,.34,8),armor,-.22,2.2,0);part(new THREE.ConeGeometry(.07,.34,8),armor,.22,2.2,0);
+   part(new THREE.BoxGeometry(.18,.44,.2),armor,-.18,.32,0);part(new THREE.BoxGeometry(.18,.44,.2),armor,.18,.32,0);
+  }else{
+   part(new THREE.CapsuleGeometry(.4,.76,4,8),dark,0,1.04,0);
+   part(new THREE.SphereGeometry(.35,16,12),armor,0,1.78,0,1,1.1,1);
+   part(new THREE.SphereGeometry(.25,16,12),dark,0,1.78,-.18,1,.72,.5);
+   part(new THREE.BoxGeometry(.42,.1,.1),visor,0,1.8,-.34);
+   part(new THREE.BoxGeometry(.28,.2,.42),armor,-.48,1.4,0);part(new THREE.BoxGeometry(.28,.2,.42),armor,.48,1.4,0);
+   part(new THREE.BoxGeometry(.18,.42,.2),dark,-.2,.34,0);part(new THREE.BoxGeometry(.18,.42,.2),dark,.2,.34,0);
+  }
+  const tagCanvas=document.createElement('canvas');tagCanvas.width=512;tagCanvas.height=128;const ctx=tagCanvas.getContext('2d');ctx.fillStyle='rgba(2,10,22,.82)';ctx.fillRect(4,4,504,120);ctx.strokeStyle='#8fd7ff';ctx.lineWidth=5;ctx.strokeRect(4,4,504,120);ctx.font='bold 42px Arial';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(String(p.name||'Spieler').slice(0,18),256,58);ctx.font='bold 30px Arial';ctx.fillStyle='#9ee5ff';ctx.fillText('♥ '+Number(p.lives??3),256,100);
+  const tag=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(tagCanvas),transparent:true,depthTest:false}));tag.position.y=2.65;tag.scale.set(3.2,.8,1);group.add(tag);group.userData.tagCanvas=tagCanvas;group.position.set(Number(p.x)||0,0,Number(p.z)||0);group.userData.uid=id;group.userData.name=String(p.name||'Spieler');group.userData.lives=Number(p.lives??3);scene.add(group);avatars.set(id,group);return group;
+ }
+ async function sync(){if(!joined||Date.now()-lastSync<180)return;lastSync=Date.now();await update(path('events/laserPlayers/'+uid),{name:name||'Spieler',skin:chosen?Number(skinSel.value):0,x,z,lives,score,active:lives>0,at:Date.now()}).catch(()=>{});}
+ const skinSel=document.createElement('select');['🛰️ SPACE TROOPER','🤖 BATTLE ROBOT','🛡️ TITAN ARMOR','👽 ALIEN RUNNER','🥷 SHADOW NINJA'].forEach((v,i)=>{const o=document.createElement('option');o.value=i;o.textContent=v;skinSel.append(o);});body.insertBefore(skinSel,wrap);
+ const previewCard=document.createElement('div');previewCard.style.cssText='display:flex;align-items:center;gap:12px;max-width:440px;margin:10px auto;padding:10px 14px;border:1px solid #4779a8;border-radius:12px;background:linear-gradient(135deg,#10243a,#07101d);color:#eaf6ff';
+ const previewHost=document.createElement('div');previewHost.style.cssText='width:150px;height:160px;flex:0 0 150px;border-radius:9px;overflow:hidden;background:radial-gradient(circle,#244a70,#07101d)';
+ const previewInfo=document.createElement('div');previewInfo.innerHTML='<b style="font-size:14px">3D-SKIN-VORSCHAU</b><div style="font-size:12px;opacity:.82;margin-top:6px">Drehe deinen Charakter in der Vorschau und wähle deinen Favoriten.</div>';
+ previewCard.append(previewHost,previewInfo);body.insertBefore(previewCard,wrap);
+ const previewScene=new THREE.Scene();previewScene.background=new THREE.Color(0x0b1b2c);previewScene.add(new THREE.HemisphereLight(0xc8e8ff,0x17243a,2.4));const previewLight=new THREE.DirectionalLight(0xffffff,2.4);previewLight.position.set(3,5,4);previewScene.add(previewLight);
+ const previewCamera=new THREE.PerspectiveCamera(35,150/160,.1,20);previewCamera.position.set(0,1.35,5.4);previewCamera.lookAt(0,1.05,0);
+ const previewRenderer=new THREE.WebGLRenderer({antialias:true,alpha:false});previewRenderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));previewRenderer.setSize(150,160,false);previewHost.append(previewRenderer.domElement);
+ let previewAvatar=null;function setPreviewSkin(index){if(previewAvatar){previewScene.remove(previewAvatar);previewAvatar.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});}previewAvatar=makeAvatar('skin-preview',{name:'VORSCHAU',skin:index,lives:3,x:0,z:0});scene.remove(previewAvatar);avatars.delete('skin-preview');previewAvatar.position.set(0,0,0);previewScene.add(previewAvatar);previewInfo.querySelector('b').textContent=['🛰️ SPACE TROOPER','🤖 BATTLE ROBOT','🛡️ TITAN ARMOR','👽 ALIEN RUNNER','🥷 SHADOW NINJA'][index];}
+ setPreviewSkin(Number(skinSel.value));skinSel.addEventListener('change',()=>setPreviewSkin(Number(skinSel.value)));
+ const join=document.createElement('button');join.textContent='SKIN WÄHLEN & BEITRETEN';join.className='secondary';body.insertBefore(join,wrap);
+ join.onclick=async()=>{
+  if(Date.now()-startAt>10000){chosen=false;joined=false;skinSel.disabled=true;join.disabled=true;hint.textContent='Die Skin-Auswahl ist vorbei. Du bist jetzt Zuschauer.';return;}
+  join.disabled=true;join.textContent='VERBINDE …';
+  const spawnPoints=[[-23,-23],[23,-23],[-23,23],[23,23],[0,-23],[0,23],[-23,0],[23,0]];
+  const spawn=spawnPoints[Math.floor(Math.random()*spawnPoints.length)];
+  const nextX=spawn[0]+(Math.random()-.5)*2,nextZ=spawn[1]+(Math.random()-.5)*2;
+  try{
+   await set(path('events/laserPlayers/'+uid),{name:name||'Spieler',skin:Number(skinSel.value),x:nextX,z:nextZ,lives:3,score:0,active:true,joinedAt:Date.now(),at:Date.now()});
+   await onDisconnect(path('events/laserPlayers/'+uid)).remove();
+   x=nextX;z=nextZ;lives=3;score=0;chosen=true;joined=true;skinSel.disabled=true;join.textContent='DU BIST IN DER ARENA';hint.textContent='Du bist in der Arena!';
+  }catch(err){
+   chosen=false;joined=false;join.disabled=false;join.textContent='ERNEUT VERSUCHEN';
+   hint.textContent='Beitritt fehlgeschlagen. Prüfe die Verbindung oder Firebase-Berechtigungen und versuche es erneut.';
+   status.textContent='LaserTag-Verbindung fehlgeschlagen: '+(err?.message||'Unbekannter Fehler');
+  }
+ };
+ function onKey(e,down){const map={KeyW:'forward',ArrowUp:'forward',KeyS:'back',ArrowDown:'back',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'fire'};const k=map[e.code];if(k){laserKeys[k]=down;if(down)e.preventDefault();}}
+ const kd=e=>onKey(e,true),ku=e=>onKey(e,false);window.addEventListener('keydown',kd);window.addEventListener('keyup',ku);
+ activate.onclick=()=>{renderer.domElement.requestPointerLock?.();};
+ document.addEventListener('mousemove',mouse);function mouse(e){if(document.pointerLockElement===renderer.domElement){yaw-=e.movementX*.0022;pitch=Math.max(-.55,Math.min(.55,pitch-e.movementY*.0018));}}let touchX=null,touchY=null;renderer.domElement.addEventListener('touchstart',e=>{touchX=e.touches[0].clientX;touchY=e.touches[0].clientY;},{passive:true});renderer.domElement.addEventListener('touchmove',e=>{if(touchX===null)return;const t=e.touches[0];yaw-=(t.clientX-touchX)*.006;pitch=Math.max(-.55,Math.min(.55,pitch-(t.clientY-touchY)*.004));touchX=t.clientX;touchY=t.clientY;},{passive:true});renderer.domElement.addEventListener('touchend',()=>{touchX=touchY=null;});
+ function fireShot(){if(!joined||lives<=0||Date.now()-startAt<10000||Date.now()-lastShot<650)return;lastShot=Date.now();camera.rotation.set(pitch,yaw,0,'YXZ');ray.setFromCamera(new THREE.Vector2(0,0),camera);const targets=[...avatars.values()].filter(a=>a.userData.uid!==uid&&a.userData.lives>0);const hits=ray.intersectObjects(targets.flatMap(a=>a.children),true);const beamEnd=hits.length?hits[0].point:camera.position.clone().add(ray.ray.direction.clone().multiplyScalar(24));const beam=new THREE.Line(new THREE.BufferGeometry().setFromPoints([camera.position.clone(),beamEnd]),new THREE.LineBasicMaterial({color:0x58caff,transparent:true,opacity:.95}));scene.add(beam);setTimeout(()=>{scene.remove(beam);beam.geometry.dispose();beam.material.dispose();},140);if(hits.length){let target=hits[0].object;while(target.parent&&!target.userData.uid)target=target.parent;const id=target.userData.uid;if(id){runTransaction(path('events/laserPlayers/'+id),v=>{if(!v||v.active===false||Number(v.lives)<=0)return undefined;return {...v,lives:Math.max(0,Number(v.lives)-1),active:Number(v.lives)-1>0,score:Number(v.score||0),lastHitAt:Date.now()};}).then(async tx=>{if(tx.committed){score++;await update(path('events/laserPlayers/'+uid),{score,at:Date.now()});result.textContent='Treffer! '+id+' hat noch '+(tx.snapshot.val()?.lives||0)+' Leben.';}}).catch(()=>{});return;}}result.textContent='Daneben!';}
+ fire.onclick=fireShot;
+ const unsub=onValue(arenaRef,snap=>{const data=snap.val()||{};for(const [id,p] of Object.entries(data)){if(id===uid){lives=Number(p.lives??lives);score=Number(p.score??score);continue;}let a=avatars.get(id);if(!a)a=makeAvatar(id,p);a.position.x=Number(p.x)||0;a.position.z=Number(p.z)||0;a.userData.lives=Number(p.lives??3);a.userData.name=String(p.name||'Spieler');const tag=a.children[a.children.length-1];if(tag?.isSprite){const ctx=a.userData.tagCanvas?.getContext('2d');if(ctx){ctx.clearRect(0,0,512,128);ctx.fillStyle='rgba(2,10,22,.82)';ctx.fillRect(4,4,504,120);ctx.strokeStyle='#8fd7ff';ctx.lineWidth=5;ctx.strokeRect(4,4,504,120);ctx.font='bold 42px Arial';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(a.userData.name.slice(0,18),256,58);ctx.font='bold 30px Arial';ctx.fillStyle='#9ee5ff';ctx.fillText('♥ '+a.userData.lives,256,100);tag.material.map.needsUpdate=true;}}a.visible=p.active!==false&&a.userData.lives>0;}const ranked=Object.entries(data).sort((a,b)=>(Number(b[1].score)||0)-(Number(a[1].score)||0)).slice(0,5);scorePanel.innerHTML='<b>🏆 ARENA-RANGLISTE</b>';ranked.forEach(([id,p],i)=>{const line=document.createElement('div');line.textContent=(i+1)+'. '+String(p.name||'Spieler').slice(0,16)+' · '+(Number(p.score)||0)+' Treffer · '+Math.max(0,Number(p.lives)||0)+' Leben';scorePanel.append(line);});const aliveCount=Object.values(data).filter(p=>p.active!==false&&Number(p.lives)>0).length;const aliveLine=document.createElement('div');aliveLine.style.cssText='margin-top:4px;color:#9ee5ff;font-weight:800';aliveLine.textContent='Noch im Spiel: '+aliveCount;scorePanel.append(aliveLine);for(const [id,a] of avatars){if(!data[id]){scene.remove(a);avatars.delete(id);}}const total=Object.keys(data).length,alive=Object.values(data).filter(p=>p.active!==false&&Number(p.lives)>0).length;if(total>=2&&alive<=1&&Date.now()-startAt>=10000&&!ended){ended=true;finishArena();}});
+ const clock=new THREE.Clock();function tick(){if(ended)return;raf=requestAnimationFrame(tick);const dt=Math.min(.05,clock.getDelta()),elapsed=Date.now()-startAt,active=joined&&lives>0;
+  if(active&&elapsed>=10000){const speed=7*dt,fx=Math.sin(yaw),fz=Math.cos(yaw),sx=Math.cos(yaw),sz=-Math.sin(yaw);let nx=x,nz=z;if(laserKeys.forward){nx-=fx*speed;nz-=fz*speed;}if(laserKeys.back){nx+=fx*speed;nz+=fz*speed;}if(laserKeys.left){nx-=sx*speed;nz-=sz*speed;}if(laserKeys.right){nx+=sx*speed;nz+=sz*speed;}nx=Math.max(-27,Math.min(27,nx));nz=Math.max(-27,Math.min(27,nz));if(!colliders.some(c=>Math.abs(nx-c.x)<c.hw&&Math.abs(nz-c.z)<c.hz)){x=nx;z=nz;}}
+  camera.position.set(x,1.7,z);camera.rotation.set(pitch,yaw,0,'YXZ');if(previewAvatar){previewAvatar.rotation.y+=dt*.8;previewRenderer.render(previewScene,previewCamera);}if(laserKeys.fire)fireShot();sync();const remaining=Math.max(0,310000-elapsed);overlay.textContent='LEBEN: '+lives+' · TREFFER: '+score+' · '+Math.ceil(remaining/1000)+'s';if(joined&&lives<=0)hint.textContent='Du bist ausgeschieden – du kannst weiter zuschauen.';if(elapsed>=310000){ended=true;finishArena();return;}renderer.render(scene,camera);
+ }
+ async function finishArena(){if(laserUnsub){laserUnsub();laserUnsub=null;}const snap=await get(arenaRef),arr=Object.entries(snap.val()||{}).filter(([,p])=>Number(p.lives)>0).sort((a,b)=>(b[1].score||0)-(a[1].score||0));const paid=await runTransaction(path('events/laserPaid/'+String(ev.runId||startAt)),v=>v===null?true:undefined);if(paid.committed){for(const [id] of arr.slice(0,3)){await awardPrizeTo(id,'diamondGift',1).catch(()=>{});}}status.textContent='LaserTag beendet. Die besten bis zu 3 Spieler erhalten je ein Diamond-Geschenk.';}
+ function cleanup(){ended=true;cancelAnimationFrame(raf);unsub();window.removeEventListener('keydown',kd);window.removeEventListener('keyup',ku);document.removeEventListener('mousemove',mouse);if(document.pointerLockElement===renderer.domElement)document.exitPointerLock();renderer.dispose();previewRenderer.dispose();previewHost.replaceChildren();laserRenderer=null;laserCleanup=null;}
+ laserCleanup=cleanup;laserUnsub=unsub;tick();status.textContent='3D-LaserTag: Wähle deinen Skin in den ersten 10 Sekunden. Jeder startet mit 3 Leben. Bleib als Letzter übrig oder sammle Treffer für die Top 3. Multiplayer benötigt aktive Firebase-Verbindung.';
+}
+
+function renderTimeTravel(body,result,status,claim,win){
+ const clips={
+  'Cristiano Ronaldo':['https://youtube.com/shorts/9N3rLlUqXS4','https://youtube.com/shorts/OpBxzZgZ6v0'],
+  'Lionel Messi':['https://youtube.com/shorts/d2KV4BPoBKY','https://youtube.com/shorts/mdbTyzu__XY'],
+  'Neymar Jr.':['https://youtube.com/shorts/rrY4sMtobGQ','https://youtube.com/shorts/t3UlZ4qY9o0']
+ };
+ const intro=document.createElement('p');intro.textContent='Wähle einen Fußball-Star. Einer seiner zwei Clips wird zufällig ausgewählt und einmal abgespielt.';body.append(intro);
+ Object.keys(clips).forEach(star=>{
+  const b=document.createElement('button');b.className='secondary';b.textContent='⏳ '+star;
+  b.onclick=async()=>{
+   body.querySelectorAll('button').forEach(x=>x.disabled=true);
+   if(!await claim()){status.textContent='Deine Zeitreise wurde bereits benutzt.';return;}
+   const url=clips[star][Math.floor(Math.random()*2)],id=youtubeId(url);
+   const frame=document.createElement('iframe');frame.width='100%';frame.height='420';frame.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';frame.allowFullscreen=true;
+   frame.src='https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&mute=1&playsinline=0&controls=1&rel=0';
+   body.append(frame);
+   const back=document.createElement('button');back.textContent='ZURÜCK ZUM EVENT';back.className='secondary';back.style.display='none';
+   const showBack=()=>{back.style.display='block';};
+   const timer=setTimeout(showBack,25000);
+   back.onclick=async()=>{clearTimeout(timer);frame.remove();back.remove();await win('Zeitreise mit '+star);};
+   body.append(back);
+   try{if(frame.requestFullscreen)await frame.requestFullscreen();}catch(e){}
+   status.textContent='Clip ausgewählt: '+star+'. Falls das Video nicht automatisch startet, tippe im Videoplayer auf Wiedergabe. Du kannst danach zum Event zurückkehren.';
+  };
+  body.append(b);
+ });
+}
+
 function renderGodzilla(body,result,status,claim,win){
  const cfg=eventState.video||settings.eventVideos?.[eventState.active]||settings.godzillaVideo||{};const id=youtubeId(cfg.url);const pause=Math.max(5,Number(cfg.pause)||45),end=Math.max(pause+5,Number(cfg.end)||120);
  if(!id){status.textContent='Der Admin muss zuerst einen gültigen YouTube-Link speichern.';return;}
@@ -560,6 +1028,61 @@ async function registerAdminRole(kind){
  msg('adminMsg',half?'Halb-Admin-Code(s) gespeichert. Die Spieler müssen nur ihren Code im Rollen-Zugang eingeben.':'Viertel-Admin-Code gespeichert. Der Spieler muss nur seinen Code im Rollen-Zugang eingeben.');
 }
 
+
+
+function renderAdminAbuseTips(data){
+ const panel=$('adminAbuseTips');if(!panel)return;
+ const active=role==='admin'&&settings.adminAbuseActive===true;
+ show('adminAbuseControl',role==='admin');
+ if(!active){panel.innerHTML='';return;}
+ const rows=Object.values(data||{}).slice(-80),texts=rows.map(x=>String(x.text||'').toLowerCase());
+ const tips=[];
+ const repeated=texts.filter((x,i)=>x&&texts.indexOf(x)!==i);
+ if(texts.some(x=>/hilfe|bug|fehler|geht nicht|funktioniert nicht/.test(x)))tips.push({level:'DRINGEND',rank:0,text:'Spieler melden möglicherweise einen Fehler. Prüfe Gerät und genaue Fehlermeldung.'});
+ if(repeated.length>=3)tips.push({level:'DRINGEND',rank:0,text:'Mehrere Nachrichten wiederholen sich. Prüfe den Chat auf Spam und moderiere bei Bedarf.'});
+ if(texts.some(x=>/unfair|zu schwer|chance|wahrscheinlichkeit/.test(x)))tips.push({level:'EMPFEHLUNG',rank:1,text:'Es gibt Rückmeldungen zu Fairness oder Gewinnchancen. Prüfe die Regeln, bevor du etwas änderst.'});
+ if(texts.some(x=>/langweilig|nichts los|wann event|welches event/.test(x)))tips.push({level:'EMPFEHLUNG',rank:1,text:'Spieler wünschen sich Aktivität. Überlege, ein passendes Event zu starten.'});
+ if(rows.length>=20)tips.push({level:'OPTIONAL',rank:2,text:'Viele Chat-Nachrichten: Eine kurze Abstimmung oder ein Überraschungs-Event könnte passen.'});
+ if(!tips.length)tips.push({level:'OPTIONAL',rank:2,text:'Noch keine auffälligen Chat-Muster. Beobachte die Unterhaltung.'});
+ tips.sort((a,b)=>a.rank-b.rank);
+ panel.innerHTML='';tips.slice(0,5).forEach(t=>{const d=document.createElement('div');d.className='item';d.textContent=t.level+' · '+t.text;panel.append(d);});
+}
+$('adminAbuseToggle').onclick=async()=>{
+ if(role!=='admin'||!isOwner)return msg('adminMsg','Nur der Hauptadmin darf Admin Abuse starten oder stoppen.');
+ const next=settings.adminAbuseActive!==true;
+ if(next){
+  const runId=String(Date.now());
+  await update(path('settings'),{adminAbuseActive:true,adminAbuseStartedAt:Date.now(),adminAbuseRunId:runId});
+  settings.adminAbuseActive=true;settings.adminAbuseRunId=runId;
+  const online=(await get(path('online'))).val()||{};
+  for(const [id,p] of Object.entries(online))await set(path('players/'+id+'/adminAbuseParticipation/'+runId),{name:p.name||'Spieler',joinedAt:p.at||Date.now()});
+ }else{
+  await update(path('settings'),{adminAbuseActive:false,adminAbuseEndedAt:Date.now()});
+  settings.adminAbuseActive=false;
+ }
+ updateHeader();
+ msg('adminAbuseStatus',next?'Admin Abuse ist aktiv. Teilnehmer werden gespeichert; Tippgeber läuft.':'Admin Abuse wurde beendet.');
+};
+// ===== LIVE CHAT =====
+function renderChat(data){
+ const el=$('chatMessages');if(!el)return;el.innerHTML='';
+ const rows=Object.entries(data||{}).sort((a,b)=>(a[1].at||0)-(b[1].at||0)).slice(-60);
+ rows.forEach(([id,m])=>{
+  const wrap=document.createElement('div');wrap.className='item';
+  const line=document.createElement('div');const who=document.createElement('b');who.textContent=(m.name||'Spieler')+': ';const body=document.createElement('span');body.textContent=m.text||'';line.append(who,body);wrap.append(line);
+  const actions=document.createElement('div');actions.className='row';
+  if(m.uid===uid){const del=document.createElement('button');del.className='secondary small';del.textContent='Eigene Nachricht löschen';del.onclick=()=>remove(path('messages/'+id)).catch(e=>msg('chatStatus','Löschen fehlgeschlagen: '+e.message));actions.append(del);}
+  const report=document.createElement('button');report.className='secondary small';report.textContent='Melden';report.onclick=()=>push(path('messageReports'),{messageId:id,reportedBy:uid,reportedName:name,text:String(m.text||'').slice(0,240),at:Date.now()}).then(()=>msg('chatStatus','Nachricht gemeldet.')).catch(e=>msg('chatStatus','Meldung fehlgeschlagen: '+e.message));actions.append(report);
+  if(role==='admin'){const delAll=document.createElement('button');delAll.className='danger small';delAll.textContent='Admin: löschen';delAll.onclick=()=>remove(path('messages/'+id)).catch(e=>msg('chatStatus',e.message));actions.append(delAll);}
+  wrap.append(actions);el.append(wrap);
+ });
+ if(!rows.length)el.textContent='Noch keine Nachrichten.';
+}
+$('chatSend').onclick=async()=>{const t=$('chatInput').value.trim();if(!uid||!t)return;try{await push(path('messages'),{uid,name,text:t.slice(0,240),at:Date.now()});$('chatInput').value='';msg('chatStatus','Nachricht gesendet.');}catch(e){msg('chatStatus','Senden fehlgeschlagen: '+e.message)}};
+$('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('chatSend').click()});
+// ===== ENDE LIVE CHAT =====
+
+
 // ===== COMEBACK GIFT =====
 let cbState=null,cbTitle='',cbBusy=false;
 function renderComeback(){
@@ -567,20 +1090,22 @@ function renderComeback(){
  show('comebackBox',!!uid&&cbState==='ready');
  let t=$('ogTitle');
  if(!t){t=document.createElement('div');t.id='ogTitle';t.style.cssText='color:var(--gold);font-weight:900;font-size:12px;letter-spacing:1px';$('hello').parentNode.insertBefore(t,$('playerMeta'));}
- t.textContent=cbTitle?'🏆 '+cbTitle:'';
+ t.textContent=(cbTitle?'🏆 '+cbTitle:'')+' '+(player&&player.comebackAccessory==='golden_comeback_cape'?'🦸 GOLDENE COMEBACK-CAPE':'');
 }
 function watchComeback(){
  unsubs.push(onValue(path('players/'+uid),s=>{const v=s.val()||{};cbState=v.comebackGift||null;cbTitle=v.title||'';renderComeback();}));
 }
 async function grantComeback(){
  if(role!=='admin'||!isOwner)return msg('cbAdminMsg','Nur der Hauptadmin darf das.');
+ if(!settings.adminAbuseRunId)return msg('cbAdminMsg','Starte zuerst den Comeback Admin Abuse. Nur gespeicherte Teilnehmer erhalten das Legendary Comeback Gift.');
  try{
-  const on=(await get(path('online'))).val()||{};let n=0,skip=0;
-  for(const id of Object.keys(on)){
+  const runId=settings.adminAbuseRunId;if(!runId)throw new Error('Es wurde noch kein Admin-Abuse-Durchlauf gestartet.');
+  const allPlayers=(await get(path('players'))).val()||{},participants=Object.entries(allPlayers).filter(([id,p])=>p.adminAbuseParticipation?.[runId]);let n=0,skip=0;
+  for(const [id] of participants){
    const tx=await runTransaction(path('players/'+id+'/comebackGift'),v=>v===null?'ready':undefined);
-   if(tx.committed){await update(path('players/'+id),{title:'OG COMEBACK PLAYER'});n++;}else skip++;
+   if(tx.committed){await update(path('players/'+id),{title:'OG COMEBACK PLAYER',comebackAccessory:'golden_comeback_cape'});n++;}else skip++;
   }
-  msg('cbAdminMsg',n+' Spieler erhalten das Gift'+(skip?', '+skip+' hatten es schon':'')+'.');
+  msg('cbAdminMsg',n+' teilnehmende Spieler erhalten das Gift'+(skip?', '+skip+' hatten es schon':'')+'.');
  }catch(e){msg('cbAdminMsg','Fehler: '+(e?.message||e));}
 }
 function openComeback(){
@@ -670,10 +1195,10 @@ async function ownerAutoRole(){
  $('roleCode').value=ownerCode;await roleCheck();$('roleCode').value='';
 }
 function askServerChange(lockIt){
- if(role!=='admin'||!isOwner)return msg('srvMsg','Nur der Hauptadmin darf den Server steuern.');
+ if(role!=='admin'||!isOwner)return msg('srvMsg','Nur der Hauptadmin darf das Spiel beenden oder starten.');
  pendingLock=lockIt;
- $('srvConfirmText').textContent=lockIt?'Möchtest du wirklich alle Spieler außer dir aus Football Gift Challenge ausschließen?':'Möchtest du Football Gift Challenge wieder für alle Spieler öffnen?';
- $('srvConfirmYes').textContent=lockIt?'JA, SERVER SPERREN':'JA, SERVER FREIGEBEN';
+ $('srvConfirmText').textContent=lockIt?'Möchtest du Football Gift Challenge jetzt beenden? Alle Spieler außer dir werden ausgeschlossen.':'Möchtest du Football Gift Challenge jetzt wieder für alle Spieler starten?';
+ $('srvConfirmYes').textContent=lockIt?'JA, SPIEL BEENDEN':'JA, SPIEL STARTEN';
  $('srvConfirm').classList.add('on');
 }
 async function applyServerChange(){
@@ -681,7 +1206,7 @@ async function applyServerChange(){
  if(lockIt===null||role!=='admin'||!isOwner)return;
  try{
   await set(path('serverControl'),{locked:lockIt,updatedAt:serverTimestamp(),updatedBy:name||'Hauptadmin',updatedByUid:uid});
-  msg('srvMsg',lockIt?'Server gesperrt. Nur du hast jetzt Zugang.':'Server freigegeben. Alle Spieler dürfen wieder beitreten.');
+  msg('srvMsg',lockIt?'Spiel beendet. Nur du hast weiterhin Zugang.':'Spiel gestartet. Alle Spieler dürfen wieder beitreten.');
  }catch(e){
   const denied=/permission/i.test(e?.message||'');
   msg('srvMsg','Serverstatus konnte nicht geändert werden: '+(denied?'Keine Berechtigung (Firebase-Regeln prüfen).':(e?.message||e))+' Bitte versuche es erneut.');
@@ -706,7 +1231,7 @@ onAuthStateChanged(auth,u=>{if(u)startServerWatch();else signInAnonymously(auth)
 // ===== ENDE SERVER LOCKDOWN 1.0 =====
 
 $('joinBtn').onclick=enter;$('playerName').addEventListener('keydown',e=>{if(e.key==='Enter')enter()});
-$('nextRound').onclick=()=>{if(opened.length===3){buildRound();$('result').textContent='Neue Runde! Viel Glück.';saveRound();}};
+$('nextRound').onclick=async()=>{if(opened.length===3){const ok=await buildRound();if(ok)$('result').textContent='Neue Runde! Viel Glück.';}};
 
 // Admin-Panel 2.0: schnelle Navigation zwischen den Bereichen
  document.querySelectorAll('.admin-nav-btn').forEach(btn=>btn.addEventListener('click',()=>{
@@ -718,7 +1243,9 @@ $('nextRound').onclick=()=>{if(opened.length===3){buildRound();$('result').textC
 $('roleLogin').onclick=()=>{role='normal';roleName='';roleCheck();};$('claimAdmin').onclick=async()=>{const v=$('initialAdminCode').value;if(v.length<8)return msg('roleMsg','Mindestens 8 Zeichen.');const a=await get(path('admin/codeHash'));if(a.exists())return msg('roleMsg','Admin wurde bereits eingerichtet.');await set(path('admin/codeHash'),await hash(v));$('roleCode').value=v;$('initialAdminCode').value='';await roleCheck();};
 $('roleLogout').onclick=()=>{role='normal';roleName='';['adminPanel','specialPanel','messageManPanel','rosterPanel'].forEach(x=>show(x,false));show('giftControls',false);show('giftLocked',true);show('gamePanel',true);show('inventoryPanel',true);show('livePanel',true);show('rankingPanel',true);show('rosterPanel',true);updateHeader();msg('roleMsg','Rolle abgemeldet.')};
 $('changeAdminCode').onclick=adminSaveCode;$('saveQuarter').onclick=()=>registerAdminRole('quarter').catch(e=>msg('adminMsg',e.message));$('saveHalves').onclick=()=>registerAdminRole('half').catch(e=>msg('adminMsg',e.message));$('setSpecial').onclick=saveSpecial;$('saveMessageMen').onclick=saveMessageMen;
-$('saveLuck').onclick=async()=>{const v=Number($('adminLuck').value);if(!Number.isFinite(v)||v<1)return msg('adminMsg','Bitte eine Zahl ab 1 eingeben.');if(role==='halfAdmin'){if(v>50)return msg('adminMsg','Halb-Admins dürfen maximal 50× einstellen.');await update(path('settings/roleLuck'),{[uid]:v});msg('adminMsg','Dein Glück wurde auf '+v+'× gesetzt.');return;}if(role!=='admin')return msg('adminMsg','Keine Berechtigung.');await update(path('settings'),{luckMultiplier:v,luckEnabled:$('adminLuckOn').value==='true'});msg('adminMsg','Globales Glück gespeichert: '+v+'×.');};
+$('saveLuck').onclick=async()=>{const v=Number($('adminLuck').value);if(!Number.isInteger(v)||v<1)return msg('adminMsg','Bitte eine ganze Zahl ab 1× eingeben.');if(role==='halfAdmin'){if(v>50)return msg('adminMsg','Halb-Admins dürfen maximal 50× einstellen.');await update(path('settings/roleLuck'),{[uid]:v});msg('adminMsg','Dein Glück wurde auf '+v+'× gesetzt.');return;}if(role!=='admin')return msg('adminMsg','Keine Berechtigung.');if(v>5)return msg('adminMsg','Der Hauptadmin kann das globale Glück nur von 1× bis 5× einstellen.');await update(path('settings'),{luckMultiplier:v,luckEnabled:$('adminLuckOn').value==='true'});settings.luckMultiplier=v;settings.luckEnabled=$('adminLuckOn').value==='true';updateHeader();msg('adminMsg','Globales Glück gespeichert: '+v+'×.');};
+// Erweiterte 20 Events aus der Comeback-Planung
+{const b=document.createElement('button');b.className='secondary';b.textContent="🏴‍☠️ Pirate Event";b.onclick=()=>startEvent('pirate');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="🎪 Carnival Event";b.onclick=()=>startEvent('carnival');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="🥷 Ninja Event";b.onclick=()=>startEvent('ninja');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="🧸 Toy Event";b.onclick=()=>startEvent('toy');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="💎 Crystal Event";b.onclick=()=>startEvent('crystal');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="🤠 Wild West Event";b.onclick=()=>startEvent('wildwest');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="🥐 Bakery Event";b.onclick=()=>startEvent('bakery');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="💥 Comic Event";b.onclick=()=>startEvent('comic');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="🦁 Safari Event";b.onclick=()=>startEvent('safari');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="🖥️ Cyber Event";b.onclick=()=>startEvent('cyber');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="🧙 Wizard Event";b.onclick=()=>startEvent('wizard');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="🌙 Moon Event";b.onclick=()=>startEvent('moon');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="🕹️ Arcade Event";b.onclick=()=>startEvent('arcade');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="⚔️ Samurai Event";b.onclick=()=>startEvent('samurai');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="🪨 Stone Age Event";b.onclick=()=>startEvent('stoneage');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="🎭 Masquerade Event";b.onclick=()=>startEvent('masquerade');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="🧪 Science Event";b.onclick=()=>startEvent('science');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="👑 Luxury Event";b.onclick=()=>startEvent('luxury');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="🌈 Rainbow Event";b.onclick=()=>startEvent('rainbow');$('expandedEventButtons').append(b);}{const b=document.createElement('button');b.className='secondary';b.textContent="⏰ Time Machine Event";b.onclick=()=>startEvent('timemachine');$('expandedEventButtons').append(b);}
 $('oceanOn').onclick=()=>startEvent('ocean');$('zombieOn').onclick=()=>startEvent('zombie');$('multiverseOn').onclick=()=>startEvent('multiverse');$('footballOn').onclick=()=>startEvent('football');$('dinosaurOn').onclick=()=>startEvent('dinosaur');$('candyOn').onclick=()=>startEvent('candy');$('castleOn').onclick=()=>startEvent('castle');$('spaceOn').onclick=()=>startEvent('space');$('ghostOn').onclick=()=>startEvent('ghost');$('winterOn').onclick=()=>startEvent('winter');$('egyptOn').onclick=()=>startEvent('egypt');$('superheroOn').onclick=()=>startEvent('superhero');$('racingOn').onclick=()=>startEvent('racing');$('dragonOn').onclick=()=>startEvent('dragon');$('musicOn').onclick=()=>startEvent('music');$('mysteryOn').onclick=()=>startEvent('mystery');
 $('galaxyOn').onclick=()=>startEvent('galaxy');$('diamondOn').onclick=()=>startEvent('diamond');$('eventsOff').onclick=stopEvent;
 $('hackerOn').onclick=()=>startEvent('hacker');$('unicornOn').onclick=()=>startEvent('unicorn');$('robotOn').onclick=()=>startEvent('robot');$('cubeOn').onclick=()=>startEvent('cube');$('skibidiOn').onclick=()=>startEvent('skibidi');$('godzillaOn').onclick=()=>startEvent('godzilla');$('blitzOn').onclick=()=>startEvent('blitz');$('laserOn').onclick=()=>startEvent('lasertag');$('spiderOn').onclick=()=>startEvent('spiderman');$('colaOn').onclick=()=>startEvent('cocacola');$('plantsOn').onclick=()=>startEvent('plants');$('elephantOn').onclick=()=>startEvent('elephant');$('timeOn').onclick=()=>startEvent('time');$('schoolOn').onclick=()=>startEvent('school');$('lavaOn').onclick=()=>startEvent('lava');$('alienOn').onclick=()=>startEvent('alien');
@@ -727,7 +1254,7 @@ $('saveEventOdds').onclick=async()=>{const v={blitzChance:Number($('blitzChance'
 $('saveDiamondChance').onclick=async()=>{const v=Number($('diamondChance').value);if(!Number.isFinite(v)||v<0||v>100)return msg('adminMsg','Chance muss zwischen 0 und 100 liegen.');await update(path('settings'),{diamondChance:v});msg('adminMsg','Diamond-Chance gespeichert.')};
 $('sendAnnouncement').onclick=()=>adminAnnouncement().catch(e=>msg('adminMsg',e.message));
 $('spawnGalaxy').onclick=()=>spawnGalaxy().catch(e=>msg('adminMsg',e.message));
-$('spawnBlitz').onclick=async()=>{if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Blitze manuell auslösen.');const scope=$('blitzScope').value;let targets;if(scope==='self')targets=[[uid,player]];else targets=await resolveTargets(scope,$('blitzTarget').value);for(const [id,p] of targets)await update(path('players/'+id),{pendingBlitz:Number(p.pendingBlitz||0)+1});msg('adminMsg','Blitz vorgemerkt. Der Einschlag erscheint in der nächsten Runde.');};
+$('spawnBlitz').onclick=async()=>{if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Blitze manuell auslösen.');const scope=$('blitzScope').value;let targets;if(scope==='self')targets=[[uid,player]];else targets=await resolveTargets(scope,$('blitzTarget').value);for(const [id,p] of targets)await update(path('players/'+id),{pendingBlitz:Number(p.pendingBlitz||0)+1});msg('adminMsg',scope==='random'?'Zufällig ausgewählt: '+(targets[0][1].name||'Spieler')+'. Blitz erscheint in der nächsten Runde.':'Blitz vorgemerkt. Der Einschlag erscheint in der nächsten Runde.')};
 $('awardBtn').onclick=grantTokens;$('giftBtn').onclick=sendGift;$('resetPlayer').onclick=()=>resetData().catch(e=>msg('adminMsg',e.message));
 $('watchBtn').onclick=watch;
 $('messageManSend').onclick=async()=>{const t=$('messageManText').value.trim();if(!t)return msg('messageManStatus','Bitte eine Nachricht eingeben.');await push(path('messages'),{uid,name,text:t,at:Date.now()});await addActivity('hat eine Nachricht geschrieben.');$('messageManText').value='';msg('messageManStatus','Nachricht gesendet.')};
@@ -735,7 +1262,7 @@ $('logoutBtn').onclick=async()=>{if(uid)await remove(path('online/'+uid));unsubs
 $('awardPrize').innerHTML='';PRIZES.concat([{id:'diamondGift',name:'Diamond-Geschenk'}]).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;$('awardPrize').append(o)});
 setInterval(()=>{if(uid){update(path('online/'+uid),{name,at:Date.now()}).catch(()=>{});updateHeader();}},30000);
 window.addEventListener('beforeunload',()=>{if(uid)remove(path('online/'+uid));});
-if(Date.now()>EXPIRY.getTime()){$('globalStatus').textContent='SPIEL BEENDET';$('loginMsg').textContent='Das Spiel ist seit dem 28.11.2026 um 14:30 Uhr beendet.';$('joinBtn').disabled=true;}
+
 </script>
 </body>
 </html>

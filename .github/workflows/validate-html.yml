@@ -1,0 +1,37 @@
+name: Validate Football Gift
+on:
+  push:
+    branches:
+      - comeback-era-build-2026-11-27
+  pull_request:
+    branches:
+      - main
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Extract module script
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r'<script type="module">(.*?)</script>', html, re.S)
+          if len(scripts) != 1:
+              raise SystemExit(f"Expected exactly one module script, found {len(scripts)}")
+          Path("/tmp/football-gift.mjs").write_text(scripts[0], encoding="utf-8")
+          PY
+      - name: Check JavaScript syntax
+        run: node --check /tmp/football-gift.mjs
+      - name: Check established game invariants
+        run: python3 tests/check_invariants.py
+      - name: Check Firebase rules fail closed
+        run: python3 tests/check_security_rules.py
+      - name: Check HTML and JavaScript DOM references
+        run: python3 tests/check_dom_integrity.py
+      - name: Check required media assets
+        run: python3 tests/check_assets.py

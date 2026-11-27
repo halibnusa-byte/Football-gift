@@ -1,0 +1,51 @@
+from pathlib import Path
+
+source = Path("index.html").read_text(encoding="utf-8")
+
+checks = {
+    "six established token IDs": all(
+        f"id:'{token}'" in source
+        for token in ("revenge", "footballLoser", "doublegoal", "selfretter", "freistoss", "football")
+    ),
+    "confirmed token odds remain unchanged": all(value in source for value in ("id:'revenge',name:'Revenge Token',emoji:'🔥',chance:.00025", "id:'doublegoal',name:'Double Goal Token',emoji:'⚽',chance:.0005", "id:'selfretter',name:'Selbst-Retter-Token',emoji:'🧤',chance:.001", "id:'freistoss',name:'Freistoß-Token',emoji:'🟥',chance:.0015", "id:'football',name:'Football Token',emoji:'🏆',chance:.002")),
+    "random gift selection respects its filtered prize pool": "function weightedPrize(mult=1,sourceList=activePrizeList())" in source and "return weightedPrize(1,list)" in source,
+    "Football Token uses a global one-time owner transaction": "settings/footballTokenOwner" in source and "v===null?uidTarget:undefined" in source,
+    "Galaxy Gift spawn chance is 0.001% only during Galaxy Event": "eventState.active==='galaxy'&&Math.random()<0.00001" in source and "if(forceGalaxy||" not in source,
+    "15 gifts per round": "Array.from({length:15}" in source,
+    "maximum three box opens": "opened.length>=3" in source,
+    "box opening is blocked when the current round cannot be saved": "async function saveRound(extra={})" in source and "if(!await saveRound())" in source and source.index("if(!await saveRound())", source.index("async function openBox")) < source.index("runTransaction(path('players/'+uid+'/boxClaims/'+roundId)", source.index("async function openBox")),
+    "new round waits for its snapshot and consumes pending bonuses atomically": "async function buildRound()" in source and "if(!await saveRound(patch))" in source and "Object.hasOwn(patch,'pendingBlitz')" in source and "Object.hasOwn(patch,'pendingGalaxy')" in source,
+    "failed new-round persistence preserves pending bonuses": "if(!await saveRound(patch)){" in source and "boxes.forEach(b=>{delete b.blitz;delete b.galaxy;})" in source and "Deine vorgemerkten Boni bleiben erhalten" in source,
+    "new round button waits for persistence before announcing success": "$('nextRound').onclick=async()=>{if(opened.length===3){const ok=await buildRound();if(ok)$('result').textContent=" in source,
+    "Ocean event challenge panel is reachable": "available=['pirate'" in source and "'ocean','zombie'" in source,
+    "Ocean loot is persisted": "players/'+uid+'/oceanLoot/'+run" in source,
+    "Zombie loot is persisted": "players/'+uid+'/zombieLoot/'+run" in source,
+    "Zombie event has five serum choices": "for(let i=0;i<5;i++)" in source and "SERUM '+(i+1)" in source,
+    "LaserTag uses Three.js": "three.module.js" in source and "renderLaserTag3D" in source,
+    "all thirty-four standard events have bespoke mini-games": "async function renderThemedEventMiniGame" in source and all(f"{name}:{{mode:" in source for name in ("pirate","carnival","ninja","toy","crystal","wildwest","bakery","comic","safari","cyber","wizard","moon","arcade","samurai","stoneage","masquerade","science","luxury","rainbow","timemachine","multiverse","football","dinosaur","candy","castle","space","ghost","winter","egypt","superhero","racing","dragon","music","mystery")),
+    "event challenge random outcomes persist per player and event run": "eventChallengeData/'+type+'/'+run" in source and "const challengeSecret=secretTx.snapshot.val()" in source and "const safe=Number(challengeSecret.mapSafe)" in source and "const keeper=Number(challengeSecret.keeper)" in source,
+    "gift box claims persist across refreshes": "lastRoundId:roundId" in source and "boxClaims/'+roundId" in source and "count>=3" in source and "claimed[String(i)]" in source and "await saveRound();" in source and "if(!claim.committed){$('result').textContent=" in source,
+    "gift box is saved before the prize is rolled": source.index("await saveRound();", source.index("async function openBox")) < source.index("await rollAndAward(uid", source.index("async function openBox")),
+    "restored box state reconciles from the atomic claim ledger": "const claimSnap=await get(path('players/'+uid+'/boxClaims/'+roundId))" in source and "claimedIds.forEach(id=>{if(!opened.includes(id))opened.push(id);boxes[id].opened=true;})" in source,
+    "failed round snapshot save after claim is reported without losing claim safety": "const roundSaved=await saveRound();" in source and "if(!roundSaved)$('result').textContent+=" in source,
+    "Comeback Gift uses saved per-player Admin Abuse participation": "players/'+uid+'/adminAbuseParticipation/'+abuseState.adminAbuseRunId" in source and "p.adminAbuseParticipation?.[runId]" in source and "Object.entries(allPlayers).filter" in source,
+    "Comeback Gift requires a saved Admin Abuse run, not current online status": "if(!settings.adminAbuseRunId)return msg('cbAdminMsg'" in source and "p.adminAbuseParticipation?.[runId]" in source,
+    "random recipient is limited to main-admin Admin Abuse": "scope==='random'" in source and "settings.adminAbuseActive!==true" in source and "role!=='admin'||!isOwner" in source and "id!==uid" in source,
+    "Skibidi unlock occurs only when stopping the event": "const skibidiDone=eventState.active==='skibidi'" in source and "if(NEW_EVENT_TYPES.includes(type))" not in source,
+    "Power Hours follow the confirmed schedule and use max rather than multiplication": "o.weekday==='Sat'||(m>=900&&m<1020)" in source and "Math.max(settings.luckEnabled" in source,
+    "main-admin global luck is capped at 5x": 'id="adminLuck" type="number" min="1" max="5"' in source and "if(v>5)return msg('adminMsg'" in source,
+    "Admin Abuse tips are main-admin-only and priority-sorted": "role==='admin'&&settings.adminAbuseActive===true" in source and "level:'DRINGEND'" in source and "level:'EMPFEHLUNG'" in source and "level:'OPTIONAL'" in source and "tips.sort((a,b)=>a.rank-b.rank)" in source,
+    "Main-admin luck requires whole-number values": "!Number.isInteger(v)" in source,
+    "game has no fixed automatic expiry date": "EXPIRY" not in source and "2026-11-28T14:30:00" not in source,
+    "main admin can end and restart the game from the control panel": 'id="srvLock"' in source and 'id="srvUnlock"' in source and "SPIEL BEENDEN" in source and "SPIEL STARTEN" in source and "Nur der Hauptadmin darf das Spiel beenden oder starten." in source,
+    "ending the game blocks box opening for regular players": "if(serverState!=='open'&&!isOwner){$('result').textContent='Das Spiel ist momentan vom Hauptadmin beendet.';return;}" in source,
+    "shop purchases use the same merged catalog shown to players": "const item=currentShopCatalog().find(x=>x.id===id)" in source,
+    "Shop balance is transaction-based": "players/'+uid+'/shopBalance" in source and "runTransaction" in source,
+}
+
+for label, passed in checks.items():
+    print(("PASS" if passed else "FAIL") + " — " + label)
+
+failed = [label for label, passed in checks.items() if not passed]
+if failed:
+    raise SystemExit("Static invariant checks failed: " + "; ".join(failed))
