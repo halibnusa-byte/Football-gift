@@ -36,9 +36,10 @@ Implemented in this branch:
 - Static regression checks and a CI workflow definition.
 
 Still not complete:
-- The browser client has not been migrated to call these endpoints; it still performs privileged direct writes.
-- The browser still uses the legacy role-code flow and has not been migrated to call `redeemRoleCode`; the new secret must be provisioned securely before role login can work through the callable.
-- No production rules have been deployed, `ROLE_CODE_MAP` has not been provisioned, and no Firebase Emulator integration tests or successful CI run have been verified.
+- Browser role login, event start/stop, and server-lock controls have been migrated to call trusted endpoints; this is only a partial migration.
+- Other legacy admin setup/role management functions and many gameplay, inventory, reward, transfer, settings, and messaging actions still write directly from the browser.
+- `ROLE_CODE_MAP` has not been provisioned; role login through the new callable will fail closed until the project owner provisions it securely.
+- No Firebase Emulator integration tests or end-to-end gameplay tests have been verified. CI only runs Node syntax checks and static regression tests.
 - Gift transfers, manual grants, player resets, admin provisioning, announcements, event mini-games, box rounds/rewards, LaserTag, Godzilla votes, and other privileged operations still need trusted server endpoints and client migration.
 
 This branch is a safe working branch created from Main. No production Firebase rules, live data, or Main-branch files have been changed. Do not merge or deploy until the full client migration, private role-code storage, narrow rules, integration tests, and billing review are complete.
@@ -52,3 +53,11 @@ This branch is a safe working branch created from Main. No production Firebase r
 - Static regression tests now cover the browser callable wiring in addition to backend callable checks.
 
 These changes are a partial migration only. Other legacy admin setup/role management functions and many gameplay, inventory, reward, transfer, settings, and messaging actions still write directly from the browser. The full client/rules migration and emulator/end-to-end testing remain release blockers.
+
+
+## Additional backend hardening — 2026-11-27
+
+- Event activation now updates only `events/active`, `events/startedAt`, and `events/runId` through a parent `update()`, rather than replacing the entire `events` object. This prevents event activation from deleting unrelated event configuration stored under that branch.
+- A regression test asserts that event changes preserve unrelated event data.
+
+Release remains blocked: broad client writes, client-side reward decisions, unprovisioned role secret, and missing emulator/end-to-end tests remain unresolved. Do not merge or deploy this branch to production.
