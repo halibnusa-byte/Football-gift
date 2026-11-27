@@ -521,20 +521,7 @@ async function renderEventChallenge(){
   hit.onclick=async()=>{if(finished)return;hp=Math.max(0,hp-10);if(hp===0){if(stage===4){finished=true;clearInterval(timer);hit.disabled=true;await win('Divine-Glücksrad gewonnen');return;}stage++;hp=stages[stage][1];seconds=120;}draw();};
   body.append(info,bar,hit);draw();status.textContent='Jeder Klick zieht 10 HP ab. Jede Stufe hat zwei Minuten.';
  }else if(type==='lasertag'){
-  const skins=['🔴 Rot','🔵 Blau','🟢 Grün','🟡 Gelb','🟣 Lila'];const colors=['#ff4545','#45a4ff','#54e477','#ffe34a','#c78aff'];
-  const elapsed=Math.max(0,Date.now()-Number(eventState.startedAt||Date.now()));const prep=Math.max(0,30000-elapsed),remaining=Math.max(0,300000-elapsed);
-  const intro=document.createElement('p');intro.textContent=prep>0?'Wähle in den ersten 30 Sekunden deinen Skin. Danach beginnt die Runde.':'LaserTag läuft – tippe auf FEUERN, um Punkte zu sammeln.';body.append(intro);
-  const skinSel=document.createElement('select');skins.forEach((x,i)=>{const o=document.createElement('option');o.value=i;o.textContent=x;skinSel.append(o)});body.append(skinSel);
-  const choose=document.createElement('button');choose.textContent='SKIN AUSWÄHLEN';body.append(choose);
-  const fire=document.createElement('button');fire.textContent='🔫 FEUERN';fire.disabled=prep>0;body.append(fire);
-  const board=document.createElement('div');board.className='status';body.append(board);
-  const arenaRef=path('events/laserPlayers');
-  choose.onclick=async()=>{await set(path('events/laserPlayers/'+uid),{name:'Spieler',skin:Number(skinSel.value),score:0,joinedAt:Date.now(),spectator:false});intro.textContent='Skin ausgewählt: '+skins[Number(skinSel.value)]+'.';};
-  if(!eventState.laserTimerStarted){/* Timer wird aus dem gemeinsamen Eventstart abgeleitet. */}
-  const unsub=onValue(arenaRef,snap=>{const arr=Object.entries(snap.val()||{}).map(([id,v])=>({...v,id})).sort((a,b)=>(b.score||0)-(a.score||0));board.innerHTML='<b>LIVE-RANGLISTE</b><br>'+arr.slice(0,10).map((x,i)=>(i+1)+'. '+skins[x.skin||0]+' – '+(x.score||0)+' Punkte').join('<br>')+'<br><br>Restzeit: '+Math.ceil(Math.max(0,300000-(Date.now()-Number(eventState.startedAt||Date.now())))/1000)+' Sek.';});
-  fire.onclick=async()=>{if(Date.now()-Number(eventState.startedAt||Date.now())<30000)return;const mine=(await get(path('events/laserPlayers/'+uid))).val()||{skin:Math.floor(Math.random()*5),score:0};await update(path('events/laserPlayers/'+uid),{name:'Spieler',skin:mine.skin??Math.floor(Math.random()*5),score:Number(mine.score||0)+1});result.textContent='Treffer! +1 Punkt';};
-  status.textContent='Gemeinsame Browser-Arena: 30 Sekunden Skin-Auswahl, danach 5 Minuten. Bei Gleichstand gilt Golden Point; Top 3 erhalten eine Belohnung nach Event-Ende. Das ist eine gemeinsame Punkte-Arena, keine echte 3D-Teleport-Lobby.';
-  const finish=setInterval(async()=>{if(Date.now()-Number(eventState.startedAt||Date.now())>=330000){clearInterval(finish);const arr=Object.entries((await get(arenaRef)).val()||{}).sort((a,b)=>(b[1].score||0)-(a[1].score||0));for(const [id] of arr.slice(0,3)){const prize=weightedPrize(1);if(prize)await awardPrizeTo(id,prize.id,1);}status.textContent='LaserTag beendet – Top 3 wurden belohnt.';}},2000);
+  await renderLaserTag3D(body,result,status,eventState);
  }else if(['pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type)){
   const games={
    ocean:{q:'Welche dieser Kreaturen lebt im Meer?',a:['Delfin','Kamel','Adler'],correct:0},
@@ -584,6 +571,61 @@ async function renderEventChallenge(){
  body.append(result,status);
 }
 function youtubeId(url){const m=String(url||'').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);return m?m[1]:'';}
+
+let laserUnsub=null,laserFrame=0,laserRenderer=null,laserKeys={},laserCleanup=null;
+async function renderLaserTag3D(body,result,status,ev){
+ if(laserCleanup){laserCleanup();laserCleanup=null;}
+ let THREE;
+ try{THREE=await import('https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js');}
+ catch(e){status.textContent='3D-Modul konnte nicht geladen werden. Prüfe deine Internetverbindung und lade das Event neu.';return;}
+ const startAt=Number(ev.startedAt||Date.now()),skinColors=[0xff4545,0x45a4ff,0x54e477,0xffe34a,0xc78aff];
+ const wrap=document.createElement('div');wrap.style.cssText='position:relative;width:100%;height:min(62vh,520px);min-height:320px;background:#07101d;border:1px solid #3568b2;border-radius:14px;overflow:hidden';
+ const canvasHost=document.createElement('div');canvasHost.style.cssText='width:100%;height:100%';wrap.append(canvasHost);body.append(wrap);
+ const overlay=document.createElement('div');overlay.style.cssText='position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:8px;pointer-events:none;color:white;text-shadow:0 2px 4px #000;font-weight:800';wrap.append(overlay);
+ const cross=document.createElement('div');cross.textContent='+';cross.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:30px;color:#b9edff;text-shadow:0 0 8px #29aaff;pointer-events:none';wrap.append(cross);
+ const hint=document.createElement('p');hint.className='hint';hint.textContent='PC: WASD bewegen, Maus zielen, Klick/Leertaste feuern. Handy: Steuerkreuz und FEUERN. Tippe auf ARENA AKTIVIEREN für Maussteuerung.';body.append(hint);
+ const controls=document.createElement('div');controls.style.cssText='display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px';
+ const activate=document.createElement('button');activate.textContent='ARENA AKTIVIEREN';activate.className='secondary';
+ const fire=document.createElement('button');fire.textContent='🔵 FEUERN';fire.style.background='linear-gradient(90deg,#1765a8,#38b9ff)';
+ const dpad=document.createElement('div');dpad.style.cssText='display:grid;grid-template-columns:repeat(3,46px);gap:4px;justify-content:center;width:100%;margin-top:8px';
+ const directions=[['',''],['↑','forward'],['',''],['←','left'],['↓','back'],['→','right']];
+ directions.forEach(([label,key])=>{const b=document.createElement('button');b.textContent=label||' ';b.className='secondary';b.style.padding='8px';b.style.touchAction='none';if(key){b.onpointerdown=e=>{e.preventDefault();laserKeys[key]=true};b.onpointerup=b.onpointercancel=b.onpointerleave=()=>laserKeys[key]=false;}dpad.append(b);});
+ controls.append(activate,fire,dpad);body.append(controls);
+ const scene=new THREE.Scene();scene.background=new THREE.Color(0x071426);scene.fog=new THREE.Fog(0x071426,18,65);
+ const camera=new THREE.PerspectiveCamera(72,1,.1,100);camera.position.set(0,1.7,8);
+ const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;canvasHost.append(renderer.domElement);laserRenderer=renderer;
+ const resize=()=>{const w=Math.max(1,canvasHost.clientWidth),h=Math.max(1,canvasHost.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};new ResizeObserver(resize).observe(canvasHost);resize();
+ scene.add(new THREE.HemisphereLight(0xb9dcff,0x15213c,2));const light=new THREE.DirectionalLight(0xffffff,2.2);light.position.set(8,15,7);light.castShadow=true;scene.add(light);
+ const floor=new THREE.Mesh(new THREE.PlaneGeometry(60,60),new THREE.MeshStandardMaterial({color:0x182b43,roughness:.85}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+ const grid=new THREE.GridHelper(60,30,0x3271a4,0x1d3858);grid.position.y=.015;scene.add(grid);
+ const matWall=new THREE.MeshStandardMaterial({color:0x24496e,metalness:.25,roughness:.55});
+ function block(x,y,z,w,h,d){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),matWall);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m;}
+ block(0,2,-30,60,4,1);block(0,2,30,60,4,1);block(-30,2,0,1,4,60);block(30,2,0,1,4,60);
+ [[-10,-9,4,3,4],[9,-8,4,3,5],[-8,10,5,3,3],[10,10,4,3,4],[0,-17,6,3,2],[0,17,6,3,2],[-18,0,3,3,7],[18,0,3,3,7]].forEach(a=>block(a[0],a[3]/2,a[1],a[2],a[3],a[4]));
+ const avatars=new Map(),ray=new THREE.Raycaster();let yaw=0,pitch=0,x=0,z=8,lives=3,score=0,lastSync=0,lastShot=0,chosen=false,ended=false,raf=0,joined=false;
+ const arenaRef=path('events/laserPlayers');
+ const playerUrl=id=>id===uid?null:id;
+ function makeAvatar(id,p){const group=new THREE.Group(),color=skinColors[Number(p.skin)||0],bodyMesh=new THREE.Mesh(new THREE.CapsuleGeometry(.42,.75,4,8),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.13}));bodyMesh.position.y=1.05;bodyMesh.castShadow=true;group.add(bodyMesh);const head=new THREE.Mesh(new THREE.SphereGeometry(.25,12,10),new THREE.MeshStandardMaterial({color:0xe9f3ff}));head.position.y=1.72;group.add(head);group.position.set(Number(p.x)||0,0,Number(p.z)||0);group.userData.uid=id;group.userData.lives=Number(p.lives??3);scene.add(group);avatars.set(id,group);return group;}
+ async function sync(){if(!joined||Date.now()-lastSync<180)return;lastSync=Date.now();await update(path('events/laserPlayers/'+uid),{name:name||'Spieler',skin:chosen?Number(skinSel.value):0,x,z,lives,score,active:lives>0,at:Date.now()}).catch(()=>{});}
+ const skinSel=document.createElement('select');['🔴 Rot','🔵 Blau','🟢 Grün','🟡 Gelb','🟣 Lila'].forEach((v,i)=>{const o=document.createElement('option');o.value=i;o.textContent=v;skinSel.append(o);});body.insertBefore(skinSel,wrap);
+ const join=document.createElement('button');join.textContent='SKIN WÄHLEN & BEITRETEN';join.className='secondary';body.insertBefore(join,wrap);
+ join.onclick=async()=>{if(Date.now()-startAt>10000){hint.textContent='Die Skin-Auswahl ist bereits beendet. Du kannst als Zuschauer beitreten.';}chosen=true;joined=true;x=(Math.random()-.5)*24;z=(Math.random()-.5)*24;await set(path('events/laserPlayers/'+uid),{name:name||'Spieler',skin:Number(skinSel.value),x,z,lives:3,score:0,active:true,joinedAt:Date.now(),at:Date.now()});skinSel.disabled=true;join.disabled=true;hint.textContent='Du bist in der Arena!';};
+ function onKey(e,down){const map={KeyW:'forward',ArrowUp:'forward',KeyS:'back',ArrowDown:'back',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'fire'};const k=map[e.code];if(k){laserKeys[k]=down;if(down)e.preventDefault();}}
+ const kd=e=>onKey(e,true),ku=e=>onKey(e,false);window.addEventListener('keydown',kd);window.addEventListener('keyup',ku);
+ activate.onclick=()=>{renderer.domElement.requestPointerLock?.();};
+ document.addEventListener('mousemove',mouse);function mouse(e){if(document.pointerLockElement===renderer.domElement){yaw-=e.movementX*.0022;pitch=Math.max(-.55,Math.min(.55,pitch-e.movementY*.0018));}}
+ function fireShot(){if(!joined||lives<=0||Date.now()-startAt<10000||Date.now()-lastShot<650)return;lastShot=Date.now();camera.rotation.set(pitch,yaw,0,'YXZ');ray.setFromCamera(new THREE.Vector2(0,0),camera);const targets=[...avatars.values()].filter(a=>a.userData.uid!==uid&&a.userData.lives>0);const hits=ray.intersectObjects(targets.flatMap(a=>a.children),true);if(hits.length){let target=hits[0].object;while(target.parent&&!target.userData.uid)target=target.parent;const id=target.userData.uid;if(id){runTransaction(path('events/laserPlayers/'+id),v=>{if(!v||v.active===false||Number(v.lives)<=0)return v;return {...v,lives:Math.max(0,Number(v.lives)-1),active:Number(v.lives)-1>0,score:Number(v.score||0),lastHitAt:Date.now()};}).then(async tx=>{if(tx.committed){score++;await update(path('events/laserPlayers/'+uid),{score,at:Date.now()});result.textContent='Treffer! '+id+' hat noch '+(tx.snapshot.val()?.lives||0)+' Leben.';}}).catch(()=>{});return;}}result.textContent='Daneben!';}
+ fire.onclick=fireShot;
+ const unsub=onValue(arenaRef,snap=>{const data=snap.val()||{};for(const [id,p] of Object.entries(data)){if(id===uid)continue;let a=avatars.get(id);if(!a)a=makeAvatar(id,p);a.position.x=Number(p.x)||0;a.position.z=Number(p.z)||0;a.userData.lives=Number(p.lives??3);a.visible=p.active!==false&&a.userData.lives>0;}for(const [id,a] of avatars){if(!data[id]){scene.remove(a);avatars.delete(id);}}});
+ const clock=new THREE.Clock();function tick(){if(ended)return;raf=requestAnimationFrame(tick);const dt=Math.min(.05,clock.getDelta()),elapsed=Date.now()-startAt,active=joined&&lives>0;
+  if(active&&elapsed>=10000){const speed=7*dt,fx=Math.sin(yaw),fz=Math.cos(yaw),sx=Math.cos(yaw),sz=-Math.sin(yaw);if(laserKeys.forward){x-=fx*speed;z-=fz*speed;}if(laserKeys.back){x+=fx*speed;z+=fz*speed;}if(laserKeys.left){x-=sx*speed;z-=sz*speed;}if(laserKeys.right){x+=sx*speed;z+=sz*speed;}x=Math.max(-27,Math.min(27,x));z=Math.max(-27,Math.min(27,z));}
+  camera.position.set(x,1.7,z);camera.rotation.set(pitch,yaw,0,'YXZ');if(laserKeys.fire)fireShot();sync();const remaining=Math.max(0,310000-elapsed);overlay.textContent='LEBEN: '+lives+' · TREFFER: '+score+' · '+Math.ceil(remaining/1000)+'s';if(joined&&lives<=0)hint.textContent='Du bist ausgeschieden – du kannst weiter zuschauen.';if(elapsed>=310000){ended=true;finishArena();return;}renderer.render(scene,camera);
+ }
+ async function finishArena(){if(laserUnsub){laserUnsub();laserUnsub=null;}const snap=await get(arenaRef),arr=Object.entries(snap.val()||{}).filter(([,p])=>Number(p.lives)>0).sort((a,b)=>(b[1].score||0)-(a[1].score||0));const paid=await runTransaction(path('events/laserPaid/'+String(ev.runId||startAt)),v=>v===null?true:undefined);if(paid.committed){for(const [id] of arr.slice(0,3)){await awardPrizeTo(id,'diamondGift',1).catch(()=>{});}}status.textContent='LaserTag beendet. Die Top 3 erhalten je ein Diamond-Geschenk.';}
+ function cleanup(){ended=true;cancelAnimationFrame(raf);unsub();window.removeEventListener('keydown',kd);window.removeEventListener('keyup',ku);document.removeEventListener('mousemove',mouse);if(document.pointerLockElement===renderer.domElement)document.exitPointerLock();renderer.dispose();laserRenderer=null;laserCleanup=null;}
+ laserCleanup=cleanup;laserUnsub=unsub;tick();status.textContent='3D-LaserTag: Wähle deinen Skin in den ersten 10 Sekunden. Jeder startet mit 3 Leben. Bleib als Letzter übrig oder sammle Treffer für die Top 3. Multiplayer benötigt aktive Firebase-Verbindung.';
+}
+
 function renderTimeTravel(body,result,status,claim,win){
  const clips={
   'Cristiano Ronaldo':['https://youtube.com/shorts/9N3rLlUqXS4','https://youtube.com/shorts/OpBxzZgZ6v0'],
