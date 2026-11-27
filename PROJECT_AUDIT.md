@@ -9,6 +9,7 @@ Status: Entwicklungsstand, nicht produktionsbereit.
 ### Runden und Geschenke
 - 15 gemeinsame Geschenkboxen pro Runde.
 - Höchstens 3 Öffnungen je Spieler und Runde.
+- Jede Box-Öffnung wird pro Spieler und Runden-ID atomar beansprucht und vor der Belohnung gespeichert; ein Neuladen kann dieselbe Box nicht erneut öffnen.
 - Gemeinsamer Live-Spielstand und Runden-Neustart.
 - Ein Shop-Punkt pro geöffneter Box; Kontostand wird in der Datenbank gespeichert.
 - Bestehende Gewinnliste und Belohnungslogik bleiben erhalten.
@@ -19,7 +20,7 @@ Status: Entwicklungsstand, nicht produktionsbereit.
 - Football Token wird über eine globale Datenbank-Transaktion nur einmal vergeben.
 - Zusätzliche Token-Freischaltungen werden erst nach dem tatsächlichen Beenden des Skibidi-Events gesetzt, nicht beim Start.
 - Weitere ältere Preise wie Comeback-, Deine-Wahl-, Penalty- und Spielvorteil-Preise bleiben erhalten.
-- Galaxy Gift kann nur während des Galaxy Events erscheinen; Chance: 0,001 %.
+- Galaxy Gift kann nur während des Galaxy Events erscheinen; Chance: 0,001 %. Eine vom Admin vorgemerkte Galaxy-Box garantiert außerhalb des Galaxy Events keinen Galaxy-Gewinn.
 - Galaxy-Belohnungsauswahl berücksichtigt den globalen Football-Token-Besitzer.
 
 ### Events
@@ -37,12 +38,13 @@ Status: Entwicklungsstand, nicht produktionsbereit.
 - Zufällige Empfängerauswahl für Geschenke, Tokens, Galaxy-Truhen und Blitz ist nur während Admin Abuse möglich; sie bestimmt ausschließlich einen anderen Online-Spieler als Empfänger, niemals die Belohnung. Der Hauptadmin wählt Geschenk/Token/Event-Aktion.
 - Teilnehmer am Admin Abuse werden beim Start und beim Beitritt während des aktiven Durchlaufs auf dem jeweiligen Spielerprofil markiert. Das Comeback Gift wird anhand dieser gespeicherten Teilnehmer vergeben, nicht anhand einer späteren Online-Liste.
 - Der Admin-Abuse-Tippgeber zeigt nur dem Hauptadmin während aktivem Admin Abuse Hinweise, sortiert nach DRINGEND, EMPFEHLUNG und OPTIONAL. Er führt keine Aktionen selbst aus.
-- Legendary Comeback Gift kann nur während aktivem Admin Abuse an die aktuell online befindlichen Teilnehmer vergeben werden; jeder Teilnehmer erhält drei verdeckte Karten und wählt eine. Der Titel OG COMEBACK PLAYER und das kosmetische Cape bleiben erhalten.
+- Legendary Comeback Gift kann für einen gestarteten Admin-Abuse-Durchlauf an dessen gespeicherte Teilnehmer vergeben werden. Erfasst werden Spieler, die beim Start online sind oder während des aktiven Durchlaufs beitreten; die Vergabe kann auch nach Ende des Durchlaufs erfolgen. Jeder Teilnehmer erhält drei verdeckte Karten und wählt eine. Der Titel OG COMEBACK PLAYER und das kosmetische Cape bleiben erhalten.
 - Power Hours: Sonntag–Freitag 15:00–17:00 Uhr, Samstag ganztägig. Normale Spieler erhalten mindestens 2× Glück; das globale Hauptadmin-Glück ist 1×–5×. Werte werden nicht miteinander multipliziert.
 
 ### Shop
 - Dauerhafte Shop-Punkte und gespeicherter Kontostand.
 - Admin kann Produkte hinzufügen, Preise und Beschreibungen ändern, aktivieren/deaktivieren und löschen.
+- Kaufaktionen verwenden denselben zusammengeführten Katalog wie die Anzeige, damit Standard- und Admin-Produkte gleichermaßen kaufbar bleiben.
 - Zeitlich begrenzte Angebote mit regulärem und reduziertem Preis.
 - Vorhandene Power-ups bleiben: Magic Remix, Lava Shield, Alien Radar, Pearl Radar, Zombie Detector und Goldene Zeugnisnote.
 - Die jeweiligen Power-ups sind mit den dazugehörigen Events verbunden.
@@ -67,8 +69,8 @@ Status: Entwicklungsstand, nicht produktionsbereit.
 
 ## Automatische Prüfungen
 - JavaScript-Modul-Syntaxprüfung in GitHub Actions.
-- Statische Invariantentests für Token-IDs, globalen Football-Token, Galaxy-Chance, Box-Anzahl, Öffnungsgrenze, gespeicherte Ocean-/Zombie-Lootdaten, 3D-LaserTag, Shop-Transaktionen und Mini-Game-Abdeckung.
-- Letzte bestätigte CI-Prüfung: erfolgreich auf Commit `4d0d0550588cc43d7e952786f060ee5bbd743942`. Nachfolgende Dokumentationsänderungen sind separat eingecheckt.
+- Statische Invariantentests für Token-IDs, globalen Football-Token, Galaxy-Event-Bedingung, persistente Box-Claims, Box-Anzahl, Öffnungsgrenze, gespeicherte Event-Challenges und Ocean-/Zombie-Lootdaten, 3D-LaserTag, Shop-Katalog/Käufe und Mini-Game-Abdeckung.
+- GitHub Actions: Syntax- und Invariant-Prüfungen sind auf Commit `b916f56253113f540ad132d1e0118dd6dfc9fc08` erfolgreich durchgelaufen.
 
 ## Noch nicht nachgewiesen / blockiert
 
