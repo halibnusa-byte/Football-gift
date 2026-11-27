@@ -308,7 +308,7 @@ function updateHeader(){
  $('powerLabel').textContent=isPower()?'AKTIV':'Inaktiv';$('luckLabel').textContent=luck()+'×'+(settings.luckEnabled?' (global)':'');
  $('eventLabel').textContent=EVENT_INFO[ev]?.[0]||'Keins aktiv';$('globalStatus').textContent='ONLINE · '+(EVENT_INFO[ev]?.[0]||'Normalbetrieb')+' · Glück '+luck()+'×';
  $('playerMeta').textContent=role==='special'?'Besonderer Spieler · 2× Glück':role==='admin'?'Hauptadmin':role==='quarterAdmin'?'Viertel-Admin · '+(roleName||name):role==='halfAdmin'?'Halb-Admin · '+(roleName||name):role==='messageMan'?'Message Man':'Spieler';
- renderBoxes();renderServerControl();renderComeback();
+ renderBoxes();renderServerControl();renderComeback();ensureShopAdmin();
 }
 const DEFAULT_SHOP=[
 {id:'magic_remix',name:'MAGIC REMIX',description:'Erlaubt einen neuen Versuch beim Zauberwürfel.',price:12,emoji:'🧊'},
@@ -317,6 +317,15 @@ const DEFAULT_SHOP=[
 {id:'pearl_radar',name:'PEARL RADAR',description:'Hilft bei der Schatzsuche im Ocean-Event.',price:10,emoji:'🦪'},
 {id:'zombie_detector',name:'ZOMBIE DETECTOR',description:'Hilft dir beim Erkennen der sicheren Wahl.',price:14,emoji:'🧟'}
 ];
+function ensureShopAdmin(){
+ if(role!=='admin'||$('shopAddProduct'))return;
+ const adminShop=document.createElement('div');
+ adminShop.innerHTML='<h3>🛍️ Shop-Verwaltung</h3><p class="muted">Produkte, Preise und Angebote verwalten. Änderungen werden für alle gespeichert.</p><div class="row"><input id="shopNewName" placeholder="Produktname"><input id="shopNewPrice" type="number" min="0" placeholder="Preis"></div><input id="shopNewDesc" placeholder="Beschreibung"><button id="shopAddProduct">PRODUKT HINZUFÜGEN</button><div id="shopAdminList" class="list"></div>';
+ $('adminPanel').append(adminShop);
+ const draw=()=>{const list=$('shopAdminList');if(!list)return;list.innerHTML='';(settings.shopCatalog||DEFAULT_SHOP).forEach(p=>{const line=document.createElement('div');line.className='item';const label=document.createElement('span');label.textContent=p.name+' · '+p.price+' Punkte';const toggle=document.createElement('button');toggle.textContent=p.active===false?'AKTIVIEREN':'DEAKTIVIEREN';toggle.onclick=async()=>{const arr=(settings.shopCatalog||DEFAULT_SHOP).map(x=>x.id===p.id?{...x,active:x.active===false}:x);await update(path('settings'),{shopCatalog:arr});};const del=document.createElement('button');del.className='danger';del.textContent='LÖSCHEN';del.onclick=async()=>{const arr=(settings.shopCatalog||DEFAULT_SHOP).filter(x=>x.id!==p.id);await update(path('settings'),{shopCatalog:arr});};line.append(label,toggle,del);list.append(line);});};
+ $('shopAddProduct').onclick=async()=>{const n=$('shopNewName').value.trim(),price=Math.floor(Number($('shopNewPrice').value)),desc=$('shopNewDesc').value.trim();if(!n||!Number.isFinite(price)||price<0)return msg('adminMsg','Name und gültiger Preis fehlen.');const arr=[...(settings.shopCatalog||DEFAULT_SHOP),{id:'custom_'+Date.now(),name:n,description:desc,price,emoji:'⭐',active:true}];await update(path('settings'),{shopCatalog:arr});$('shopNewName').value='';$('shopNewPrice').value='';$('shopNewDesc').value='';msg('adminMsg','Shop-Produkt gespeichert.');draw();};
+ draw();
+}
 function renderShop(){
  const bal=Number(player?.shopBalance||0);$('shopBalance').textContent=String(bal);
  const host=$('shopItems');if(!host)return;host.innerHTML='';
@@ -787,13 +796,6 @@ $('awardBtn').onclick=grantTokens;$('giftBtn').onclick=sendGift;$('resetPlayer')
 $('watchBtn').onclick=watch;
 $('messageManSend').onclick=async()=>{const t=$('messageManText').value.trim();if(!t)return msg('messageManStatus','Bitte eine Nachricht eingeben.');await push(path('messages'),{uid,name,text:t,at:Date.now()});await addActivity('hat eine Nachricht geschrieben.');$('messageManText').value='';msg('messageManStatus','Nachricht gesendet.')};
 $('logoutBtn').onclick=async()=>{if(uid)await remove(path('online/'+uid));unsubs.forEach(f=>f());if(watchUnsub)watchUnsub();unsubs=[];await signOut(auth);uid=null;show('app',false);show('loginPanel',true)};
-if(role==='admin'){
- const adminShop=document.createElement('div');
- adminShop.innerHTML='<h3>🛍️ Shop-Verwaltung</h3><p class="muted">Produkte, Preise und Angebote verwalten. Änderungen werden für alle gespeichert.</p><div class="row"><input id="shopNewName" placeholder="Produktname"><input id="shopNewPrice" type="number" min="0" placeholder="Preis"></div><input id="shopNewDesc" placeholder="Beschreibung"><button id="shopAddProduct">PRODUKT HINZUFÜGEN</button><div id="shopAdminList" class="list"></div>';
- $('adminPanel').append(adminShop);
- const drawAdminShop=()=>{const list=$('shopAdminList');if(!list)return;list.innerHTML='';(settings.shopCatalog||DEFAULT_SHOP).forEach(p=>{const line=document.createElement('div');line.className='item';const label=document.createElement('span');label.textContent=p.name+' · '+p.price+' Punkte';const toggle=document.createElement('button');toggle.textContent=p.active===false?'AKTIVIEREN':'DEAKTIVIEREN';toggle.onclick=async()=>{const arr=(settings.shopCatalog||DEFAULT_SHOP).map(x=>x.id===p.id?{...x,active:x.active===false}:x);await update(path('settings'),{shopCatalog:arr});};const del=document.createElement('button');del.className='danger';del.textContent='LÖSCHEN';del.onclick=async()=>{const arr=(settings.shopCatalog||DEFAULT_SHOP).filter(x=>x.id!==p.id);await update(path('settings'),{shopCatalog:arr});};line.append(label,toggle,del);list.append(line);});};
- $('shopAddProduct').onclick=async()=>{const n=$('shopNewName').value.trim(),price=Math.floor(Number($('shopNewPrice').value)),desc=$('shopNewDesc').value.trim();if(!n||!Number.isFinite(price)||price<0)return msg('adminMsg','Name und gültiger Preis fehlen.');const arr=[...(settings.shopCatalog||DEFAULT_SHOP),{id:'custom_'+Date.now(),name:n,description:desc,price,emoji:'⭐',active:true}];await update(path('settings'),{shopCatalog:arr});$('shopNewName').value='';$('shopNewPrice').value='';$('shopNewDesc').value='';msg('adminMsg','Shop-Produkt gespeichert.');};
-}
 $('awardPrize').innerHTML='';PRIZES.concat([{id:'diamondGift',name:'Diamond-Geschenk'}]).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;$('awardPrize').append(o)});
 setInterval(()=>{if(uid){update(path('online/'+uid),{name,at:Date.now()}).catch(()=>{});updateHeader();}},30000);
 window.addEventListener('beforeunload',()=>{if(uid)remove(path('online/'+uid));});
