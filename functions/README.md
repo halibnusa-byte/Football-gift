@@ -21,6 +21,8 @@ This folder is a server-side migration scaffold. It is **not deployed** and the 
 ## Setup
 - Node.js 20+
 - Run `npm install` in this folder.
+- Run `npm run lint` for a JavaScript syntax check.
+- Run `npm test` for static security regression checks. These are guardrails, not substitutes for Firebase Emulator integration tests.
 - Configure Firebase CLI for the correct project and run the Emulator Suite.
 - Cloud Functions deployment may require Firebase Blaze billing. A parent/guardian must review billing before enabling it. Do not enable billing just to test.
 
