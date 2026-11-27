@@ -11,6 +11,7 @@ Status: Entwicklungsstand, nicht produktionsbereit.
 - Höchstens 3 Öffnungen je Spieler und Runde.
 - Jede Box-Öffnung wird pro Spieler und Runden-ID atomar beansprucht und vor der Belohnung gespeichert; ein Neuladen kann dieselbe Box nicht erneut öffnen. Die Drei-Box-Grenze wird ebenfalls atomar über alle Tabs hinweg durchgesetzt.
 - Beim erneuten Beitritt wird die sichtbare Rundendarstellung mit dem atomaren Claim-Ledger abgeglichen. So bleiben bestätigte Öffnungen auch dann sichtbar, wenn das zusätzliche Rundensnapshot-Schreiben nach dem Claim fehlschlägt; der Spieler erhält dafür einen Hinweis.
+- Neue Runden werden erst nach erfolgreichem Snapshot als bereit gemeldet. Vorgemerkte Blitz-/Galaxy-Boni werden im selben Datenbank-Update wie die neue Runde verbraucht; schlägt das Speichern fehl, bleiben die Boni erhalten und werden nicht doppelt vergeben.
 - Gemeinsamer Live-Spielstand und Runden-Neustart.
 - Ein Shop-Punkt pro geöffneter Box; Kontostand wird in der Datenbank gespeichert.
 - Bestehende Gewinnliste und Belohnungslogik bleiben erhalten.
