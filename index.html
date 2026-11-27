@@ -544,6 +544,28 @@ async function renderEventChallenge(){
    body.append(chest);
   }
   status.textContent='Drei Truhen pro Spieler und Event-Runde. Deine Truhen-Inhalte bleiben beim Neuladen gleich.';
+ }else if(type==='zombie'){
+  const intro=document.createElement('p');intro.textContent='🧟 Die Stadt ist verlassen. Fünf Impfstoff-Fläschchen stehen bereit – aber nur eines ist das sichere Serum. Wähle genau eins!';body.append(intro);
+  const vialStatus=document.createElement('div');vialStatus.className='hint';body.append(vialStatus);
+  const lootRef=path('players/'+uid+'/zombieLoot/'+run);
+  const lootTx=await runTransaction(lootRef,v=>v||{safe:Math.floor(Math.random()*5),createdAt:Date.now()});
+  const loot=lootTx.snapshot.val()||{safe:0};
+  const detector=document.createElement('button');detector.className='secondary';detector.textContent='🧟 ZOMBIE DETECTOR VERWENDEN';
+  detector.onclick=async()=>{detector.disabled=true;if(await consumeShopItem('zombie_detector')){vialStatus.textContent='📡 Der Zombie Detector findet das sichere Serum bei Fläschchen '+(Number(loot.safe)+1)+'.';}else{detector.disabled=false;vialStatus.textContent='Du hast keinen Zombie Detector im Inventar.';}};
+  if(Number(player.shopItems?.zombie_detector||0)>0)body.append(detector);
+  const vialRow=document.createElement('div');vialRow.style.cssText='display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:12px 0';
+  for(let i=0;i<5;i++){
+   const vial=document.createElement('button');vial.className='secondary';vial.style.cssText='min-height:84px;padding:8px 3px;font-size:12px';vial.textContent='🧪\nSERUM '+(i+1);
+   vial.onclick=async()=>{
+    vialRow.querySelectorAll('button').forEach(x=>x.disabled=true);
+    if(!await claim()){vialStatus.textContent='Dein Versuch wurde bereits benutzt.';return;}
+    if(i===Number(loot.safe)){vial.textContent='✅\nSICHER';await win('Serum gefunden – Stadt gerettet');}
+    else{vial.textContent='❌\nLEER';vialStatus.textContent='Das Fläschchen war leer. Diesmal keine Belohnung.';for(let j=0;j<5;j++)if(j!==i)vialRow.children[j].textContent='🔒\nVERSCHLOSSEN';}
+    status.textContent='Dein Serum-Versuch für diese Event-Runde ist beendet.';
+   };
+   vialRow.append(vial);
+  }
+  body.append(vialRow);status.textContent='Fünf Fläschchen, ein sicheres Serum. Der Zombie Detector kann dir den richtigen Platz zeigen.';
  }else if(type==='skibidi'){
   const stages=[['Noob-Glücksrad',100],['Glücksrad',500],['Boss-Glücksrad',1000],['Hacker-Glücksrad',1500],['Divine-Glücksrad',2000]];
   if(!await claim()){status.textContent='Du hast deinen Bosskampf in diesem Event bereits benutzt.';body.append(status);return;}
