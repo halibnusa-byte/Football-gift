@@ -4,7 +4,6 @@ const { getDatabase } = require("firebase-admin/database");
 const { getAuth } = require("firebase-admin/auth");
 const { defineSecret } = require("firebase-functions/params");
 const crypto = require("node:crypto");
-const { PRIZES } = require("./comeback");
 
 // Server-only role map stored in Google Secret Manager.
 const roleCodeMapSecret = defineSecret("ROLE_CODE_MAP");
@@ -149,7 +148,7 @@ exports.grantAdminTokens = onCall({ region: "europe-west1" }, async (request) =>
   const amount = Number(data.amount);
   const targetName = typeof data.targetName === "string" ? data.targetName.trim().slice(0, 24) : "";
   const isPublic = data.public === true;
-  const allowedIds = new Set([...PRIZES.map((prize) => prize.id), "diamondGift"]);
+  const allowedIds = new Set(["deinewahl", "revenge", "comeback", "doublegoal", "selfretter", "freistoss", "football", "penalty", "goal", "redcard", "keeper", "switch", "diamondGift"]);
 
   if (!allowedIds.has(prizeId)) {
     throw new HttpsError("invalid-argument", "Dieses Geschenk ist nicht verfügbar.");
