@@ -179,6 +179,7 @@ const PRIZES=[
 {id:'revenge',name:'Revenge Token',emoji:'🔥',chance:.00025,rank:2},
 {id:'comeback',name:'Comeback-Token',emoji:'🔁',chance:.0005,rank:3},
 {id:'doublegoal',name:'Double Goal Token',emoji:'⚽',chance:.0005,rank:3},
+{id:'footballLoser',name:'Football Loser Token',emoji:'🏴',chance:.00075,rank:4},
 {id:'selfretter',name:'Selbst-Retter-Token',emoji:'🧤',chance:.001,rank:5},
 {id:'freistoss',name:'Freistoß-Token',emoji:'🟥',chance:.0015,rank:6},
 {id:'football',name:'Football Token',emoji:'🏆',chance:.002,rank:7},
@@ -201,7 +202,7 @@ const isPower=()=>{const a=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Ber
 const luck=()=>Math.max(settings.luckEnabled?Number(settings.luckMultiplier||1):1,role==='special'?2:1,isPower()?2:1,role==='halfAdmin'?Math.min(50,Number(settings.roleLuck?.[uid]||1)):1);
 const newTokensUnlocked=()=>settings.completedEvents?.skibidi===true;
 const prizeById=id=>PRIZES.find(p=>p.id===id)||({id:'diamondGift',name:'Diamond-Geschenk',emoji:'💎',chance:0});
-function activePrizeList(){return PRIZES.filter(p=>(newTokensUnlocked()||!['deinewahl','doublegoal','selfretter','freistoss','comeback'].includes(p.id))&&!(p.id==='penalty'&&player.inventory?.penalty)&&!(p.id==='football'&&settings.footballTokenOwner));}
+function activePrizeList(){return PRIZES.filter(p=>(newTokensUnlocked()||!['deinewahl','doublegoal','footballLoser','selfretter','freistoss','comeback'].includes(p.id))&&!(p.id==='penalty'&&player.inventory?.penalty)&&!(p.id==='football'&&settings.footballTokenOwner));}
 function weightedPrize(mult=1){
  let list=activePrizeList(),weights=list.map(p=>p.chance*mult),sum=weights.reduce((a,b)=>a+b,0);
  if(sum>100)weights=weights.map(x=>x*100/sum);
@@ -364,14 +365,14 @@ async function consumeShopItem(id){
 function renderInventory(){
  const inv=player?.inventory||{};$('tokenCount').textContent=Object.values(inv).reduce((a,b)=>a+Number(b||0),0);
  $('inventory').innerHTML='';
- const list=PRIZES.filter(p=>(newTokensUnlocked()||!['deinewahl','doublegoal','selfretter','freistoss','comeback'].includes(p.id))).concat([{id:'diamondGift',name:'Diamond-Geschenk',emoji:'💎'}]);
+ const list=PRIZES.filter(p=>(newTokensUnlocked()||!['deinewahl','doublegoal','footballLoser','selfretter','freistoss','comeback'].includes(p.id))).concat([{id:'diamondGift',name:'Diamond-Geschenk',emoji:'💎'}]);
  list.forEach(p=>{const n=Number(inv[p.id]||0);if(n){const d=document.createElement('div');d.className='item';d.textContent=p.emoji+' '+p.name;const b=document.createElement('b');b.textContent='×'+n;d.append(b);$('inventory').append(d)}});
  if(!$('inventory').children.length)$('inventory').textContent='Noch keine Geschenke gewonnen.';
  $('giftPrize').innerHTML='';list.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name+' (×'+(inv[p.id]||0)+')';$('giftPrize').append(o)});
 }
 function renderRanking(all){
  all=all||{};$('ranking').innerHTML='';
- const list=PRIZES.filter(p=>(newTokensUnlocked()||!['deinewahl','doublegoal','selfretter','freistoss','comeback'].includes(p.id))).concat([{id:'diamondGift',name:'Diamond-Geschenk',emoji:'💎',rank:0}]).sort((a,b)=>(a.rank||0)-(b.rank||0));
+ const list=PRIZES.filter(p=>(newTokensUnlocked()||!['deinewahl','doublegoal','footballLoser','selfretter','freistoss','comeback'].includes(p.id))).concat([{id:'diamondGift',name:'Diamond-Geschenk',emoji:'💎',rank:0}]).sort((a,b)=>(a.rank||0)-(b.rank||0));
  list.forEach(p=>{
   const owners=Object.entries(all).map(([id,x])=>({name:x.name||'Unbekannt',count:Number(x.inventory?.[p.id]||0),first:Number(x.firstWon?.[p.id]||0)})).filter(x=>x.count>0).sort((a,b)=>(a.first||0)-(b.first||0));
   const d=document.createElement('div');d.className='item';const left=document.createElement('span');left.textContent=p.emoji+' '+p.name;const right=document.createElement('b');right.textContent=owners.length?owners.map(x=>x.name+' ×'+x.count).join(' · '):'Noch niemand';d.append(left,right);$('ranking').append(d);
