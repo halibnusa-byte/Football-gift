@@ -266,9 +266,10 @@ function buildRound(){
  const pending=Number(player.pendingGalaxy||0);if(pending>0){const i=boxes.findIndex(b=>!b.rare);if(i>=0){boxes[i].galaxy=true;player.pendingGalaxy=pending-1;update(path('players/'+uid),{pendingGalaxy:player.pendingGalaxy}).catch(()=>{});}}
  renderBoxes();saveRound();
 }
-async function saveRound(){if(!uid)return;await update(path('players/'+uid),{lastBoxes:boxes.map((b,i)=>({opened:opened.includes(i),rare:b.rare,galaxy:b.galaxy,blitz:b.blitz})),lastRareType:rareType?.id||null,lastRoundId:roundId,opensThisRound:opened.length,roundUpdated:Date.now()}).catch(()=>{})}
+async function saveRound(){if(!uid||!roundId)return false;try{await update(path('players/'+uid),{lastBoxes:boxes.map((b,i)=>({opened:opened.includes(i),rare:b.rare,galaxy:b.galaxy,blitz:b.blitz})),lastRareType:rareType?.id||null,lastRoundId:roundId,opensThisRound:opened.length,roundUpdated:Date.now()});return true;}catch(e){return false;}}
 async function openBox(i){
  if(opened.length>=3||opened.includes(i)||Date.now()>EXPIRY.getTime()||!roundId)return;
+ if(!await saveRound()){$('result').textContent='Deine Runde konnte nicht sicher gespeichert werden. Prüfe deine Verbindung und versuche es erneut.';return;}
  let claim;
  try{
   claim=await runTransaction(path('players/'+uid+'/boxClaims/'+roundId),v=>{
