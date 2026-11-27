@@ -612,9 +612,52 @@ async function renderLaserTag3D(body,result,status,ev){
  const avatars=new Map(),ray=new THREE.Raycaster();let yaw=0,pitch=0,x=0,z=8,lives=3,score=0,lastSync=0,lastShot=0,chosen=false,ended=false,raf=0,joined=false;
  const arenaRef=path('events/laserPlayers');
  const playerUrl=id=>id===uid?null:id;
- function makeAvatar(id,p){const group=new THREE.Group(),color=skinColors[Number(p.skin)||0],bodyMesh=new THREE.Mesh(new THREE.CapsuleGeometry(.42,.75,4,8),new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.13}));bodyMesh.position.y=1.05;bodyMesh.castShadow=true;group.add(bodyMesh);const head=new THREE.Mesh(new THREE.SphereGeometry(.25,12,10),new THREE.MeshStandardMaterial({color:0xe9f3ff}));head.position.y=1.72;group.add(head);const tagCanvas=document.createElement('canvas');tagCanvas.width=512;tagCanvas.height=128;const ctx=tagCanvas.getContext('2d');ctx.fillStyle='rgba(2,10,22,.82)';ctx.fillRect(4,4,504,120);ctx.strokeStyle='#8fd7ff';ctx.lineWidth=5;ctx.strokeRect(4,4,504,120);ctx.font='bold 42px Arial';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(String(p.name||'Spieler').slice(0,18),256,58);ctx.font='bold 30px Arial';ctx.fillStyle='#9ee5ff';ctx.fillText('♥ '+Number(p.lives??3),256,100);const tag=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(tagCanvas),transparent:true,depthTest:false}));tag.position.y=2.55;tag.scale.set(3.2,.8,1);group.add(tag);group.userData.tagCanvas=tagCanvas;group.position.set(Number(p.x)||0,0,Number(p.z)||0);group.userData.uid=id;group.userData.name=String(p.name||'Spieler');group.userData.lives=Number(p.lives??3);scene.add(group);avatars.set(id,group);return group;}
+ function makeAvatar(id,p){
+  const group=new THREE.Group(),skinIndex=Math.max(0,Math.min(4,Number(p.skin)||0)),color=skinColors[skinIndex];
+  const armor=new THREE.MeshStandardMaterial({color,metalness:.48,roughness:.38,emissive:color,emissiveIntensity:.1});
+  const dark=new THREE.MeshStandardMaterial({color:0x17283d,metalness:.65,roughness:.35});
+  const visor=new THREE.MeshStandardMaterial({color:0x9deaff,metalness:.35,roughness:.18,emissive:0x238dcc,emissiveIntensity:.5});
+  const pale=new THREE.MeshStandardMaterial({color:0xe9f3ff,metalness:.12,roughness:.5});
+  const part=(geo,mat,x,y,z,sx=1,sy=1,sz=1)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;m.receiveShadow=true;group.add(m);return m;};
+  if(skinIndex===0){
+   part(new THREE.CapsuleGeometry(.4,.72,4,8),armor,0,1.05,0);
+   part(new THREE.SphereGeometry(.31,16,12),dark,0,1.78,0,1,1,.95);
+   part(new THREE.SphereGeometry(.23,16,12),visor,0,1.79,-.19,1.12,.62,.5);
+   part(new THREE.BoxGeometry(.24,.18,.48),dark,-.48,1.35,0);part(new THREE.BoxGeometry(.24,.18,.48),dark,.48,1.35,0);
+   part(new THREE.BoxGeometry(.16,.42,.18),armor,-.2,.35,0);part(new THREE.BoxGeometry(.16,.42,.18),armor,.2,.35,0);
+  }else if(skinIndex===1){
+   part(new THREE.BoxGeometry(.82,.9,.42),armor,0,1.05,0);
+   part(new THREE.CylinderGeometry(.3,.34,.48,8),dark,0,1.78,0);
+   part(new THREE.BoxGeometry(.48,.16,.12),visor,0,1.82,-.24);
+   part(new THREE.BoxGeometry(.32,.3,.5),armor,-.56,1.35,0);part(new THREE.BoxGeometry(.32,.3,.5),armor,.56,1.35,0);
+   part(new THREE.CylinderGeometry(.13,.16,.48,8),dark,-.22,.35,0);part(new THREE.CylinderGeometry(.13,.16,.48,8),dark,.22,.35,0);
+   part(new THREE.BoxGeometry(.22,.14,.12),visor,0,1.05,-.24);
+  }else if(skinIndex===2){
+   part(new THREE.CapsuleGeometry(.39,.8,4,8),armor,0,1.02,0);
+   part(new THREE.SphereGeometry(.3,16,12),armor,0,1.78,0);
+   part(new THREE.ConeGeometry(.13,.38,8),armor,0,2.1,0);
+   part(new THREE.BoxGeometry(.56,.22,.48),dark,0,1.42,0);
+   part(new THREE.BoxGeometry(.22,.38,.2),armor,-.49,1.32,0);part(new THREE.BoxGeometry(.22,.38,.2),armor,.49,1.32,0);
+   part(new THREE.BoxGeometry(.16,.46,.2),dark,-.2,.32,0);part(new THREE.BoxGeometry(.16,.46,.2),dark,.2,.32,0);
+  }else if(skinIndex===3){
+   part(new THREE.CapsuleGeometry(.32,.8,4,8),armor,0,1.02,0);
+   part(new THREE.SphereGeometry(.38,16,12),armor,0,1.82,0,1,.85,1.05);
+   part(new THREE.SphereGeometry(.13,12,8),visor,-.17,1.85,-.3,1,.6,.6);part(new THREE.SphereGeometry(.13,12,8),visor,.17,1.85,-.3,1,.6,.6);
+   part(new THREE.ConeGeometry(.07,.34,8),armor,-.22,2.2,0);part(new THREE.ConeGeometry(.07,.34,8),armor,.22,2.2,0);
+   part(new THREE.BoxGeometry(.18,.44,.2),armor,-.18,.32,0);part(new THREE.BoxGeometry(.18,.44,.2),armor,.18,.32,0);
+  }else{
+   part(new THREE.CapsuleGeometry(.4,.76,4,8),dark,0,1.04,0);
+   part(new THREE.SphereGeometry(.35,16,12),armor,0,1.78,0,1,1.1,1);
+   part(new THREE.SphereGeometry(.25,16,12),dark,0,1.78,-.18,1,.72,.5);
+   part(new THREE.BoxGeometry(.42,.1,.1),visor,0,1.8,-.34);
+   part(new THREE.BoxGeometry(.28,.2,.42),armor,-.48,1.4,0);part(new THREE.BoxGeometry(.28,.2,.42),armor,.48,1.4,0);
+   part(new THREE.BoxGeometry(.18,.42,.2),dark,-.2,.34,0);part(new THREE.BoxGeometry(.18,.42,.2),dark,.2,.34,0);
+  }
+  const tagCanvas=document.createElement('canvas');tagCanvas.width=512;tagCanvas.height=128;const ctx=tagCanvas.getContext('2d');ctx.fillStyle='rgba(2,10,22,.82)';ctx.fillRect(4,4,504,120);ctx.strokeStyle='#8fd7ff';ctx.lineWidth=5;ctx.strokeRect(4,4,504,120);ctx.font='bold 42px Arial';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(String(p.name||'Spieler').slice(0,18),256,58);ctx.font='bold 30px Arial';ctx.fillStyle='#9ee5ff';ctx.fillText('♥ '+Number(p.lives??3),256,100);
+  const tag=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(tagCanvas),transparent:true,depthTest:false}));tag.position.y=2.65;tag.scale.set(3.2,.8,1);group.add(tag);group.userData.tagCanvas=tagCanvas;group.position.set(Number(p.x)||0,0,Number(p.z)||0);group.userData.uid=id;group.userData.name=String(p.name||'Spieler');group.userData.lives=Number(p.lives??3);scene.add(group);avatars.set(id,group);return group;
+ }
  async function sync(){if(!joined||Date.now()-lastSync<180)return;lastSync=Date.now();await update(path('events/laserPlayers/'+uid),{name:name||'Spieler',skin:chosen?Number(skinSel.value):0,x,z,lives,score,active:lives>0,at:Date.now()}).catch(()=>{});}
- const skinSel=document.createElement('select');['🔴 Rot','🔵 Blau','🟢 Grün','🟡 Gelb','🟣 Lila'].forEach((v,i)=>{const o=document.createElement('option');o.value=i;o.textContent=v;skinSel.append(o);});body.insertBefore(skinSel,wrap);
+ const skinSel=document.createElement('select');['🛰️ SPACE TROOPER','🤖 BATTLE ROBOT','🛡️ TITAN ARMOR','👽 ALIEN RUNNER','🥷 SHADOW NINJA'].forEach((v,i)=>{const o=document.createElement('option');o.value=i;o.textContent=v;skinSel.append(o);});body.insertBefore(skinSel,wrap);
  const join=document.createElement('button');join.textContent='SKIN WÄHLEN & BEITRETEN';join.className='secondary';body.insertBefore(join,wrap);
  join.onclick=async()=>{if(Date.now()-startAt>10000){chosen=false;joined=false;skinSel.disabled=true;join.disabled=true;hint.textContent='Die Skin-Auswahl ist vorbei. Du bist jetzt Zuschauer.';return;}chosen=true;joined=true;const spawnPoints=[[-23,-23],[23,-23],[-23,23],[23,23],[0,-23],[0,23],[-23,0],[23,0]];const spawn=spawnPoints[Math.floor(Math.random()*spawnPoints.length)];x=spawn[0]+(Math.random()-.5)*2;z=spawn[1]+(Math.random()-.5)*2;await set(path('events/laserPlayers/'+uid),{name:name||'Spieler',skin:Number(skinSel.value),x,z,lives:3,score:0,active:true,joinedAt:Date.now(),at:Date.now()});await onDisconnect(path('events/laserPlayers/'+uid)).remove();skinSel.disabled=true;join.disabled=true;hint.textContent='Du bist in der Arena!';};
  function onKey(e,down){const map={KeyW:'forward',ArrowUp:'forward',KeyS:'back',ArrowDown:'back',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'fire'};const k=map[e.code];if(k){laserKeys[k]=down;if(down)e.preventDefault();}}
