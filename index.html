@@ -259,14 +259,26 @@ function renderBoxes(){
  $('opens').textContent=opened.length+' / 3';$('roundText').textContent=opened.length>=3?'Runde abgeschlossen – neu mischen!':'Du kannst noch '+(3-opened.length)+' Box(en) öffnen.';
  $('nextRound').disabled=opened.length!==3;$('rareLabel').textContent=rareType?rareType.name+'-Box ist dabei!':'Normale Runde';
 }
-function buildRound(){
+async function buildRound(){
  opened=[];rareType=null;roundId=Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,9);boxes=Array.from({length:15},(_,i)=>({id:i,rare:false,galaxy:false,opened:false}));
  if(Math.random()<.01){rareType=rarePick();const i=Math.floor(Math.random()*15);boxes[i].rare=true;boxes[i].rareType=rareType.id;}
- const pendingBlitz=Number(player.pendingBlitz||0);if(pendingBlitz>0){const i=Math.floor(Math.random()*15);boxes[i].blitz=true;player.pendingBlitz=pendingBlitz-1;update(path('players/'+uid),{pendingBlitz:player.pendingBlitz}).catch(()=>{});}
- const pending=Number(player.pendingGalaxy||0);if(pending>0){const i=boxes.findIndex(b=>!b.rare);if(i>=0){boxes[i].galaxy=true;player.pendingGalaxy=pending-1;update(path('players/'+uid),{pendingGalaxy:player.pendingGalaxy}).catch(()=>{});}}
- renderBoxes();saveRound();
+ const pendingBlitz=Math.max(0,Number(player.pendingBlitz)||0),pendingGalaxy=Math.max(0,Number(player.pendingGalaxy)||0),patch={};
+ if(pendingBlitz>0){const i=Math.floor(Math.random()*15);boxes[i].blitz=true;patch.pendingBlitz=pendingBlitz-1;}
+ if(pendingGalaxy>0){const i=boxes.findIndex(b=>!b.rare);if(i>=0){boxes[i].galaxy=true;patch.pendingGalaxy=pendingGalaxy-1;}}
+ renderBoxes();
+ if(!await saveRound(patch)){
+  boxes.forEach(b=>{delete b.blitz;delete b.galaxy;});renderBoxes();
+  $('result').textContent='Die neue Runde konnte nicht sicher gespeichert werden. Deine vorgemerkten Boni bleiben erhalten. Bitte Verbindung prüfen und erneut versuchen.';
+  return false;
+ }
+ if(Object.hasOwn(patch,'pendingBlitz'))player.pendingBlitz=patch.pendingBlitz;
+ if(Object.hasOwn(patch,'pendingGalaxy'))player.pendingGalaxy=patch.pendingGalaxy;
+ return true;
 }
-async function saveRound(){if(!uid||!roundId)return false;try{await update(path('players/'+uid),{lastBoxes:boxes.map((b,i)=>({opened:opened.includes(i),rare:b.rare,galaxy:b.galaxy,blitz:b.blitz})),lastRareType:rareType?.id||null,lastRoundId:roundId,opensThisRound:opened.length,roundUpdated:Date.now()});return true;}catch(e){return false;}}
+async function saveRound(extra={}){
+ if(!uid||!roundId)return false;
+ try{await update(path('players/'+uid),{lastBoxes:boxes.map((b,i)=>({opened:opened.includes(i),rare:b.rare,galaxy:b.galaxy,blitz:b.blitz})),lastRareType:rareType?.id||null,lastRoundId:roundId,opensThisRound:opened.length,roundUpdated:Date.now(),...extra});return true;}catch(e){return false;}
+}
 async function openBox(i){
  if(opened.length>=3||opened.includes(i)||Date.now()>EXPIRY.getTime()||!roundId)return;
  if(!await saveRound()){$('result').textContent='Deine Runde konnte nicht sicher gespeichert werden. Prüfe deine Verbindung und versuche es erneut.';return;}
@@ -314,7 +326,7 @@ async function enter(){
     const claimedIds=Object.keys(claimState.opened||{}).map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<15);
     claimedIds.forEach(id=>{if(!opened.includes(id))opened.push(id);boxes[id].opened=true;});
     if(!player.lastRoundId||claimedIds.length)await saveRound();
-  }else buildRound();
+  }else await buildRound();
   renderBoxes();subscribe();watchComeback();renderInventory();renderShop();renderRanking();await addActivity('ist dem Spiel beigetreten');await roleRefresh();await ownerAutoRole();applyServerState();
  }catch(e){msg('loginMsg','Verbindung fehlgeschlagen: '+e.message)}
 }
@@ -1167,7 +1179,7 @@ onAuthStateChanged(auth,u=>{if(u)startServerWatch();else signInAnonymously(auth)
 // ===== ENDE SERVER LOCKDOWN 1.0 =====
 
 $('joinBtn').onclick=enter;$('playerName').addEventListener('keydown',e=>{if(e.key==='Enter')enter()});
-$('nextRound').onclick=()=>{if(opened.length===3){buildRound();$('result').textContent='Neue Runde! Viel Glück.';saveRound();}};
+$('nextRound').onclick=async()=>{if(opened.length===3){const ok=await buildRound();if(ok)$('result').textContent='Neue Runde! Viel Glück.';}};
 
 // Admin-Panel 2.0: schnelle Navigation zwischen den Bereichen
  document.querySelectorAll('.admin-nav-btn').forEach(btn=>btn.addEventListener('click',()=>{
