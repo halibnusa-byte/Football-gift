@@ -420,7 +420,7 @@ function applyRolePanelPermissions(){
  const halfEvents=['cubeOn',...quarterEvents,'schoolOn'];
  ['cubeOn','hackerOn','unicornOn','galaxyOn','diamondOn','robotOn','schoolOn','godzillaOn','timeOn','lavaOn','alienOn','blitzOn','laserOn','spiderOn','colaOn','plantsOn','elephantOn','skibidiOn'].forEach(id=>{const el=$(id);if(!el)return;const allowed=role==='admin'||(role==='quarterAdmin'&&quarterEvents.includes(id))||(role==='halfAdmin'&&halfEvents.includes(id));el.classList.toggle('hidden',!allowed);});
  ['eventsOff','saveLuck','adminLuck','adminLuckOn','announcementText','announcementScope','announcementTarget','announcementPublic','sendAnnouncement','godzillaUrl','godzillaPause','godzillaEnd','godzillaWinner','videoEvent','saveGodzillaVideo'].forEach(id=>{const el=$(id);if(el)el.classList.toggle('hidden',role==='quarterAdmin'&&['eventsOff','saveLuck','adminLuck','adminLuckOn','godzillaUrl','godzillaPause','godzillaEnd','godzillaWinner','videoEvent','saveGodzillaVideo'].includes(id));});
- const luckInput=$('adminLuck');if(luckInput){luckInput.max=role==='halfAdmin'?'50':'1000000';if(role==='halfAdmin')luckInput.value=String(settings.roleLuck?.[uid]||1);}
+ const luckInput=$('adminLuck');if(luckInput){luckInput.max=role==='halfAdmin'?'50':'5';if(role==='halfAdmin')luckInput.value=String(settings.roleLuck?.[uid]||1);}
  const title=$('adminPanel')?.querySelector('h2');if(title)title.textContent=role==='admin'?'👑 Hauptadmin-Panel':role==='halfAdmin'?'🛡️ Halb-Admin-Panel':'🛡️ Viertel-Admin-Panel';
 }
 
