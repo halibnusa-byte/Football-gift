@@ -21,6 +21,8 @@ checks = {
     "Skibidi unlock occurs only when stopping the event": "const skibidiDone=eventState.active==='skibidi'" in source and "if(NEW_EVENT_TYPES.includes(type))" not in source,
     "Power Hours follow the confirmed schedule and use max rather than multiplication": "o.weekday==='Sat'||(m>=900&&m<1020)" in source and "Math.max(settings.luckEnabled" in source,
     "main-admin global luck is capped at 5x": 'id="adminLuck" type="number" min="1" max="5"' in source and "if(v>5)return msg('adminMsg'" in source,
+    "Admin Abuse tips are main-admin-only and priority-sorted": "role==='admin'&&settings.adminAbuseActive===true" in source and "level:'DRINGEND'" in source and "level:'EMPFEHLUNG'" in source and "level:'OPTIONAL'" in source and "tips.sort((a,b)=>a.rank-b.rank)" in source,
+    "Main-admin luck requires whole-number values": "!Number.isInteger(v)" in source,
     "Shop balance is transaction-based": "players/'+uid+'/shopBalance" in source and "runTransaction" in source,
 }
 
