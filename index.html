@@ -546,7 +546,27 @@ async function renderEventChallenge(){
    racing:{q:'Tippe so schnell wie möglich fünfmal auf START!',a:['START'],correct:null},
    dragon:{q:'Wähle deinen Drachen:',a:['Feuerdrache','Eisdrache','Sturmdrache'],correct:null},
    music:{q:'Welches Muster hat einen gleichmäßigen Beat?',a:['Klatsch – Pause – Klatsch – Pause','Nur lange Pause','Unregelmäßiges Durcheinander'],correct:0},
-   mystery:{q:'Hinter welcher Tür steckt dein Glück?',a:['Tür 1','Tür 2','Tür 3'],correct:null}
+   mystery:{q:'Hinter welcher Tür steckt dein Glück?',a:['Tür 1','Tür 2','Tür 3'],correct:null},
+   pirate:{q:'Was markiert den Schatz auf einer Karte?',a:['X','Herz','Stern'],correct:0},
+   carnival:{q:'Womit jongliert ein Artist?',a:['Bälle','Bücher','Schuhe'],correct:0},
+   ninja:{q:'Welches Tier bewegt sich besonders leise?',a:['Katze','Elefant','Hahn'],correct:0},
+   toy:{q:'Was lässt ein Spielzeugauto rollen?',a:['Räder','Flügel','Segel'],correct:0},
+   crystal:{q:'Was ist Quarz?',a:['Mineral','Planet','Instrument'],correct:0},
+   wildwest:{q:'Wie heißt ein großer Bauernhof im Wilden Westen?',a:['Ranch','Hafen','Schloss'],correct:0},
+   bakery:{q:'Was lässt Hefeteig aufgehen?',a:['Hefe','Eis','Salz allein'],correct:0},
+   comic:{q:'Wo steht gesprochener Text im Comic?',a:['Sprechblase','Fußnote','Landkarte'],correct:0},
+   safari:{q:'Welches Tier lebt in der Savanne?',a:['Giraffe','Eisbär','Pinguin'],correct:0},
+   cyber:{q:'Welche Dezimalzahl ist binär 1010?',a:['10','8','12'],correct:0},
+   wizard:{q:'Welche Zutat passt zu einem Fantasie-Zaubertrank?',a:['Mondstaub','Asphalt','Plastik'],correct:0},
+   moon:{q:'Warum leuchtet der Mond?',a:['Er reflektiert Sonnenlicht','Er ist eine Sonne','Er brennt'],correct:0},
+   arcade:{q:'Welche Taste wird oft zum Springen genutzt?',a:['Leertaste','Esc','Druck'],correct:0},
+   samurai:{q:'Aus welchem Land stammt die Samurai-Kultur?',a:['Japan','Kanada','Brasilien'],correct:0},
+   stoneage:{q:'Woraus bestanden viele Werkzeuge in der Steinzeit?',a:['Stein','Glasfaser','Aluminiumfolie'],correct:0},
+   masquerade:{q:'Was trägt man auf einem Maskenball?',a:['Maske','Flossen','Helm'],correct:0},
+   science:{q:'Welche Formel hat Wasser?',a:['H2O','CO2','O2'],correct:0},
+   luxury:{q:'Welches Material ist ein Edelmetall?',a:['Gold','Kreide','Holz'],correct:0},
+   rainbow:{q:'Was entsteht durch Sonnenlicht und Regentropfen?',a:['Regenbogen','Schneesturm','Nebel immer'],correct:0},
+   timemachine:{q:'Welche Reihenfolge ist zeitlich richtig?',a:['1900, 2000, 2020','2020, 1900, 2000','2000, 2020, 1900'],correct:0}
   };
   const g=games[type],q=document.createElement('p');q.textContent=g.q;body.append(q);let used=false;
   if(type==='racing'){const b=document.createElement('button');b.textContent='START';let count=0;b.onclick=async()=>{if(used)return;count++;b.textContent='Noch '+(5-count)+'…';if(count>=5){used=true;b.disabled=true;if(await claim()){if(Math.random()<.65)await win('Rennen geschafft');else result.textContent='🏎️ Knapp verloren – Niete.';}}};body.append(b);status.textContent='Ein Klick zählt pro Tastendruck. Fünf Klicks beenden die Challenge.';}
