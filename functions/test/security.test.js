@@ -71,3 +71,9 @@ test("role redemption fails closed when the private role map is missing or malfo
   assert.match(source, /JSON\.parse\(roleCodeMapSecret\.value\(\)\)/);
   assert.match(source, /Array\.isArray\(roleMap\)/);
 });
+
+
+test("event updates preserve unrelated event configuration", () => {
+  assert.match(source, /db\.ref\(["']events["']\)\.update\(/);
+  assert.doesNotMatch(source, /db\.ref\(["']events["']\)\.set\(/);
+});
