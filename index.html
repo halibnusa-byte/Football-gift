@@ -681,7 +681,7 @@ function renderComeback(){
  show('comebackBox',!!uid&&cbState==='ready');
  let t=$('ogTitle');
  if(!t){t=document.createElement('div');t.id='ogTitle';t.style.cssText='color:var(--gold);font-weight:900;font-size:12px;letter-spacing:1px';$('hello').parentNode.insertBefore(t,$('playerMeta'));}
- t.textContent=cbTitle?'🏆 '+cbTitle:'';
+ t.textContent=(cbTitle?'🏆 '+cbTitle:'')+' '+(player&&player.comebackAccessory==='golden_comeback_cape'?'🦸 GOLDENE COMEBACK-CAPE':'');
 }
 function watchComeback(){
  unsubs.push(onValue(path('players/'+uid),s=>{const v=s.val()||{};cbState=v.comebackGift||null;cbTitle=v.title||'';renderComeback();}));
@@ -692,7 +692,7 @@ async function grantComeback(){
   const on=(await get(path('online'))).val()||{};let n=0,skip=0;
   for(const id of Object.keys(on)){
    const tx=await runTransaction(path('players/'+id+'/comebackGift'),v=>v===null?'ready':undefined);
-   if(tx.committed){await update(path('players/'+id),{title:'OG COMEBACK PLAYER'});n++;}else skip++;
+   if(tx.committed){await update(path('players/'+id),{title:'OG COMEBACK PLAYER',comebackAccessory:'golden_comeback_cape'});n++;}else skip++;
   }
   msg('cbAdminMsg',n+' Spieler erhalten das Gift'+(skip?', '+skip+' hatten es schon':'')+'.');
  }catch(e){msg('cbAdminMsg','Fehler: '+(e?.message||e));}
