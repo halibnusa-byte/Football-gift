@@ -324,7 +324,7 @@ function ensureShopAdmin(){
  const adminShop=document.createElement('div');
  adminShop.innerHTML='<h3>🛍️ Shop-Verwaltung</h3><p class="muted">Produkte, Preise und Angebote verwalten. Änderungen werden für alle gespeichert.</p><div class="row"><input id="shopNewName" placeholder="Produktname"><input id="shopNewPrice" type="number" min="0" placeholder="Preis"></div><input id="shopNewDesc" placeholder="Beschreibung"><button id="shopAddProduct">PRODUKT HINZUFÜGEN</button><div id="shopAdminList" class="list"></div>';
  $('adminPanel').append(adminShop);
- const draw=()=>{const list=$('shopAdminList');if(!list)return;list.innerHTML='';(settings.shopCatalog||DEFAULT_SHOP).forEach(p=>{const line=document.createElement('div');line.className='item';const label=document.createElement('span');label.textContent=p.name+' · '+p.price+' Punkte';const toggle=document.createElement('button');toggle.textContent=p.active===false?'AKTIVIEREN':'DEAKTIVIEREN';toggle.onclick=async()=>{const arr=(settings.shopCatalog||DEFAULT_SHOP).map(x=>x.id===p.id?{...x,active:x.active===false}:x);await update(path('settings'),{shopCatalog:arr});};const del=document.createElement('button');del.className='danger';del.textContent='LÖSCHEN';del.onclick=async()=>{const arr=(settings.shopCatalog||DEFAULT_SHOP).filter(x=>x.id!==p.id);await update(path('settings'),{shopCatalog:arr});};line.append(label,toggle,del);list.append(line);});};
+ const draw=()=>{const list=$('shopAdminList');if(!list)return;list.innerHTML='';(settings.shopCatalog||DEFAULT_SHOP).forEach(p=>{const line=document.createElement('div');line.className='item';const label=document.createElement('span');label.textContent=p.name+' · '+p.price+' Punkte';const price=document.createElement('input');price.type='number';price.min='0';price.value=String(p.price);price.placeholder='Preis';const offer=document.createElement('input');offer.type='number';offer.min='0';offer.placeholder='Angebotspreis';offer.value=p.offerPrice==null?'':String(p.offerPrice);const minutes=document.createElement('input');minutes.type='number';minutes.min='0';minutes.placeholder='Angebot Minuten';const save=document.createElement('button');save.textContent='PREIS / ANGEBOT SPEICHERN';save.onclick=async()=>{const base=Math.floor(Number(price.value)),op=offer.value.trim()===''?null:Math.floor(Number(offer.value)),mins=Math.floor(Number(minutes.value)||0);if(!Number.isFinite(base)||base<0||op!==null&&(!Number.isFinite(op)||op<0))return msg('adminMsg','Bitte gültige Preise eingeben.');const arr=(settings.shopCatalog||DEFAULT_SHOP).map(x=>x.id===p.id?{...x,price:base,offerPrice:op,offerUntil:op!==null&&mins>0?Date.now()+mins*60000:0}:x);await update(path('settings'),{shopCatalog:arr});msg('adminMsg','Preis und Angebot gespeichert.');};const toggle=document.createElement('button');toggle.textContent=p.active===false?'AKTIVIEREN':'DEAKTIVIEREN';toggle.onclick=async()=>{const arr=(settings.shopCatalog||DEFAULT_SHOP).map(x=>x.id===p.id?{...x,active:x.active===false}:x);await update(path('settings'),{shopCatalog:arr});};const del=document.createElement('button');del.className='danger';del.textContent='LÖSCHEN';del.onclick=async()=>{const arr=(settings.shopCatalog||DEFAULT_SHOP).filter(x=>x.id!==p.id);await update(path('settings'),{shopCatalog:arr});};line.append(label,price,offer,minutes,save,toggle,del);list.append(line);});};
  $('shopAddProduct').onclick=async()=>{const n=$('shopNewName').value.trim(),price=Math.floor(Number($('shopNewPrice').value)),desc=$('shopNewDesc').value.trim();if(!n||!Number.isFinite(price)||price<0)return msg('adminMsg','Name und gültiger Preis fehlen.');const arr=[...(settings.shopCatalog||DEFAULT_SHOP),{id:'custom_'+Date.now(),name:n,description:desc,price,emoji:'⭐',active:true}];await update(path('settings'),{shopCatalog:arr});$('shopNewName').value='';$('shopNewPrice').value='';$('shopNewDesc').value='';msg('adminMsg','Shop-Produkt gespeichert.');draw();};
  draw();
 }
@@ -333,17 +333,17 @@ function renderShop(){
  const host=$('shopItems');if(!host)return;host.innerHTML='';
  (settings.shopCatalog||DEFAULT_SHOP).forEach(item=>{
   const row=document.createElement('div');row.className='item';
-  const title=document.createElement('strong');title.textContent=item.emoji+' '+item.name+' · '+item.price+' Punkte';
+  const offerActive=Number(item.offerUntil)>Date.now()&&Number(item.offerPrice)>=0;const displayPrice=offerActive?Number(item.offerPrice):Number(item.price);const title=document.createElement('strong');title.textContent=item.emoji+' '+item.name+' · '+displayPrice+' Punkte'+(offerActive?' · ANGEBOT':'');
   const desc=document.createElement('div');desc.className='muted';desc.textContent=item.description||'';
   const owned=Number(player?.shopItems?.[item.id]||0);
-  const b=document.createElement('button');b.textContent='KAUFEN';b.disabled=bal<Number(item.price)||item.active===false;b.onclick=()=>buyShopItem(item.id);
+  const b=document.createElement('button');b.textContent='KAUFEN';b.disabled=bal<displayPrice||item.active===false;b.onclick=()=>buyShopItem(item.id);
   row.append(title,desc,b);if(owned){const tag=document.createElement('div');tag.className='hint';tag.textContent='Besitzt: '+owned;row.insertBefore(tag,b);}host.append(row);
  });
 }
 async function buyShopItem(id){
  const catalog=settings.shopCatalog||DEFAULT_SHOP,item=catalog.find(x=>x.id===id);if(!item||item.active===false)return;
  try{
-  const price=Math.max(0,Math.floor(Number(item.price)||0));
+  const offerActive=Number(item.offerUntil)>Date.now()&&Number(item.offerPrice)>=0;const price=Math.max(0,Math.floor(offerActive?Number(item.offerPrice):Number(item.price)||0));
   const tx=await runTransaction(path('players/'+uid+'/shopBalance'),v=>{v=Number(v)||0;return v>=price?v-price:undefined;});
   if(!tx.committed)return msg('shopStatus','Du hast nicht genug Punkte.');
   const inv={...(player.shopItems||{})};inv[id]=(Number(inv[id])||0)+1;
