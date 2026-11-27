@@ -13,7 +13,7 @@ checks = {
     "maximum three box opens": "opened.length>=3" in source,
     "Ocean loot is persisted": "players/'+uid+'/oceanLoot/'+run" in source,
     "Zombie loot is persisted": "players/'+uid+'/zombieLoot/'+run" in source,
-    "Zombie event has five serum choices": "for(let i=0;i<5;i++)" in source and "SERUM "+(i+1) in source,
+    "Zombie event has five serum choices": "for(let i=0;i<5;i++)" in source and "SERUM "+(i+1)" in source,
     "LaserTag uses Three.js": "three.module.js" in source and "renderLaserTag3D" in source,
     "Shop balance is transaction-based": "players/'+uid+'/shopBalance" in source and "runTransaction" in source,
 }
