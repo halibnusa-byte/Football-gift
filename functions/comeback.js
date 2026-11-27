@@ -40,23 +40,7 @@ function comebackLuck({ settings = {}, claims = {}, uid = "", now = Date.now() }
   return Math.max(...values.map((value) => Number.isFinite(value) && value > 0 ? value : 1));
 }
 
-function selectComebackPrize({
-  settings = {},
-  player = {},
-  claims = {},
-  uid = "",
-  now = Date.now(),
-  random = Math.random,
-}) {
-  const unlocked = settings.completedEvents && settings.completedEvents.skibidi === true;
-  const inventory = player.inventory || {};
-  const prizes = PRIZES.filter((prize) => {
-    if (!unlocked && ["deinewahl", "doublegoal", "selfretter", "freistoss", "comeback"].includes(prize.id)) return false;
-    if (prize.id === "penalty" && Number(inventory.penalty || 0) > 0) return false;
-    if (prize.id === "football" && (settings.footballTokenOwner || Number(inventory.football || 0) > 0)) return false;
-    return true;
-  });
-  const multiplier = comebackLuck({ settings, claims, uid, now });
+function weightedPrize(prizes, multiplier, random) {
   let weights = prizes.map((prize) => prize.chance * multiplier);
   const sum = weights.reduce((total, weight) => total + weight, 0);
   if (sum > 100) weights = weights.map((weight) => weight * 100 / sum);
@@ -66,6 +50,50 @@ function selectComebackPrize({
     if (roll < 0) return prizes[index];
   }
   return null;
+}
+
+function selectComebackPrize({
+  settings = {},
+  player = {},
+  claims = {},
+  uid = "",
+  eventState = {},
+  now = Date.now(),
+  random = Math.random,
+}) {
+  const inventory = player.inventory || {};
+  const footballAvailable = !settings.footballTokenOwner && Number(inventory.football || 0) === 0;
+  const active = eventState.active;
+
+  // Preserve the special event outcomes already used by the browser game.
+  if (active === "galaxy" && random() < 0.00001) {
+    const choices = ["comeback", "revenge"];
+    if (footballAvailable) choices.push("football");
+    const id = choices[Math.floor(random() * choices.length)];
+    return PRIZES.find((prize) => prize.id === id) || null;
+  }
+  if (active === "elephant" && random() < Number(settings.elephantChestChance ?? 0.00001)) {
+    const id = random() < 0.5 ? "revenge" : "switch";
+    return PRIZES.find((prize) => prize.id === id) || null;
+  }
+  if (active === "diamond" && random() < Number(settings.diamondChance ?? 0.1) / 100) {
+    return { id: "diamondGift", name: "Diamond-Geschenk", emoji: "💎" };
+  }
+
+  const unlocked = settings.completedEvents && settings.completedEvents.skibidi === true;
+  const prizes = PRIZES.filter((prize) => {
+    if (!unlocked && ["deinewahl", "doublegoal", "selfretter", "freistoss", "comeback"].includes(prize.id)) return false;
+    if (prize.id === "penalty" && Number(inventory.penalty || 0) > 0) return false;
+    if (prize.id === "football" && !footballAvailable) return false;
+    return true;
+  });
+  let extra = 1;
+  if (active === "blitz" && random() < Number(settings.blitzChance ?? 0.015)) extra = 10;
+  if (active === "spiderman" && random() < Number(settings.spiderChance ?? 0.01)) extra = Number(settings.spiderLuck || 5);
+  if (active === "cocacola" && random() < Number(settings.colaChance ?? 0.01)) extra = Number(settings.colaLuck || 5);
+  if (active === "plants" && random() < Number(settings.vineChance ?? 0.01)) extra = Number(settings.plantLuck || 5);
+  const multiplier = comebackLuck({ settings, claims, uid, now }) * extra;
+  return weightedPrize(prizes, multiplier, random);
 }
 
 module.exports = { PRIZES, isPowerHour, comebackLuck, selectComebackPrize };
