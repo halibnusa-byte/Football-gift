@@ -675,7 +675,7 @@ function renderEventChallenge(){
  }else if(type==='lasertag'){
   await renderLaserTag3D(body,result,status,eventState);
  }else if(['pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type)){
-  await renderThemedEventMiniGame(type,body,result,status,claim,win);
+  renderThemedEventMiniGame(type,body,result,status,claim,win);
  }else if(['ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type)){
   const games={
    ocean:{q:'Welche dieser Kreaturen lebt im Meer?',a:['Delfin','Kamel','Adler'],correct:0},
