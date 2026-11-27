@@ -492,7 +492,7 @@ async function resetData(){
  msg('adminMsg','Zurückgesetzt: '+targets.length+' Spieler.');
 }
 async function renderEventChallenge(){
- const type=eventState.active,available=['pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine','unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type);
+ const type=eventState.active,available=['pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine','unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag' ,'zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type);
  show('eventChallengePanel',available);if(!available||!uid)return;
  const body=$('eventChallengeBody');body.innerHTML='';$('eventChallengeTitle').textContent=EVENT_INFO[type]?.[0]||'Event';
  const descriptions={unicorn:'Wähle deinen Einhorn-Drop. Jeder Spieler kann pro Event einmal eine Belohnung erhalten.',cube:'Löse das Rätsel. Ein Versuch pro Event.',skibidi:'Klicke dich durch fünf Boss-Stufen. Jeder Boss hat einen eigenen Timer von zwei Minuten.',godzilla:'Sieh den Videoclip. Er stoppt mitten im Kampf. Danach tippst du einmal auf Godzilla oder Kong.',time:'Wähle einmal Vergangenheit, Gegenwart oder Zukunft.',school:'Beantworte die Schulfrage. Richtig: normales Geschenk. Falsch: nichts.',lava:'Wähle eine von drei Lava-Kisten. Ein Versuch.',alien:'Löse das Alien-Rätsel. Ein Versuch.',ocean:'Wähle eine Schatztruhe aus dem Ozean.',zombie:'Beantworte die Zombie-Frage.',multiverse:'Wähle dein Universum.',football:'Beantworte die Fußballfrage.',dinosaur:'Erkenne den Dinosaurier.',candy:'Wähle eine Süßigkeiten-Überraschung.',castle:'Löse das Burg-Rätsel.',space:'Wähle einen Planeten.',ghost:'Löse das Geister-Rätsel.',winter:'Beantworte die Winterfrage.',egypt:'Löse das Pyramiden-Rätsel.',superhero:'Wähle deine Helden-Mission.',racing:'Starte dein kurzes Reaktionsrennen.',dragon:'Wähle einen Drachentyp.',music:'Erkenne die Musikrichtung anhand eines Rhythmus-Musters.',mystery:'Wähle eine geheimnisvolle Tür.'};
@@ -516,6 +516,29 @@ async function renderEventChallenge(){
   const q=document.createElement('p');q.textContent='Wähle genau eine Lava-Kiste:';body.append(q);for(let i=1;i<=3;i++){const b=document.createElement('button');b.className='secondary';b.textContent='🌋 Kiste '+i;b.onclick=async()=>{body.querySelectorAll('button').forEach(x=>x.disabled=true);if(await claim()){if(Math.random()<1/3)await win('Kiste geöffnet');else if(Number(player.shopItems?.lava_shield||0)>0&&confirm('LAVA SHIELD verwenden und dich einmal retten?')){if(await consumeShopItem('lava_shield'))await win('LAVA SHIELD hat dich gerettet');else result.textContent='🌋 Niete!';}else result.textContent='🌋 Niete!';}};body.append(b)}
  }else if(type==='alien'){
   const q=document.createElement('p');q.textContent='Welcher Planet wird auch der Rote Planet genannt?';const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT ABSENDEN';b.onclick=async()=>{b.disabled=true;if(await claim()){if(inp.value.trim().toLowerCase()==='mars')await win('Rätsel gelöst');else result.textContent='Falsch – kein Geschenk.';}};body.append(q,inp,b);addRadarButton('alien_radar','👽 ALIEN RADAR VERWENDEN','👽 Alien Radar: Der gesuchte Planet ist Mars.');
+ }else if(type==='ocean'){
+  const intro=document.createElement('p');intro.textContent='Öffne bis zu drei Schatztruhen. In jeder Truhe wartet vielleicht ein Geschenk – manchmal taucht sogar der goldene Hai auf!';body.append(intro);
+  const chestStatus=document.createElement('div');chestStatus.className='hint';body.append(chestStatus);
+  const radar=document.createElement('button');radar.className='secondary';radar.textContent='🦪 PEARL RADAR VERWENDEN';
+  radar.onclick=async()=>{radar.disabled=true;if(await consumeShopItem('pearl_radar')){chestStatus.textContent='🦪 Der Pearl Radar zeigt eine besonders vielversprechende Truhe: Achte auf den goldenen Schimmer!';}else{radar.disabled=false;chestStatus.textContent='Kein Pearl Radar im Inventar.';}};
+  if(Number(player.shopItems?.pearl_radar||0)>0)body.append(radar);
+  let openedChests=0;
+  for(let n=1;n<=3;n++){
+   const chest=document.createElement('button');chest.className='secondary';chest.textContent='🫧 SCHATZTRUHE '+n;
+   chest.onclick=async()=>{
+    chest.disabled=true;
+    const token=String(Date.now())+Math.random();
+    const tx=await runTransaction(path('players/'+uid+'/eventClaims/ocean/'+run+'/chest_'+n),v=>v||{token,at:Date.now()});
+    if(!tx.committed||tx.snapshot.val()?.token!==token){chestStatus.textContent='Diese Schatztruhe wurde bereits geöffnet.';return;}
+    openedChests++;chest.textContent='📭 TRUHE '+n+' GEÖFFNET';
+    if(Math.random()<0.06){chestStatus.textContent='🦈 DER GOLDENE HAI!';await win('Goldener Hai entdeckt');}
+    else if(Math.random()<0.55){chestStatus.textContent='🎁 Du hast einen Schatz gefunden!';await win('Schatz gefunden');}
+    else chestStatus.textContent='🫧 Nur ein paar Luftblasen – Niete!';
+    if(openedChests>=3){chestStatus.textContent+=' Alle drei Truhen sind geöffnet.';body.querySelectorAll('button').forEach(x=>{if(x!==radar)x.disabled=true;});}
+   };
+   body.append(chest);
+  }
+  status.textContent='Drei Truhen pro Spieler und Event-Runde.';
  }else if(type==='skibidi'){
   const stages=[['Noob-Glücksrad',100],['Glücksrad',500],['Boss-Glücksrad',1000],['Hacker-Glücksrad',1500],['Divine-Glücksrad',2000]];
   if(!await claim()){status.textContent='Du hast deinen Bosskampf in diesem Event bereits benutzt.';body.append(status);return;}
