@@ -587,7 +587,7 @@ async function renderThemedEventMiniGame(type,body,result,status,claim,win){
  return true;
 }
 
-function renderEventChallenge(){
+async function renderEventChallenge(){
  const type=eventState.active,available=['pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine','unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag' ,'zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type);
  show('eventChallengePanel',available);if(!available||!uid)return;
  const body=$('eventChallengeBody');body.innerHTML='';$('eventChallengeTitle').textContent=EVENT_INFO[type]?.[0]||'Event';
