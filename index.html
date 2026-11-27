@@ -318,7 +318,8 @@ const DEFAULT_SHOP=[
 {id:'lava_shield',name:'LAVA SHIELD',description:'Schützt dich einmal bei einer Lava-Entscheidung.',price:15,emoji:'🛡️'},
 {id:'alien_radar',name:'ALIEN RADAR',description:'Hilft dir bei einer Alien-Invasion.',price:10,emoji:'👽'},
 {id:'pearl_radar',name:'PEARL RADAR',description:'Hilft bei der Schatzsuche im Ocean-Event.',price:10,emoji:'🦪'},
-{id:'zombie_detector',name:'ZOMBIE DETECTOR',description:'Hilft dir beim Erkennen der sicheren Wahl.',price:14,emoji:'🧟'}
+{id:'zombie_detector',name:'ZOMBIE DETECTOR',description:'Hilft dir beim Erkennen der sicheren Wahl.',price:14,emoji:'🧟'},
+{id:'golden_report_card',name:'GOLDENE ZEUGNISNOTE',description:'Erlaubt dir eine zweite Antwort im School-Event.',price:13,emoji:'📘'}
 ];
 function ensureShopAdmin(){
  if(role!=='admin'||$('shopAddProduct'))return;
@@ -505,7 +506,7 @@ async function renderEventChallenge(){
  }else if(type==='time'){
   renderTimeTravel(body,result,status,claim,win);
  }else if(type==='school'){
-  const q=document.createElement('p');q.textContent='Wie viele Spieler einer Mannschaft stehen normalerweise gleichzeitig auf dem Fußballfeld?';const inp=document.createElement('input');inp.placeholder='Antwort als Zahl';const b=document.createElement('button');b.textContent='ANTWORT ABSENDEN';b.onclick=async()=>{b.disabled=true;if(await claim()){if(inp.value.trim()==='11')await win('Richtig');else result.textContent='Falsch – kein Geschenk.';}};body.append(q,inp,b);
+  const q=document.createElement('p');q.textContent='Wie viele Spieler einer Mannschaft stehen normalerweise gleichzeitig auf dem Fußballfeld?';const inp=document.createElement('input');inp.placeholder='Antwort als Zahl';const b=document.createElement('button');b.textContent='ANTWORT ABSENDEN';let claimed=false;b.onclick=async()=>{if(!claimed){b.disabled=true;if(!await claim()){status.textContent='Dein Versuch wurde bereits benutzt.';return;}claimed=true;b.disabled=false;}if(inp.value.trim()==='11'){b.disabled=true;inp.disabled=true;await win('Richtig');}else if(Number(player.shopItems?.golden_report_card||0)>0&&confirm('📘 GOLDENE ZEUGNISNOTE verwenden und deine Antwort einmal neu prüfen?')){if(await consumeShopItem('golden_report_card')){result.textContent='📘 Goldene Zeugnisnote aktiviert – du darfst deine Antwort einmal ändern.';status.textContent='Ein zweiter Antwortversuch ist freigeschaltet.';inp.value='';inp.focus();}else{b.disabled=true;inp.disabled=true;result.textContent='Falsch – kein Geschenk.';}}else{b.disabled=true;inp.disabled=true;result.textContent='Falsch – kein Geschenk.';}};body.append(q,inp,b);
  }else if(type==='lava'){
   const q=document.createElement('p');q.textContent='Wähle genau eine Lava-Kiste:';body.append(q);for(let i=1;i<=3;i++){const b=document.createElement('button');b.className='secondary';b.textContent='🌋 Kiste '+i;b.onclick=async()=>{body.querySelectorAll('button').forEach(x=>x.disabled=true);if(await claim()){if(Math.random()<1/3)await win('Kiste geöffnet');else if(Number(player.shopItems?.lava_shield||0)>0&&confirm('LAVA SHIELD verwenden und dich einmal retten?')){if(await consumeShopItem('lava_shield'))await win('LAVA SHIELD hat dich gerettet');else result.textContent='🌋 Niete!';}else result.textContent='🌋 Niete!';}};body.append(b)}
  }else if(type==='alien'){
