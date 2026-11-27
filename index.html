@@ -668,7 +668,22 @@ async function renderLaserTag3D(body,result,status,ev){
  let previewAvatar=null;function setPreviewSkin(index){if(previewAvatar){previewScene.remove(previewAvatar);previewAvatar.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});}previewAvatar=makeAvatar('skin-preview',{name:'VORSCHAU',skin:index,lives:3,x:0,z:0});scene.remove(previewAvatar);avatars.delete('skin-preview');previewAvatar.position.set(0,0,0);previewScene.add(previewAvatar);previewInfo.querySelector('b').textContent=['🛰️ SPACE TROOPER','🤖 BATTLE ROBOT','🛡️ TITAN ARMOR','👽 ALIEN RUNNER','🥷 SHADOW NINJA'][index];}
  setPreviewSkin(Number(skinSel.value));skinSel.addEventListener('change',()=>setPreviewSkin(Number(skinSel.value)));
  const join=document.createElement('button');join.textContent='SKIN WÄHLEN & BEITRETEN';join.className='secondary';body.insertBefore(join,wrap);
- join.onclick=async()=>{if(Date.now()-startAt>10000){chosen=false;joined=false;skinSel.disabled=true;join.disabled=true;hint.textContent='Die Skin-Auswahl ist vorbei. Du bist jetzt Zuschauer.';return;}chosen=true;joined=true;const spawnPoints=[[-23,-23],[23,-23],[-23,23],[23,23],[0,-23],[0,23],[-23,0],[23,0]];const spawn=spawnPoints[Math.floor(Math.random()*spawnPoints.length)];x=spawn[0]+(Math.random()-.5)*2;z=spawn[1]+(Math.random()-.5)*2;await set(path('events/laserPlayers/'+uid),{name:name||'Spieler',skin:Number(skinSel.value),x,z,lives:3,score:0,active:true,joinedAt:Date.now(),at:Date.now()});await onDisconnect(path('events/laserPlayers/'+uid)).remove();skinSel.disabled=true;join.disabled=true;hint.textContent='Du bist in der Arena!';};
+ join.onclick=async()=>{
+  if(Date.now()-startAt>10000){chosen=false;joined=false;skinSel.disabled=true;join.disabled=true;hint.textContent='Die Skin-Auswahl ist vorbei. Du bist jetzt Zuschauer.';return;}
+  join.disabled=true;join.textContent='VERBINDE …';
+  const spawnPoints=[[-23,-23],[23,-23],[-23,23],[23,23],[0,-23],[0,23],[-23,0],[23,0]];
+  const spawn=spawnPoints[Math.floor(Math.random()*spawnPoints.length)];
+  const nextX=spawn[0]+(Math.random()-.5)*2,nextZ=spawn[1]+(Math.random()-.5)*2;
+  try{
+   await set(path('events/laserPlayers/'+uid),{name:name||'Spieler',skin:Number(skinSel.value),x:nextX,z:nextZ,lives:3,score:0,active:true,joinedAt:Date.now(),at:Date.now()});
+   await onDisconnect(path('events/laserPlayers/'+uid)).remove();
+   x=nextX;z=nextZ;lives=3;score=0;chosen=true;joined=true;skinSel.disabled=true;join.textContent='DU BIST IN DER ARENA';hint.textContent='Du bist in der Arena!';
+  }catch(err){
+   chosen=false;joined=false;join.disabled=false;join.textContent='ERNEUT VERSUCHEN';
+   hint.textContent='Beitritt fehlgeschlagen. Prüfe die Verbindung oder Firebase-Berechtigungen und versuche es erneut.';
+   status.textContent='LaserTag-Verbindung fehlgeschlagen: '+(err?.message||'Unbekannter Fehler');
+  }
+ };
  function onKey(e,down){const map={KeyW:'forward',ArrowUp:'forward',KeyS:'back',ArrowDown:'back',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'fire'};const k=map[e.code];if(k){laserKeys[k]=down;if(down)e.preventDefault();}}
  const kd=e=>onKey(e,true),ku=e=>onKey(e,false);window.addEventListener('keydown',kd);window.addEventListener('keyup',ku);
  activate.onclick=()=>{renderer.domElement.requestPointerLock?.();};
