@@ -365,3 +365,99 @@ exports.sendGift = onCall({ region: "europe-west1" }, async (request) => {
     throw new HttpsError("aborted", error.message || "Das Geschenk konnte nicht gesendet werden.");
   }
 });
+
+
+// Queue Galaxy gifts without trusting client-side inventory writes.
+exports.spawnGalaxyGifts = onCall({ region: "europe-west1" }, async (request) => {
+  requireRole(request, ["mainAdmin"]);
+  const data = request.data || {};
+  const scope = data.scope;
+  const amount = Number(data.amount);
+  const targetName = typeof data.targetName === "string" ? data.targetName.trim().slice(0, 24) : "";
+  if (scope !== "single" && scope !== "global") {
+    throw new HttpsError("invalid-argument", "Ungültiger Empfängerbereich.");
+  }
+  if (!Number.isInteger(amount) || amount < 1 || amount > 100) {
+    throw new HttpsError("invalid-argument", "Die Menge muss zwischen 1 und 100 liegen.");
+  }
+  const players = (await db.ref("players").get()).val() || {};
+  let targets;
+  if (scope === "global") {
+    targets = Object.keys(players);
+    if (targets.length > 200) {
+      throw new HttpsError("failed-precondition", "Zu viele Spieler für eine globale Aktion.");
+    }
+  } else {
+    if (!targetName) throw new HttpsError("invalid-argument", "Bitte einen Spielernamen eingeben.");
+    const normalized = targetName.toLowerCase();
+    const found = Object.entries(players).find(([, player]) =>
+      String(player && player.name || "").trim().toLowerCase() === normalized
+    );
+    if (!found) throw new HttpsError("not-found", "Spieler nicht gefunden.");
+    targets = [found[0]];
+  }
+  let queued = 0;
+  for (const targetUid of targets) {
+    const tx = await db.ref("players/" + targetUid).transaction((current) => {
+      if (!current) return;
+      return { ...current, pendingGalaxy: (Number(current.pendingGalaxy) || 0) + amount };
+    });
+    if (tx.committed) queued += 1;
+  }
+  if (queued === 0) throw new HttpsError("failed-precondition", "Es konnten keine Galaxy-Geschenke vorgemerkt werden.");
+  if (data.public === true) {
+    await db.ref("activity").push({ name: "OWNER", text: "Owner hat Galaxy-Truhen gespawnt.", at: Date.now() }).catch(() => {});
+  }
+  return { queued, amount };
+});
+
+// Player resets are restricted to the verified main-admin claim.
+exports.resetPlayerData = onCall({ region: "europe-west1" }, async (request) => {
+  requireRole(request, ["mainAdmin"]);
+  const data = request.data || {};
+  const scope = data.scope;
+  const targetName = typeof data.targetName === "string" ? data.targetName.trim().slice(0, 24) : "";
+  if (data.confirm !== true) throw new HttpsError("failed-precondition", "Zurücksetzen wurde nicht bestätigt.");
+  if (scope !== "single" && scope !== "global") {
+    throw new HttpsError("invalid-argument", "Ungültiger Zurücksetzungsbereich.");
+  }
+  const players = (await db.ref("players").get()).val() || {};
+  let targets;
+  if (scope === "global") {
+    targets = Object.keys(players);
+    if (targets.length > 500) {
+      throw new HttpsError("failed-precondition", "Zu viele Spieler für einen globalen Reset.");
+    }
+  } else {
+    if (!targetName) throw new HttpsError("invalid-argument", "Bitte einen Spielernamen eingeben.");
+    const normalized = targetName.toLowerCase();
+    const found = Object.entries(players).find(([, player]) =>
+      String(player && player.name || "").trim().toLowerCase() === normalized
+    );
+    if (!found) throw new HttpsError("not-found", "Spieler nicht gefunden.");
+    targets = [found[0]];
+  }
+  let reset = 0;
+  for (const targetUid of targets) {
+    const tx = await db.ref("players/" + targetUid).transaction((current) => {
+      if (!current) return;
+      return {
+        ...current,
+        inventory: {},
+        firstWon: {},
+        totalWins: 0,
+        lastBoxes: [],
+        opensThisRound: 0,
+        pendingGalaxy: 0,
+        eventClaims: {},
+      };
+    });
+    if (tx.committed) reset += 1;
+  }
+  if (scope === "global") {
+    await db.ref("settings").update({ footballTokenOwner: null, completedEvents: {} });
+  } else if (targets[0] && (await db.ref("settings/footballTokenOwner").get()).val() === targets[0]) {
+    await db.ref("settings/footballTokenOwner").remove();
+  }
+  return { reset, scope };
+});
