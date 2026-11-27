@@ -689,14 +689,6 @@ async function applyServerChange(){
   msg('srvMsg','Serverstatus konnte nicht geändert werden: '+(denied?'Keine Berechtigung (Firebase-Regeln prüfen).':(e?.message||e))+' Bitte versuche es erneut.');
  }
 }
-const roleCheckInner=roleCheck;
-roleCheck=async function(){
- const code=String($('roleCode').value||'').trim();
- await roleCheckInner();
- if(role==='admin'&&code){try{await set(path('adminProof/'+uid),await hash(code));ownerCode=code;}catch(e){}}
- isOwner=role==='admin';
- applyServerState();
-};
 $('lockRetry').onclick=()=>{if(!auth.currentUser)signInAnonymously(auth).catch(()=>{});startServerWatch();};
 $('lockAdminBtn').onclick=lockAdminLogin;
 $('lockAdminCode').addEventListener('keydown',e=>{if(e.key==='Enter')lockAdminLogin()});
