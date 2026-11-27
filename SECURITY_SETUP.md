@@ -2,11 +2,13 @@
 
 Diese Datei dokumentiert die Schritte, die vor einer öffentlichen Freigabe noch in Firebase erledigt und getestet werden müssen. **Sie ändert keine Firebase-Einstellungen und macht die App allein nicht sicher.**
 
-## Important: current rules file is not safe to deploy as production rules
+## Emergency security change (2026-11-27)
 
-The checked-in `firebase-config.js` is a development draft, not a production security policy. In its current form, authenticated users can write broad data branches while the server is open. The client-writable `adminProof` plus readable code hash also means the code-hash proof is not a secure identity check. A malicious user could potentially impersonate an admin and alter player data, settings, events, or rewards.
+`firebase-config.js` has now been changed to a **fail-closed policy**: root `.read` and `.write` are both `false`, with no permissive child rules. This prevents anonymous/authenticated clients from reading or writing any Realtime Database path if these rules are deployed. It also means the current game cannot operate against the database while this emergency policy is active. This is intentional: it closes the client-side privilege-escalation path instead of pretending the old client-writable `adminProof` is secure.
 
-**Do not deploy the current rules as a security fix.** The app must be migrated to server-verified Firebase Authentication custom claims and trusted Cloud Functions/Admin SDK operations for sensitive writes. Player-owned cosmetic/profile fields can then be allowed separately, while balances, inventory, tokens, global one-time rewards, event claims, shop purchases, and admin actions are validated on the server. Rules must be tested in the Firebase Emulator before deployment.
+**Important:** editing this repository file does not deploy Firebase rules. The policy must still be published in the Firebase Realtime Database Rules console by the project owner. No Firebase project deployment credentials are connected to this repository workflow, so deployment has not been performed from here.
+
+To restore gameplay safely, migrate sensitive writes to trusted Cloud Functions/Admin SDK operations and server-verified Firebase Authentication custom claims. Only after that migration should narrowly scoped read/write rules be reintroduced and tested in the Firebase Emulator. Player-owned cosmetics/profile fields, chat, and presence can be allowed separately after auditing their exact paths; balances, inventory, tokens, global one-time rewards, event claims, shop purchases, LaserTag results, and admin actions must be validated server-side. Rules must be tested in the Firebase Emulator before deployment.
 
 
 ## 0. Findings from the current app review (2026-11-27)
@@ -80,7 +82,7 @@ Vor Freigabe mit mindestens zwei getrennten Testkonten prüfen:
 - JavaScript-Syntaxprüfung über GitHub Actions: vorhanden.
 - Browser-Test auf Desktop und Android: noch erforderlich.
 - Zwei-Konten-Multiplayer-Test: noch erforderlich.
-- Firebase Rules Review und Deployment: noch erforderlich.
-- Serverseitige Admin-Autorisierung und Reward-Validierung: noch erforderlich.
+- Fail-closed Realtime Database Rules im Repository: erstellt; Firebase Console Deployment noch erforderlich.
+- Serverseitige Admin-Autorisierung und Reward-Validierung: noch erforderlich; bis dahin bleibt die Datenbank absichtlich gesperrt.
 
 Die App sollte erst nach diesen Prüfungen aus dem Draft-Pull-Request in den Hauptbranch übernommen werden.
