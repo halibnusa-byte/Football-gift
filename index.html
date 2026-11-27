@@ -358,7 +358,7 @@ function renderShop(){
  });
 }
 async function buyShopItem(id){
- const catalog=settings.shopCatalog||DEFAULT_SHOP,item=catalog.find(x=>x.id===id);if(!item||item.active===false)return;
+ const item=currentShopCatalog().find(x=>x.id===id);if(!item||item.active===false)return;
  try{
   const offerActive=Number(item.offerUntil)>Date.now()&&Number(item.offerPrice)>=0;const price=Math.max(0,Math.floor(offerActive?Number(item.offerPrice):Number(item.price)||0));
   const tx=await runTransaction(path('players/'+uid+'/shopBalance'),v=>{v=Number(v)||0;return v>=price?v-price:undefined;});
