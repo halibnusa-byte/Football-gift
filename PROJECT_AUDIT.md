@@ -30,6 +30,12 @@ Status: Entwicklungsstand, nicht produktionsbereit.
 - Time Travel behält die vereinbarten Fußballstar-Clips und den Rückweg zum Event.
 - Skibidi behält seine fünf Boss-Stufen.
 
+### Admin Abuse und Power Hours
+- Admin Abuse kann nur der Hauptadmin starten und stoppen.
+- Zufällige Empfängerauswahl ist nur während Admin Abuse möglich; die Zufallsauswahl bestimmt den Empfänger, nicht Geschenk oder Token. Der Hauptadmin wählt die Belohnung.
+- Legendary Comeback Gift kann nur während aktivem Admin Abuse an die aktuell online befindlichen Teilnehmer vergeben werden; jeder Teilnehmer erhält drei verdeckte Karten und wählt eine. Der Titel OG COMEBACK PLAYER und das kosmetische Cape bleiben erhalten.
+- Power Hours: Sonntag–Freitag 15:00–17:00 Uhr, Samstag ganztägig. Normale Spieler erhalten mindestens 2× Glück; das globale Hauptadmin-Glück ist 1×–5×. Werte werden nicht miteinander multipliziert.
+
 ### Shop
 - Dauerhafte Shop-Punkte und gespeicherter Kontostand.
 - Admin kann Produkte hinzufügen, Preise und Beschreibungen ändern, aktivieren/deaktivieren und löschen.
@@ -50,6 +56,9 @@ Status: Entwicklungsstand, nicht produktionsbereit.
 - Admin-Abuse-Tippgeber analysiert Chat-Muster regelbasiert; es ist kein autonomes KI-System.
 - Comeback-Gift, OG-Comeback-Titel und kosmetisches Cape.
 - Lockdown-Oberfläche mit Hauptadmin-Ausnahme ist vorhanden.
+
+## Noch nicht bestätigte Wahrscheinlichkeiten
+- Die prozentuale Verteilung der seltenen Boxen, Diamond-Restchance, Event-Spawnraten und sämtliche nicht ausdrücklich bestätigten Token-Chancen müssen mit den Nutzerabsprachen abgeglichen werden. Vorhandene Zahlen im Code gelten nicht automatisch als freigegeben.
 
 ## Automatische Prüfungen
 - JavaScript-Modul-Syntaxprüfung in GitHub Actions.
