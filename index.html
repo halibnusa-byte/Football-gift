@@ -492,7 +492,81 @@ async function resetData(){
  if(scope==='global'){await remove(path('settings/footballTokenOwner'));await update(path('settings'),{completedEvents:{}});}else if(settings.footballTokenOwner===targets[0][0]){await remove(path('settings/footballTokenOwner'));}
  msg('adminMsg','Zurückgesetzt: '+targets.length+' Spieler.');
 }
-async function renderEventChallenge(){
+async 
+async function renderThemedEventMiniGame(type,body,result,status,claim,win){
+ const configs={
+  pirate:{mode:'map',title:'🗺️ SCHATZKARTE',prompt:'Finde das X auf der Schatzkarte. Du hast genau einen Versuch.'},
+  carnival:{mode:'reaction',title:'🎪 JAHRMARKT-REAKTION',prompt:'Warte auf das grüne Signal und tippe dann so schnell wie möglich!'},
+  ninja:{mode:'sequence',title:'🥷 NINJA-MERKTEST',prompt:'Merke dir die Ninja-Zeichen und wiederhole ihre Reihenfolge.',symbols:['🥷','🌙','⭐'],sequence:[1,0,2]},
+  toy:{mode:'order',title:'🧸 SPIELZEUG ZUSAMMENBAUEN',prompt:'Setze das Spielzeug in der richtigen Reihenfolge zusammen.',symbols:['🛞 Räder','🧩 Körper','🚗 Fertig'],sequence:[1,0,2]},
+  crystal:{mode:'quiz',title:'💎 KRISTALL-PRÜFUNG',prompt:'Welcher Kristall ist für seine violette Farbe bekannt?',symbols:['Amethyst','Rubin','Smaragd'],correct:0},
+  wildwest:{mode:'reaction',title:'🤠 WILDER-WESTEN-DUELL',prompt:'Warte auf LOS! Tippe nicht vorher.'},
+  bakery:{mode:'order',title:'🥐 BACKSTUBE',prompt:'Bringe die Schritte in die richtige Reihenfolge.',symbols:['🔥 Backen','🥣 Teig mischen','🍞 Servieren'],sequence:[1,0,2]},
+  comic:{mode:'order',title:'💥 COMIC-STORY',prompt:'Ordne die drei Comic-Bilder: Anfang, Überraschung, Ende.',symbols:['🏁 Ende','📖 Anfang','💥 Überraschung'],sequence:[1,2,0]},
+  safari:{mode:'quiz',title:'🦁 SAFARI-SPUR',prompt:'Welches Tier ist besonders gut an das Leben in der Savanne angepasst?',symbols:['Giraffe','Eisbär','Pinguin'],correct:0},
+  cyber:{mode:'sequence',title:'🖥️ CYBER-CODE',prompt:'Merke dir die Ziffernfolge und tippe sie nach.',symbols:['0','1','0','1'],sequence:[1,0,1,0]},
+  wizard:{mode:'order',title:'🧙 ZAUBERTRANK',prompt:'Mische die Zutaten in der angezeigten Reihenfolge.',symbols:['✨ Zauberstaub','🌙 Mondwasser','🧪 Trank'],sequence:[1,0,2]},
+  moon:{mode:'order',title:'🌙 MONDPHASEN',prompt:'Ordne den Ablauf: Neumond, Halbmond, Vollmond.',symbols:['🌕 Vollmond','🌑 Neumond','🌓 Halbmond'],sequence:[1,2,0]},
+  arcade:{mode:'reaction',title:'🕹️ ARCADE-REAKTION',prompt:'Warte auf START und tippe dann so schnell du kannst!'},
+  samurai:{mode:'sequence',title:'🥷 SAMURAI-MERKTEST',prompt:'Merke dir die Schwert-Kombination und wiederhole sie.',symbols:['⚔️','🛡️','🌸'],sequence:[0,2,1]},
+  stoneage:{mode:'order',title:'🪨 STEINZEIT-WERKSTATT',prompt:'Wähle die Schritte zum Werkzeug in der richtigen Reihenfolge.',symbols:['🪵 Griff befestigen','🪨 Stein auswählen','🛠️ Werkzeug fertig'],sequence:[1,0,2]},
+  masquerade:{mode:'quiz',title:'🎭 MASKENBALL',prompt:'Welches Detail gehört typischerweise zu einer Maske für einen Maskenball?',symbols:['Augenausschnitte','Schwimmflossen','Autoreifen'],correct:0},
+  science:{mode:'order',title:'🧪 LABOR-CHALLENGE',prompt:'Ordne die Schritte eines einfachen Experiments.',symbols:['📊 Ergebnis notieren','🧫 Versuch durchführen','❓ Frage stellen'],sequence:[2,1,0]},
+  luxury:{mode:'sequence',title:'👑 LUXUS-MEMORY',prompt:'Merke dir die Edelstein-Reihenfolge und wiederhole sie.',symbols:['💎','👑','✨'],sequence:[2,0,1]},
+  rainbow:{mode:'sequence',title:'🌈 REGENBOGEN-MEMORY',prompt:'Merke dir die Farben und tippe sie in derselben Reihenfolge.',symbols:['🔴','🟡','🔵'],sequence:[0,2,1]},
+  timemachine:{mode:'order',title:'⏰ ZEITMASCHINE',prompt:'Ordne die Ereignisse vom ältesten zum neuesten.',symbols:['📱 Smartphone-Zeit','🏰 Mittelalter','🚂 Eisenbahn-Zeit'],sequence:[1,2,0]}
+ };
+ const cfg=configs[type];if(!cfg)return false;
+ const heading=document.createElement('h3');heading.textContent=cfg.title;body.append(heading);
+ const prompt=document.createElement('p');prompt.textContent=cfg.prompt;body.append(prompt);
+ const board=document.createElement('div');board.className='row';board.style.cssText='display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0';body.append(board);
+ let started=false,finished=false,progress=0,sequenceTimer=null;
+ const makeButton=(label,fn)=>{const b=document.createElement('button');b.className='secondary';b.textContent=label;b.onclick=fn;board.append(b);return b;};
+ const disable=()=>board.querySelectorAll('button').forEach(b=>b.disabled=true);
+ async function begin(){if(started)return true;started=true;if(!await claim()){finished=true;disable();status.textContent='Dein Versuch für dieses Event wurde bereits benutzt.';return false;}return true;}
+ async function finish(ok,label){
+  if(finished)return;finished=true;disable();
+  if(ok)await win(label||'Event-Challenge geschafft');
+  else result.textContent='❌ Nicht geschafft – dein Versuch ist verbraucht.';
+  status.textContent='Die Challenge ist beendet.';
+ }
+ if(cfg.mode==='map'){
+  const safe=Math.floor(Math.random()*9);
+  for(let i=0;i<9;i++){const n=i;makeButton('🟫 '+(i+1),async()=>{if(!await begin())return;await finish(n===safe,n===safe?'Schatz gefunden!':'');});}
+ }else if(cfg.mode==='reaction'){
+  let armed=false,readyAt=0,timer=null;
+  const b=makeButton('BEREIT',async()=>{
+   if(finished||armed)return;if(!await begin())return;armed=true;b.disabled=true;b.textContent='⏳ WARTEN …';
+   timer=setTimeout(()=>{if(finished)return;readyAt=Date.now();b.disabled=false;b.textContent='🟢 JETZT!';},900+Math.floor(Math.random()*1900));
+  });
+  b.onclick=async()=>{
+   if(finished)return;
+   if(!armed){if(!await begin())return;armed=true;b.disabled=true;b.textContent='⏳ WARTEN …';timer=setTimeout(()=>{if(finished)return;readyAt=Date.now();b.disabled=false;b.textContent='🟢 JETZT!';},900+Math.floor(Math.random()*1900));return;}
+   if(!readyAt){clearTimeout(timer);await finish(false,'');return;}
+   const delay=Date.now()-readyAt;await finish(delay<=900,'Perfekte Reaktion!');
+  };
+  status.textContent='Zu frühes Tippen zählt als Fehlversuch. Nach dem Signal hast du 0,9 Sekunden.';
+ }else if(cfg.mode==='quiz'){
+  cfg.symbols.forEach((v,i)=>makeButton(v,async()=>{if(!await begin())return;await finish(i===cfg.correct,'Richtig beantwortet!');}));
+ }else{
+  const symbols=cfg.symbols,seq=cfg.sequence;
+  const reveal=document.createElement('div');reveal.className='hint';reveal.textContent=seq.map(i=>symbols[i]).join('  →  ');body.append(reveal);
+  const buttons=[];
+  symbols.forEach((v,i)=>buttons.push(makeButton(v,async()=>{
+   if(finished||reveal.dataset.ready!=='yes')return;
+   if(!await begin())return;
+   if(i!==seq[progress]){await finish(false,'');return;}
+   progress++;status.textContent='Richtig! '+progress+' / '+seq.length;
+   if(progress===seq.length)await finish(true,'Reihenfolge geschafft!');
+  })));
+  buttons.forEach(b=>b.disabled=true);
+  sequenceTimer=setTimeout(()=>{if(finished)return;reveal.textContent='Jetzt bist du dran!';reveal.dataset.ready='yes';buttons.forEach(b=>b.disabled=false);},2400);
+  status.textContent='Schau dir die Reihenfolge an. Danach wird sie ausgeblendet.';
+ }
+ return true;
+}
+
+function renderEventChallenge(){
  const type=eventState.active,available=['pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine','unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag' ,'zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type);
  show('eventChallengePanel',available);if(!available||!uid)return;
  const body=$('eventChallengeBody');body.innerHTML='';$('eventChallengeTitle').textContent=EVENT_INFO[type]?.[0]||'Event';
@@ -579,7 +653,9 @@ async function renderEventChallenge(){
   body.append(info,bar,hit);draw();status.textContent='Jeder Klick zieht 10 HP ab. Jede Stufe hat zwei Minuten.';
  }else if(type==='lasertag'){
   await renderLaserTag3D(body,result,status,eventState);
- }else if(['pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type)){
+ }else if(['pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type)){
+  await renderThemedEventMiniGame(type,body,result,status,claim,win);
+ }else if(['ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type)){
   const games={
    ocean:{q:'Welche dieser Kreaturen lebt im Meer?',a:['Delfin','Kamel','Adler'],correct:0},
    zombie:{q:'Was hilft in einem Fantasy-Spiel am besten gegen eine Zombie-Welle?',a:['Teamarbeit','Schlaflied','Schneemann'],correct:0},
