@@ -3,7 +3,7 @@
 This folder is a server-side migration scaffold. It is **not deployed** and the current browser app has not yet been migrated to call these endpoints.
 
 ## Implemented callable endpoints
-- `redeemRoleCode`: checks the entered code against hashes in the database on the trusted server, then assigns Firebase custom claims. Stored hashes are not returned to the browser by this endpoint.
+- `redeemRoleCode`: checks the entered code against a server-only `ROLE_CODE_MAP` Secret Manager secret, then assigns Firebase custom claims. It does not read role hashes from Realtime Database.
 - `setActiveEvent`: starts/stops a whitelisted event and enforces main/half/quarter-admin permissions using custom claims.
 - `setServerControl`: changes the server lock only for a user with the `mainAdmin` custom claim.
 - `rollAndAward`: deliberately disabled. It must remain disabled until box openings and event claims are tracked authoritatively on the server. Otherwise a modified client could request unlimited rewards.
@@ -17,6 +17,21 @@ This folder is a server-side migration scaffold. It is **not deployed** and the 
 6. Replace broad branch-level database grants with narrowly validated client permissions and public-safe read models. The existing UI reads the full players/settings/activity branches, so rules cannot safely be tightened until those reads are redesigned.
 7. Add Firebase Emulator tests for anonymous users, normal players, Message Man, special players, quarter admins, half admins and main admin. Test one-time Football Token uniqueness and every forbidden write.
 8. Test the complete migrated client and backend together before deployment.
+
+## Secure role-code secret (required before role login can work)
+The callable reads `ROLE_CODE_MAP` from Google Secret Manager through Firebase Functions params. The secret value must be a JSON object keyed by lowercase SHA-256 hashes of the role codes. Example structure (placeholders only; never commit real codes or hashes):
+
+```json
+{
+  "<sha256-of-main-admin-code>": { "role": "mainAdmin" },
+  "<sha256-of-half-admin-code>": { "role": "halfAdmin" },
+  "<sha256-of-quarter-admin-code>": { "role": "quarterAdmin" },
+  "<sha256-of-special-code>": { "role": "special", "uid": "<firebase-auth-uid>", "name": "Special Player" },
+  "<sha256-of-message-man-code>": { "role": "messageMan", "uid": "<firebase-auth-uid>", "name": "Message Man" }
+}
+```
+
+Allowed roles are `mainAdmin`, `halfAdmin`, `quarterAdmin`, `special`, and `messageMan`. Special and Message Man entries must be bound to the intended Firebase Auth UID. Provision and rotate this secret only through a trusted administrator/parent or guardian using Firebase's secure secret-management flow. Never paste actual role codes, hashes, service-account keys, or credentials into chat or GitHub. If the secret is missing, role redemption fails closed.
 
 ## Setup
 - Node.js 20+
