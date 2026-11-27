@@ -50,3 +50,25 @@ test("browser event and server-lock controls call trusted backend endpoints", ()
   assert.match(client, /httpsCallable\(functions,["']setServerControl["']\)/);
   assert.doesNotMatch(client, /set\(path\(["']serverControl["']/);
 });
+
+
+test("role redemption validates code length and uses a strict role allowlist", () => {
+  assert.match(source, /code\.length < 4 \|\| code\.length > 128/);
+  assert.match(source, /new Set\(\["mainAdmin", "halfAdmin", "quarterAdmin", "special", "messageMan"\]\)/);
+});
+
+test("special and message-man codes are bound to the authenticated UID", () => {
+  assert.match(source, /entry\.uid !== auth\.uid/);
+  assert.match(source, /\["special", "messageMan"\]/);
+});
+
+test("role redemption clears stale privileged claims before assigning the new role", () => {
+  assert.match(source, /for \(const key of \["mainAdmin", "halfAdmin", "quarterAdmin", "special", "messageMan"\]\) delete claims\[key\]/);
+  assert.match(source, /setCustomUserClaims\(auth\.uid, claims\)/);
+});
+
+test("role redemption fails closed when the private role map is missing or malformed", () => {
+  assert.match(source, /failed-precondition/);
+  assert.match(source, /JSON\.parse\(roleCodeMapSecret\.value\(\)\)/);
+  assert.match(source, /Array\.isArray\(roleMap\)/);
+});
