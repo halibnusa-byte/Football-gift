@@ -23,7 +23,7 @@ checks = {
     "gift box claims persist across refreshes": "lastRoundId:roundId" in source and "boxClaims/'+roundId+'/'+i" in source and "await saveRound();" in source and "if(!claim.committed)return" in source,
     "Comeback Gift uses saved per-player Admin Abuse participation": "players/'+uid+'/adminAbuseParticipation/'+abuseState.adminAbuseRunId" in source and "p.adminAbuseParticipation?.[runId]" in source and "Object.entries(allPlayers).filter" in source,
     "Comeback Gift requires a saved Admin Abuse run, not current online status": "if(!settings.adminAbuseRunId)return msg('cbAdminMsg'" in source and "p.adminAbuseParticipation?.[runId]" in source,
-    "random recipient is limited to main-admin Admin Abuse": "scope==='random'" in source and "settings.adminAbuseActive!==true" in source and "id!==uid" in source,
+    "random recipient is limited to main-admin Admin Abuse": "scope==='random'" in source and "settings.adminAbuseActive!==true" in source and "role!=='admin'||!isOwner" in source and "id!==uid" in source,
     "Skibidi unlock occurs only when stopping the event": "const skibidiDone=eventState.active==='skibidi'" in source and "if(NEW_EVENT_TYPES.includes(type))" not in source,
     "Power Hours follow the confirmed schedule and use max rather than multiplication": "o.weekday==='Sat'||(m>=900&&m<1020)" in source and "Math.max(settings.luckEnabled" in source,
     "main-admin global luck is capped at 5x": 'id="adminLuck" type="number" min="1" max="5"' in source and "if(v>5)return msg('adminMsg'" in source,
