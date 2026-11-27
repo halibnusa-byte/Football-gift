@@ -4,7 +4,7 @@ const { getDatabase } = require("firebase-admin/database");
 const { getAuth } = require("firebase-admin/auth");
 const crypto = require("node:crypto");
 
-initializeApp();
+initializeApp({ databaseURL: "https://football-gift-challange-default-rtdb.europe-west1.firebasedatabase.app" });
 const db = getDatabase();
 
 const EVENT_TYPES = new Set([
@@ -50,6 +50,9 @@ exports.setActiveEvent = onCall({ region: "europe-west1" }, async (request) => {
   if (type !== null && !EVENT_TYPES.has(type)) {
     throw new HttpsError("invalid-argument", "Unbekanntes Event.");
   }
+  if (type === null && claims.quarterAdmin && !claims.mainAdmin) {
+    throw new HttpsError("permission-denied", "Viertel-Admins dürfen Events nicht beenden.");
+  }
   if (claims.quarterAdmin && !claims.mainAdmin &&
       !["hacker", "unicorn", "galaxy", "diamond", "robot"].includes(type)) {
     throw new HttpsError("permission-denied", "Dieses Event ist für Viertel-Admins nicht freigegeben.");
@@ -59,6 +62,10 @@ exports.setActiveEvent = onCall({ region: "europe-west1" }, async (request) => {
     throw new HttpsError("permission-denied", "Dieses Event ist für Halb-Admins nicht freigegeben.");
   }
 
+  const currentEvent = await db.ref("events/active").get();
+  if (type === null && currentEvent.val() === "skibidi") {
+    await db.ref("settings/completedEvents/skibidi").set(true);
+  }
   const now = Date.now();
   await db.ref("events").set({ active: type, startedAt: now, runId: String(now) });
   if (type === "skibidi") {
