@@ -1003,7 +1003,7 @@ function watchComeback(){
 }
 async function grantComeback(){
  if(role!=='admin'||!isOwner)return msg('cbAdminMsg','Nur der Hauptadmin darf das.');
- if(settings.adminAbuseActive!==true)return msg('cbAdminMsg','Starte zuerst den Comeback Admin Abuse. Nur aktuelle Teilnehmer erhalten das Legendary Comeback Gift.');
+ if(!settings.adminAbuseRunId)return msg('cbAdminMsg','Starte zuerst den Comeback Admin Abuse. Nur gespeicherte Teilnehmer erhalten das Legendary Comeback Gift.');
  try{
   const runId=settings.adminAbuseRunId;if(!runId)throw new Error('Es wurde noch kein Admin-Abuse-Durchlauf gestartet.');
   const allPlayers=(await get(path('players'))).val()||{},participants=Object.entries(allPlayers).filter(([id,p])=>p.adminAbuseParticipation?.[runId]);let n=0,skip=0;
