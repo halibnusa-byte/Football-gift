@@ -32,10 +32,9 @@ test("a globally-owned Football Token and an already-owned Penalty Token are exc
     settings: { footballTokenOwner: "another-user", completedEvents: { skibidi: true } },
     player: { inventory: { penalty: 1 } },
     now: Date.UTC(2026, 10, 27, 10, 0),
-    random: () => 0.999999,
+    random: () => 0.000045,
   });
-  assert.notEqual(prize && prize.id, "football");
-  assert.notEqual(prize && prize.id, "penalty");
+  assert.equal(prize && prize.id, "goal");
 });
 
 test("a low roll can correctly produce a miss when all prize weights are tiny", () => {
