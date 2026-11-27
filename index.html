@@ -169,7 +169,7 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <script type="module">
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth,signInAnonymously,signOut,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {getDatabase,ref,get,set,update,remove,onValue,runTransaction,push,serverTimestamp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+import {getDatabase,ref,get,set,update,remove,onValue,runTransaction,push,serverTimestamp,onDisconnect} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
 const firebaseConfig={apiKey:'AIzaSyAXt8wqnPyRYGXrbq8ZWtCl4uQT83V0Nso',authDomain:'football-gift-challange.firebaseapp.com',databaseURL:'https://football-gift-challange-default-rtdb.europe-west1.firebasedatabase.app',projectId:'football-gift-challange',storageBucket:'football-gift-challange.firebasestorage.app',messagingSenderId:'935406041054',appId:'1:935406041054:web:efc64818b9364fd2d2cf4f'};
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getDatabase(app),$=id=>document.getElementById(id);
@@ -609,7 +609,7 @@ async function renderLaserTag3D(body,result,status,ev){
  async function sync(){if(!joined||Date.now()-lastSync<180)return;lastSync=Date.now();await update(path('events/laserPlayers/'+uid),{name:name||'Spieler',skin:chosen?Number(skinSel.value):0,x,z,lives,score,active:lives>0,at:Date.now()}).catch(()=>{});}
  const skinSel=document.createElement('select');['🔴 Rot','🔵 Blau','🟢 Grün','🟡 Gelb','🟣 Lila'].forEach((v,i)=>{const o=document.createElement('option');o.value=i;o.textContent=v;skinSel.append(o);});body.insertBefore(skinSel,wrap);
  const join=document.createElement('button');join.textContent='SKIN WÄHLEN & BEITRETEN';join.className='secondary';body.insertBefore(join,wrap);
- join.onclick=async()=>{if(Date.now()-startAt>10000){chosen=false;joined=false;skinSel.disabled=true;join.disabled=true;hint.textContent='Die Skin-Auswahl ist vorbei. Du bist jetzt Zuschauer.';return;}chosen=true;joined=true;x=(Math.random()-.5)*24;z=(Math.random()-.5)*24;await set(path('events/laserPlayers/'+uid),{name:name||'Spieler',skin:Number(skinSel.value),x,z,lives:3,score:0,active:true,joinedAt:Date.now(),at:Date.now()});skinSel.disabled=true;join.disabled=true;hint.textContent='Du bist in der Arena!';};
+ join.onclick=async()=>{if(Date.now()-startAt>10000){chosen=false;joined=false;skinSel.disabled=true;join.disabled=true;hint.textContent='Die Skin-Auswahl ist vorbei. Du bist jetzt Zuschauer.';return;}chosen=true;joined=true;x=(Math.random()-.5)*24;z=(Math.random()-.5)*24;await set(path('events/laserPlayers/'+uid),{name:name||'Spieler',skin:Number(skinSel.value),x,z,lives:3,score:0,active:true,joinedAt:Date.now(),at:Date.now()});await onDisconnect(path('events/laserPlayers/'+uid)).remove();skinSel.disabled=true;join.disabled=true;hint.textContent='Du bist in der Arena!';};
  function onKey(e,down){const map={KeyW:'forward',ArrowUp:'forward',KeyS:'back',ArrowDown:'back',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',Space:'fire'};const k=map[e.code];if(k){laserKeys[k]=down;if(down)e.preventDefault();}}
  const kd=e=>onKey(e,true),ku=e=>onKey(e,false);window.addEventListener('keydown',kd);window.addEventListener('keyup',ku);
  activate.onclick=()=>{renderer.domElement.requestPointerLock?.();};
