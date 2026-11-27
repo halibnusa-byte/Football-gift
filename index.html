@@ -276,7 +276,7 @@ async function openBox(i){
   claimed[String(i)]=true;
   return {opened:claimed,count:count+1};
  });
- if(!claim.committed)return;
+ if(!claim.committed){$('result').textContent='Diese Box wurde bereits geöffnet oder du hast deine 3 Boxen für diese Runde schon genutzt.';return;}
  opened.push(i);boxes[i].opened=true;renderBoxes();
  await saveRound();
  try{
