@@ -937,14 +937,15 @@ function renderAdminAbuseTips(data){
  if(!active){panel.innerHTML='';return;}
  const rows=Object.values(data||{}).slice(-80),texts=rows.map(x=>String(x.text||'').toLowerCase());
  const tips=[];
- if(rows.length>=20)tips.push('Viele Chat-Nachrichten: Starte eine kurze Abstimmung oder ein Überraschungs-Event.');
  const repeated=texts.filter((x,i)=>x&&texts.indexOf(x)!==i);
- if(repeated.length>=3)tips.push('Mehrere Nachrichten wiederholen sich. Prüfe den Chat auf Spam und moderiere bei Bedarf.');
- if(texts.some(x=>/hilfe|bug|fehler|geht nicht|funktioniert nicht/.test(x)))tips.push('Spieler melden möglicherweise ein Problem. Frage nach Gerät und genauer Fehlermeldung.');
- if(texts.some(x=>/langweilig|nichts los|wann event/.test(x)))tips.push('Spieler wünschen sich Aktivität. Eine kurze Power Hour oder ein Quiz könnte passen.');
- if(texts.some(x=>/unfair|zu schwer|chance/.test(x)))tips.push('Es gibt Rückmeldungen zu Fairness oder Gewinnchancen. Prüfe die Event-Regeln, bevor du etwas änderst.');
- if(!tips.length)tips.push('Noch keine auffälligen Chat-Muster. Beobachte die Unterhaltung.');
- panel.innerHTML='';tips.slice(0,4).forEach(t=>{const d=document.createElement('div');d.className='item';d.textContent='💡 '+t;panel.append(d);});
+ if(texts.some(x=>/hilfe|bug|fehler|geht nicht|funktioniert nicht/.test(x)))tips.push({level:'DRINGEND',rank:0,text:'Spieler melden möglicherweise einen Fehler. Prüfe Gerät und genaue Fehlermeldung.'});
+ if(repeated.length>=3)tips.push({level:'DRINGEND',rank:0,text:'Mehrere Nachrichten wiederholen sich. Prüfe den Chat auf Spam und moderiere bei Bedarf.'});
+ if(texts.some(x=>/unfair|zu schwer|chance|wahrscheinlichkeit/.test(x)))tips.push({level:'EMPFEHLUNG',rank:1,text:'Es gibt Rückmeldungen zu Fairness oder Gewinnchancen. Prüfe die Regeln, bevor du etwas änderst.'});
+ if(texts.some(x=>/langweilig|nichts los|wann event|welches event/.test(x)))tips.push({level:'EMPFEHLUNG',rank:1,text:'Spieler wünschen sich Aktivität. Überlege, ein passendes Event zu starten.'});
+ if(rows.length>=20)tips.push({level:'OPTIONAL',rank:2,text:'Viele Chat-Nachrichten: Eine kurze Abstimmung oder ein Überraschungs-Event könnte passen.'});
+ if(!tips.length)tips.push({level:'OPTIONAL',rank:2,text:'Noch keine auffälligen Chat-Muster. Beobachte die Unterhaltung.'});
+ tips.sort((a,b)=>a.rank-b.rank);
+ panel.innerHTML='';tips.slice(0,5).forEach(t=>{const d=document.createElement('div');d.className='item';d.textContent=t.level+' · '+t.text;panel.append(d);});
 }
 $('adminAbuseToggle').onclick=async()=>{
  if(role!=='admin'||!isOwner)return msg('adminMsg','Nur der Hauptadmin darf Admin Abuse starten oder stoppen.');
