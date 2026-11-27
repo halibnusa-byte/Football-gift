@@ -23,8 +23,8 @@ if duplicates:
 
 defined = set(parser.ids)
 # Some admin controls are intentionally created at runtime with innerHTML or .id assignments.
-generated = set(re.findall(r"\\bid=['\\\"]([^'\\\"]+)['\\\"]", html))
-generated.update(re.findall(r"\\.id\\s*=\\s*['\\\"]([^'\\\"]+)['\\\"]", html))
+generated = set(re.findall(r"\bid=['\"]([^'\"]+)['\"]", html))
+generated.update(re.findall(r"\.id\s*=\s*['\"]([^'\"]+)['\"]", html))
 patterns = (
     r"\$\(\s*(['\"])(.*?)\1\s*\)",
     r"document\.getElementById\(\s*(['\"])(.*?)\1\s*\)",
