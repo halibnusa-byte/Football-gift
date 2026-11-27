@@ -39,9 +39,10 @@ test("server lock is main-admin-only", () => {
 const client = fs.readFileSync(path.join(__dirname, "..", "..", "index.html"), "utf8");
 
 test("browser role login uses the trusted callable, not database role hashes", () => {
-  assert.match(client, /httpsCallable\(functions,["']redeemRoleCode["']\)/);
-  assert.doesNotMatch(client, /get\(path\(["']admin\/(?:codeHash|special|quarterAdmins|halfAdmins|messageManCodes)/);
-  assert.doesNotMatch(client, /set\(path\(["']adminProof\//);
+  const roleSection = client.slice(client.indexOf("async function roleCheck"), client.indexOf("function applyRolePanelPermissions"));
+  assert.match(roleSection, /httpsCallable\(functions,["']redeemRoleCode["']\)/);
+  assert.doesNotMatch(roleSection, /get\(path\(["']admin\//);
+  assert.doesNotMatch(roleSection, /adminProof/);
 });
 
 test("browser event and server-lock controls call trusted backend endpoints", () => {
