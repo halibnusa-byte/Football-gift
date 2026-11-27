@@ -71,7 +71,7 @@ Status: Entwicklungsstand, nicht produktionsbereit.
 ## Automatische Prüfungen
 - JavaScript-Modul-Syntaxprüfung in GitHub Actions.
 - Statische Invariantentests für Token-IDs, globalen Football-Token, Galaxy-Event-Bedingung, persistente Box-Claims, Box-Anzahl, Öffnungsgrenze, Wiederabgleich des Claim-Ledgers, gespeicherte Event-Challenges und Ocean-/Zombie-Lootdaten, 3D-LaserTag, Shop-Katalog/Käufe und Mini-Game-Abdeckung.
-- GitHub Actions: Die Push-Syntax- und Invariant-Prüfungen für den Box-Claim-Abgleich sind auf Commit `d4f6694e863ce10e49da9ca47c69a4dc342d2678` erfolgreich durchgelaufen; die Pull-Request-Prüfung mit den ergänzten neuen Invariantentests läuft noch.
+- GitHub Actions: Sowohl Push- als auch Pull-Request-Prüfung sind für den aktuellen Branch-Stand `680cec83e2772d9388543707f039b8415cc311c7` erfolgreich abgeschlossen. Der Job `syntax-check` hat sowohl die JavaScript-Syntaxprüfung als auch die statischen Spiel-Invariantentests bestanden. Das bestätigt keine Browser-, Firebase- oder Multiplayer-Funktionstests.
 
 ## Noch nicht nachgewiesen / blockiert
 
