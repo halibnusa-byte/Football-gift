@@ -392,12 +392,22 @@ async function resolveTargets(scope,targetName){
 }
 async function sendGift(){
  try{
-  const id=$('giftPrize').value,amount=Math.max(1,Math.min(20,Number($('giftAmount').value)||1)),targets=await resolveTargets($('giftScope').value,$('giftTarget').value);
-  if(id==='football'&&($('giftScope').value==='global'||settings.footballTokenOwner||amount!==1))throw new Error('Football Token kann nur einmal im gesamten Spiel vergeben werden. Wähle einen einzelnen Spieler und Menge 1.');
-  if(role==='special'){if(targets.length!==1||targets[0][0]===uid)throw new Error('Wähle einen anderen einzelnen Spieler.');if(Number(player.inventory?.[id]||0)<amount)throw new Error('Du besitzt nicht genug davon.');const inv={...(player.inventory||{})};inv[id]-=amount;await update(path('players/'+uid),{inventory:inv});}
-  for(const [idTarget] of targets)await awardPrizeTo(idTarget,id,amount);
-  msg('giftMsg','Geschenk erfolgreich gesendet.');if(role==='admin'&&$('giftPublic').checked)await addActivity('Owner hat Geschenke verteilt.');renderInventory();
- }catch(e){msg('giftMsg',e.message)}
+  if(!['admin','special'].includes(role))throw new Error('Keine Berechtigung.');
+  const id=$('giftPrize').value;
+  const amount=Math.max(1,Math.min(20,Number($('giftAmount').value)||1));
+  const scope=$('giftScope').value;
+  if(role==='special'&&scope!=='single')throw new Error('Besondere Spieler dürfen nur an einen einzelnen Spieler senden.');
+  if(id==='football'&&(scope==='global'||settings.footballTokenOwner||amount!==1))throw new Error('Football Token kann nur einmal im gesamten Spiel vergeben werden. Wähle einen einzelnen Spieler und Menge 1.');
+  const result=await httpsCallable(functions,'sendGift')({
+    prizeId:id,
+    amount,
+    scope,
+    targetName:$('giftTarget').value.trim(),
+    public:role==='admin'&&$('giftPublic').checked
+  });
+  msg('giftMsg','Geschenk erfolgreich gesendet ('+result.data.delivered+' Empfänger).');
+  renderInventory();
+ }catch(e){msg('giftMsg',e?.message||'Geschenk konnte nicht gesendet werden.');}
 }
 async function grantTokens(){
  if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Tokens vergeben.');
