@@ -7,6 +7,7 @@ This repository contains the Football Gift Challenge web app.
 Active work is kept on the draft branch `comeback-era-build-2026-11-27`. The `main` branch is not changed by this development work.
 
 ### Existing game systems
+- During Admin Abuse, the main admin chooses the reward and can direct it to one randomly selected online player; random selection never chooses the reward.
 
 - 15 shared gift boxes per round and up to 3 opens per player.
 - Existing prize inventory, ranking, global one-time Football Token ownership, and Galaxy event drop.
