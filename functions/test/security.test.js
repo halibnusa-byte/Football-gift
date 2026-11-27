@@ -77,3 +77,31 @@ test("event updates preserve unrelated event configuration", () => {
   assert.match(source, /db\.ref\(["']events["']\)\.update\(/);
   assert.doesNotMatch(source, /db\.ref\(["']events["']\)\.set\(/);
 });
+
+
+
+test("gift transfers are authenticated and restricted to main admins or special players", () => {
+  assert.match(source, /exports\.sendGift\s*=\s*onCall/);
+  assert.match(source, /claims\.mainAdmin === true/);
+  assert.match(source, /claims\.special === true/);
+  assert.match(source, /amount > 20/);
+  assert.match(source, /settings\/footballTokenOwner/);
+});
+
+test("Galaxy queue and player reset actions are main-admin-only callables", () => {
+  assert.match(source, /exports\.spawnGalaxyGifts\s*=\s*onCall/);
+  assert.match(source, /exports\.resetPlayerData\s*=\s*onCall/);
+  assert.match(source, /data\.confirm !== true/);
+});
+
+test("browser gift transfer, Galaxy queue and reset use server callables", () => {
+  const gift = client.slice(client.indexOf("async function sendGift"), client.indexOf("async function grantTokens"));
+  const galaxy = client.slice(client.indexOf("async function spawnGalaxy"), client.indexOf("async function resetData"));
+  const reset = client.slice(client.indexOf("async function resetData"), client.indexOf("async function renderEventChallenge"));
+  assert.match(gift, /httpsCallable\(functions,'sendGift'\)/);
+  assert.doesNotMatch(gift, /update\(path\('players\//);
+  assert.match(galaxy, /httpsCallable\(functions,'spawnGalaxyGifts'\)/);
+  assert.doesNotMatch(galaxy, /update\(path\('players\//);
+  assert.match(reset, /httpsCallable\(functions,'resetPlayerData'\)/);
+  assert.doesNotMatch(reset, /update\(path\('players\//);
+});
