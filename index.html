@@ -194,7 +194,7 @@ const NEW_EVENT_TYPES=['skibidi'];
 const EVENT_INFO={
 galaxy:['🌌 Galaxy','🌌'],diamond:['💎 Diamond','💎'],hacker:['💻 Hacker','0101'],unicorn:['🦄 Einhorn','🦄'],robot:['🤖 Roboter','🤖'],cube:['🧊 Zauberwürfel','🧊'],skibidi:['🚽 Skibidi Toilet','🚽'],godzilla:['🦖 Godzilla vs. Kong','🦖'],time:['⏳ Time Travel','⏳'],school:['🏫 School','🎒'],lava:['🌋 Lava','🌋'],alien:['👾 Alien Invasion','👾'],blitz:['⚡ Blitz Event','⚡'],lasertag:['🔫 LaserTag Event','🔫'],spiderman:['🕷️ Spider-Man Event','🕸️'],cocacola:['🥤 Coca-Cola Event','🥤'],plants:['🌿 Pflanzen Event','🌿'],elephant:['🐘 Elefanten Event','🐘'],ocean:['🌊 Ocean Event','🌊'],zombie:['🧟 Zombie Event','🧟'],multiverse:['🌌 Multiverse Event','🌌'],football:['⚽ Football Event','⚽'],dinosaur:['🦖 Dinosaur Event','🦖'],candy:['🍬 Candy Event','🍬'],castle:['🏰 Castle Event','🏰'],space:['🚀 Space Event','🚀'],ghost:['👻 Ghost Event','👻'],winter:['❄️ Winter Event','❄️'],egypt:['🐪 Egypt Event','🐪'],superhero:['🦸 Superhero Event','🦸'],racing:['🏎️ Racing Event','🏎️'],dragon:['🐉 Dragon Event','🐉'],music:['🎵 Music Event','🎵'],mystery:['🎭 Mystery Event','🎭'],pirate:["🏴‍☠️ Pirate Event","🗺️"],carnival:["🎪 Carnival Event","🎟️"],ninja:["🥷 Ninja Event","🥷"],toy:["🧸 Toy Event","🧸"],crystal:["💎 Crystal Event","🔮"],wildwest:["🤠 Wild West Event","🤠"],bakery:["🥐 Bakery Event","🧁"],comic:["💥 Comic Event","💥"],safari:["🦁 Safari Event","🦁"],cyber:["🖥️ Cyber Event","🖥️"],wizard:["🧙 Wizard Event","🪄"],moon:["🌙 Moon Event","🌙"],arcade:["🕹️ Arcade Event","🕹️"],samurai:["⚔️ Samurai Event","⚔️"],stoneage:["🪨 Stone Age Event","🪨"],masquerade:["🎭 Masquerade Event","🎭"],science:["🧪 Science Event","🧪"],luxury:["👑 Luxury Event","👑"],rainbow:["🌈 Rainbow Event","🌈"],timemachine:["⏰ Time Machine Event","⏰"]
 };
-let uid=null,name='',player={},role='normal',roleName='',settings={},eventState={},boxes=[],opened=[],rareType=null,unsubs=[],watchUnsub=null,bannerTimer=null,challengeTimer=null;
+let uid=null,name='',player={},role='normal',roleName='',settings={},eventState={},boxes=[],opened=[],rareType=null,roundId=null,unsubs=[],watchUnsub=null,bannerTimer=null,challengeTimer=null;
 const path=p=>ref(db,p),clean=s=>String(s||'').trim().replace(/[.#$\[\]/]/g,'').slice(0,24);
 const show=(id,on)=>$(id)?.classList.toggle('hidden',!on),msg=(id,t)=>{if($(id))$(id).textContent=t};
 const hash=async s=>{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')};
@@ -260,21 +260,27 @@ function renderBoxes(){
  $('nextRound').disabled=opened.length!==3;$('rareLabel').textContent=rareType?rareType.name+'-Box ist dabei!':'Normale Runde';
 }
 function buildRound(){
- opened=[];rareType=null;boxes=Array.from({length:15},(_,i)=>({id:i,rare:false,galaxy:false,opened:false}));
+ opened=[];rareType=null;roundId=Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,9);boxes=Array.from({length:15},(_,i)=>({id:i,rare:false,galaxy:false,opened:false}));
  if(Math.random()<.01){rareType=rarePick();const i=Math.floor(Math.random()*15);boxes[i].rare=true;boxes[i].rareType=rareType.id;}
  const pendingBlitz=Number(player.pendingBlitz||0);if(pendingBlitz>0){const i=Math.floor(Math.random()*15);boxes[i].blitz=true;player.pendingBlitz=pendingBlitz-1;update(path('players/'+uid),{pendingBlitz:player.pendingBlitz}).catch(()=>{});}
  const pending=Number(player.pendingGalaxy||0);if(pending>0){const i=boxes.findIndex(b=>!b.rare);if(i>=0){boxes[i].galaxy=true;player.pendingGalaxy=pending-1;update(path('players/'+uid),{pendingGalaxy:player.pendingGalaxy}).catch(()=>{});}}
  renderBoxes();saveRound();
 }
-async function saveRound(){if(!uid)return;await update(path('players/'+uid),{lastBoxes:boxes.map((b,i)=>({opened:opened.includes(i),rare:b.rare,galaxy:b.galaxy,blitz:b.blitz})),lastRareType:rareType?.id||null,opensThisRound:opened.length,roundUpdated:Date.now()}).catch(()=>{})}
+async function saveRound(){if(!uid)return;await update(path('players/'+uid),{lastBoxes:boxes.map((b,i)=>({opened:opened.includes(i),rare:b.rare,galaxy:b.galaxy,blitz:b.blitz})),lastRareType:rareType?.id||null,lastRoundId:roundId,opensThisRound:opened.length,roundUpdated:Date.now()}).catch(()=>{})}
 async function openBox(i){
- if(opened.length>=3||opened.includes(i)||Date.now()>EXPIRY.getTime())return;
+ if(opened.length>=3||opened.includes(i)||Date.now()>EXPIRY.getTime()||!roundId)return;
+ const claim=await runTransaction(path('players/'+uid+'/boxClaims/'+roundId+'/'+i),v=>v===true?undefined:true);
+ if(!claim.committed)return;
  opened.push(i);boxes[i].opened=true;renderBoxes();
- const credit=await runTransaction(path('players/'+uid+'/shopBalance'),v=>(Number(v)||0)+1);
- if(credit.committed){player.shopBalance=credit.snapshot.val();renderShop();}
+ await saveRound();
+ try{
+  const credit=await runTransaction(path('players/'+uid+'/shopBalance'),v=>(Number(v)||0)+1);
+  if(credit.committed){player.shopBalance=credit.snapshot.val();renderShop();}
+ }catch(e){msg('shopStatus','Shop-Punkt konnte nicht gespeichert werden.');}
  $('result').textContent='Die Box wird geöffnet…';
- await rollAndAward(uid,(boxes[i].rare?rareType.mult:1)*(boxes[i].blitz?10:1),'Box',!!boxes[i].galaxy);if(boxes[i].blitz)$('result').textContent='⚡ BLITZ! 10× Glück! '+$('result').textContent;
- await saveRound();renderInventory();renderRanking();
+ await rollAndAward(uid,(boxes[i].rare?rareType.mult:1)*(boxes[i].blitz?10:1),'Box',!!boxes[i].galaxy);
+ if(boxes[i].blitz)$('result').textContent='⚡ BLITZ! 10× Glück! '+$('result').textContent;
+ renderInventory();renderRanking();
 }
 async function enter(){
  if(serverState!=='open'&&!isOwner){applyServerState();return msg('loginMsg',serverState==='locked'?'Server gesperrt.':LOCK_ERR);}
@@ -290,6 +296,8 @@ async function enter(){
   if(Array.isArray(player.lastBoxes)&&player.lastBoxes.length===15){
     boxes=player.lastBoxes.map((b,i)=>({...b,id:i,opened:!!b.opened}));opened=boxes.filter(b=>b.opened).map(b=>b.id);
     rareType=boxes.some(b=>b.rare)?RARE.find(r=>r.id===player.lastRareType)||RARE[0]:null;
+    roundId=player.lastRoundId||('legacy_'+String(player.roundUpdated||Date.now()));
+    if(!player.lastRoundId)await saveRound();
   }else buildRound();
   renderBoxes();subscribe();watchComeback();renderInventory();renderShop();renderRanking();await addActivity('ist dem Spiel beigetreten');await roleRefresh();await ownerAutoRole();applyServerState();
  }catch(e){msg('loginMsg','Verbindung fehlgeschlagen: '+e.message)}
