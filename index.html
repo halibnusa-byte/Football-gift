@@ -514,7 +514,21 @@ async function renderThemedEventMiniGame(type,body,result,status,claim,win){
   science:{mode:'order',title:'🧪 LABOR-CHALLENGE',prompt:'Ordne die Schritte eines einfachen Experiments.',symbols:['📊 Ergebnis notieren','🧫 Versuch durchführen','❓ Frage stellen'],sequence:[2,1,0]},
   luxury:{mode:'sequence',title:'👑 LUXUS-MEMORY',prompt:'Merke dir die Edelstein-Reihenfolge und wiederhole sie.',symbols:['💎','👑','✨'],sequence:[2,0,1]},
   rainbow:{mode:'sequence',title:'🌈 REGENBOGEN-MEMORY',prompt:'Merke dir die Farben und tippe sie in derselben Reihenfolge.',symbols:['🔴','🟡','🔵'],sequence:[0,2,1]},
-  timemachine:{mode:'order',title:'⏰ ZEITMASCHINE',prompt:'Ordne die Ereignisse vom ältesten zum neuesten.',symbols:['📱 Smartphone-Zeit','🏰 Mittelalter','🚂 Eisenbahn-Zeit'],sequence:[1,2,0]}
+  timemachine:{mode:'order',title:'⏰ ZEITMASCHINE',prompt:'Ordne die Ereignisse vom ältesten zum neuesten.',symbols:['📱 Smartphone-Zeit','🏰 Mittelalter','🚂 Eisenbahn-Zeit'],sequence:[1,2,0]},
+  multiverse:{mode:'pick',title:'🌌 MULTIVERSUM-PORTALE',prompt:'Wähle eines der drei Universen. Nur ein Portal führt zum Geschenk.'},
+  football:{mode:'goal',title:'⚽ ELFMETER-CHALLENGE',prompt:'Der Torwart deckt eine Ecke ab. Wähle eine der anderen beiden Ecken.'},
+  dinosaur:{mode:'quiz',title:'🦖 DINOSAURIER-WISSEN',prompt:'Welcher Dinosaurier war ein Pflanzenfresser?',symbols:['Triceratops','Tyrannosaurus Rex','Velociraptor'],correct:0},
+  candy:{mode:'pick',title:'🍬 CANDY-BOX',prompt:'Wähle eine Süßigkeiten-Überraschung.'},
+  castle:{mode:'sequence',title:'🏰 ZUGBRÜCKEN-CODE',prompt:'Merke dir das Muster der Burgwachen und wiederhole es.',symbols:['🛡️','🔑','🏰'],sequence:[2,1,0]},
+  space:{mode:'quiz',title:'🚀 WELTRAUM-TEST',prompt:'Welcher Planet ist der größte in unserem Sonnensystem?',symbols:['Mars','Jupiter','Venus'],correct:1},
+  ghost:{mode:'sequence',title:'👻 GEISTER-MUSTER',prompt:'Merke dir die Geisterzeichen und tippe sie erneut.',symbols:['👻','🌙','✨'],sequence:[0,2,1]},
+  winter:{mode:'quiz',title:'❄️ WINTER-WISSEN',prompt:'Bei welcher Temperatur gefriert Wasser ungefähr?',symbols:['0 °C','20 °C','50 °C'],correct:0},
+  egypt:{mode:'order',title:'🐪 PYRAMIDEN-BAU',prompt:'Ordne die Schritte vom Fundament bis zur Spitze.',symbols:['🔺 Spitze','🧱 Fundament','🪨 Mittlere Steine'],sequence:[1,2,0]},
+  superhero:{mode:'reaction',title:'🦸 HELDEN-ALARM',prompt:'Die Stadt braucht Hilfe! Warte auf den Alarm und reagiere.'},
+  racing:{mode:'reaction',title:'🏎️ STARTSIGNAL-RENNEN',prompt:'Warte auf das Startsignal und tippe sofort.'},
+  dragon:{mode:'pick',title:'🐉 DRACHEN-EI',prompt:'Wähle eines der drei Dracheneier.'},
+  music:{mode:'sequence',title:'🎵 RHYTHMUS-MERKTEST',prompt:'Merke dir den Beat und wiederhole ihn.',symbols:['👏','⏸️','👏'],sequence:[0,1,0]},
+  mystery:{mode:'pick',title:'🎭 GEHEIMNISVOLLE TÜREN',prompt:'Hinter einer Tür wartet dein Geschenk. Wähle eine!'}
  };
  const cfg=configs[type];if(!cfg)return false;
  const heading=document.createElement('h3');heading.textContent=cfg.title;body.append(heading);
@@ -533,6 +547,13 @@ async function renderThemedEventMiniGame(type,body,result,status,claim,win){
  if(cfg.mode==='map'){
   const safe=Math.floor(Math.random()*9);
   for(let i=0;i<9;i++){const n=i;makeButton('🟫 '+(i+1),async()=>{if(!await begin())return;await finish(n===safe,n===safe?'Schatz gefunden!':'');});}
+ }else if(cfg.mode==='pick'){
+  const safe=Math.floor(Math.random()*3);
+  const labels=type==='multiverse'?['💎 Kristallwelt','🤖 Roboterwelt','🐉 Drachenwelt']:type==='candy'?['🍭 Lolli','🍫 Schokolade','🍬 Bonbons']:type==='dragon'?['🔥 Feuerdrache','❄️ Eisdrache','⚡ Sturmdrache']:['🚪 Tür 1','🚪 Tür 2','🚪 Tür 3'];
+  labels.forEach((label,i)=>makeButton(label,async()=>{if(!await begin())return;await finish(i===safe,'Die richtige Wahl getroffen!');}));
+ }else if(cfg.mode==='goal'){
+  const keeper=Math.floor(Math.random()*3),lanes=['⬅️ LINKS','⬆️ MITTE','➡️ RECHTS'];
+  lanes.forEach((label,i)=>makeButton(label,async()=>{if(!await begin())return;await finish(i!==keeper,'TOOOR! Elfmeter verwandelt!');}));
  }else if(cfg.mode==='reaction'){
   let armed=false,readyAt=0,timer=null;
   const b=makeButton('BEREIT',async()=>{
@@ -653,7 +674,7 @@ function renderEventChallenge(){
   body.append(info,bar,hit);draw();status.textContent='Jeder Klick zieht 10 HP ab. Jede Stufe hat zwei Minuten.';
  }else if(type==='lasertag'){
   await renderLaserTag3D(body,result,status,eventState);
- }else if(['pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type)){
+ }else if(['pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type)){
   await renderThemedEventMiniGame(type,body,result,status,claim,win);
  }else if(['ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type)){
   const games={
