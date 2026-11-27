@@ -1,9 +1,9 @@
 # Intro-Video
 
-Lege das Intro-Video aus dem Chat hier unter exakt diesem Namen ab:
+Das Intro-Video ist bereits in diesem Branch enthalten:
 
 `assets/intro.mp4`
 
-Die Startseite spielt `intro.mp4` automatisch stumm und im Vollbildbereich ab. Nach dem Video erscheint **STARTEN**. Erst ein Klick darauf blendet das Intro aus und zeigt die App.
+Die Startseite spielt das Video automatisch stumm ab. Falls der Browser Autoplay blockiert, kann der Spieler die Wiedergabe über die eingeblendeten Videosteuerungen starten. Nach dem Video erscheint **STARTEN**; erst ein Klick darauf blendet das Intro aus und zeigt die App.
 
-Wichtig: Die Videodatei selbst muss noch in diesen Ordner hochgeladen werden. Ohne `assets/intro.mp4` kann der Browser sie nicht abspielen.
+Die Datei wird durch `tests/check_assets.py` auf Vorhandensein und eine Mindestgröße geprüft.
