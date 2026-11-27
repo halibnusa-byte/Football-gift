@@ -616,7 +616,16 @@ async function renderEventChallenge(){
  if(type==='unicorn'){
   const b=document.createElement('button');b.textContent='🪅 PINATA EINMAL SCHLAGEN';b.onclick=async()=>{b.disabled=true;if(!await claim()){status.textContent='Schon benutzt.';return;}if(Math.random()<.5)await win('Die Pinata spuckt aus');else result.textContent='🪅 Niete!';status.textContent='Dein Schlag ist verbraucht.';};body.append(b);
  }else if(type==='cube'){
-  const q=document.createElement('p');q.textContent='Rätsel: Ich habe sechs Seiten und farbige Felder. Was bin ich?';const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT';b.onclick=async()=>{b.disabled=true;if(!await claim())return;if(['zauberwürfel','zauberwurfel','rubik cube','rubiks cube'].includes(inp.value.trim().toLowerCase()))await win('Richtig gelöst');else if(Number(player.shopItems?.magic_remix||0)>0&&confirm('MAGIC REMIX verwenden und noch einmal versuchen?')){if(await consumeShopItem('magic_remix')){result.textContent='🧊 MAGIC REMIX aktiviert – ein neuer Versuch!';b.disabled=false;inp.disabled=false;inp.value='';return;}}else result.textContent='Falsch – keine Belohnung.';inp.disabled=true;};body.append(q,inp,b);
+  const q=document.createElement('p');q.textContent='Rätsel: Ich habe sechs Seiten und farbige Felder. Was bin ich?';const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT';let claimed=false,remixUsed=false;b.onclick=async()=>{
+   if(b.disabled)return;
+   if(!claimed){b.disabled=true;if(!await claim()){status.textContent='Dein Versuch wurde bereits benutzt.';return;}claimed=true;b.disabled=false;}
+   const answer=inp.value.trim().toLowerCase();
+   if(['zauberwürfel','zauberwurfel','rubik cube','rubiks cube'].includes(answer)){b.disabled=true;inp.disabled=true;await win('Richtig gelöst');}
+   else if(!remixUsed&&Number(player.shopItems?.magic_remix||0)>0&&confirm('MAGIC REMIX verwenden und noch einmal versuchen?')){
+    if(await consumeShopItem('magic_remix')){remixUsed=true;result.textContent='🧊 MAGIC REMIX aktiviert – ein zweiter Versuch!';inp.value='';inp.focus();}
+    else{b.disabled=true;inp.disabled=true;result.textContent='MAGIC REMIX konnte nicht verwendet werden.';}
+   }else{b.disabled=true;inp.disabled=true;result.textContent='Falsch – keine Belohnung.';}
+  };body.append(q,inp,b);
  }else if(type==='time'){
   renderTimeTravel(body,result,status,claim,win);
  }else if(type==='school'){
