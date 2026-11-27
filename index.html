@@ -577,12 +577,9 @@ function watchComeback(){
 async function grantComeback(){
  if(role!=='admin'||!isOwner)return msg('cbAdminMsg','Nur der Hauptadmin darf das.');
  try{
-  const on=(await get(path('online'))).val()||{};let n=0,skip=0;
-  for(const id of Object.keys(on)){
-   const tx=await runTransaction(path('players/'+id+'/comebackGift'),v=>v===null?'ready':undefined);
-   if(tx.committed){await update(path('players/'+id),{title:'OG COMEBACK PLAYER'});n++;}else skip++;
-  }
-  msg('cbAdminMsg',n+' Spieler erhalten das Gift'+(skip?', '+skip+' hatten es schon':'')+'.');
+  const result=await httpsCallable(functions,'grantComebackGifts')({});
+  const data=result.data||{};
+  msg('cbAdminMsg',data.granted+' Spieler erhalten das Gift'+(data.skipped?', '+data.skipped+' übersprungen (bereits vergeben oder nicht verfügbar)':'')+'.');
  }catch(e){msg('cbAdminMsg','Fehler: '+(e?.message||e));}
 }
 function openComeback(){
@@ -595,12 +592,16 @@ async function pickCard(btn){
  if(cbBusy||cbState!=='ready')return;cbBusy=true;
  $('cbCards').querySelectorAll('button').forEach(b=>b.disabled=true);
  try{
-  const tx=await runTransaction(path('players/'+uid+'/comebackGift'),v=>v==='ready'?'opened':undefined);
-  if(!tx.committed)throw new Error('Das Gift wurde schon geöffnet.');
-  const prize=await rollAndAward(uid,1,'Comeback');
+  const result=await httpsCallable(functions,'openComebackGift')({});
+  const prize=result.data?.prize||null;
+  cbState='opened';
   btn.classList.add('show');btn.textContent=prize?prize.emoji+' '+prize.name:'Niete';
   $('cbText').textContent=prize?'🎉 Du hast gewonnen!':'Diesmal eine Niete – aber du bleibst OG COMEBACK PLAYER!';
- }catch(e){$('cbText').textContent=e?.message||'Fehler beim Öffnen.';}
+  renderComeback();
+ }catch(e){
+  $('cbText').textContent=e?.message||'Fehler beim Öffnen.';
+  $('cbCards').querySelectorAll('button').forEach(b=>b.disabled=false);
+ }
  cbBusy=false;
 }
 $('cbGrant').onclick=grantComeback;$('cbOpen').onclick=openComeback;
