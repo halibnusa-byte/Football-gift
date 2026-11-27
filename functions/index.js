@@ -2,7 +2,11 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
 const { getDatabase } = require("firebase-admin/database");
 const { getAuth } = require("firebase-admin/auth");
+const { defineSecret } = require("firebase-functions/params");
 const crypto = require("node:crypto");
+
+// Server-only role map stored in Google Secret Manager.
+const roleCodeMapSecret = defineSecret("ROLE_CODE_MAP");
 
 initializeApp({ databaseURL: "https://football-gift-challange-default-rtdb.europe-west1.firebasedatabase.app" });
 const db = getDatabase();
@@ -75,41 +79,39 @@ exports.setActiveEvent = onCall({ region: "europe-west1" }, async (request) => {
 });
 
 
-// Verify a role code on the trusted server and issue Firebase custom claims.
-// The client never receives stored hashes or decides its own role.
-exports.redeemRoleCode = onCall({ region: "europe-west1" }, async (request) => {
+// Verify a role code against a Secret Manager-backed map and issue custom claims.
+// Never fall back to client-writable Realtime Database paths for authorization.
+exports.redeemRoleCode = onCall({ region: "europe-west1", secrets: [roleCodeMapSecret] }, async (request) => {
   const auth = requireAuth(request);
   const code = request.data && typeof request.data.code === "string" ? request.data.code.trim() : "";
   if (code.length < 4 || code.length > 128) {
     throw new HttpsError("invalid-argument", "Ungültiger Zugangscode.");
   }
-  const digest = hashCode(code);
-  const [main, special, quarter, half, messageMen] = await Promise.all([
-    db.ref("admin/codeHash").get(),
-    db.ref("admin/special").get(),
-    db.ref("admin/quarterAdmins/" + digest).get(),
-    db.ref("admin/halfAdmins/" + digest).get(),
-    db.ref("admin/messageManCodes/" + digest).get(),
-  ]);
-
-  let role = "normal";
-  let roleName = "";
-  if (main.exists() && main.val() === digest) {
-    role = "mainAdmin";
-  } else if (special.exists() && special.val().uid === auth.uid && special.val().codeHash === digest) {
-    role = "special";
-    roleName = String(special.val().name || "");
-  } else if (quarter.exists()) {
-    role = "quarterAdmin";
-  } else if (half.exists()) {
-    role = "halfAdmin";
-  } else if (messageMen.exists() && messageMen.val().uid === auth.uid) {
-    role = "messageMan";
-    roleName = String(messageMen.val().name || "");
-  } else {
-    throw new HttpsError("permission-denied", "Dieser Code ist nicht vergeben oder stimmt nicht.");
+  let roleMap;
+  try {
+    roleMap = JSON.parse(roleCodeMapSecret.value());
+  } catch {
+    throw new HttpsError("failed-precondition", "Die sichere Rollen-Konfiguration fehlt oder ist ungültig.");
+  }
+  if (!roleMap || typeof roleMap !== "object" || Array.isArray(roleMap)) {
+    throw new HttpsError("failed-precondition", "Die sichere Rollen-Konfiguration ist ungültig.");
   }
 
+  const digest = hashCode(code);
+  const entry = roleMap[digest];
+  const allowedRoles = new Set(["mainAdmin", "halfAdmin", "quarterAdmin", "special", "messageMan"]);
+  if (!entry || !allowedRoles.has(entry.role)) {
+    throw new HttpsError("permission-denied", "Dieser Code ist nicht vergeben oder stimmt nicht.");
+  }
+  if ((entry.role === "special" || entry.role === "messageMan") &&
+      (typeof entry.uid !== "string" || entry.uid !== auth.uid)) {
+    throw new HttpsError("permission-denied", "Dieser Code ist an ein anderes Konto gebunden.");
+  }
+
+  const role = entry.role;
+  const roleName = role === "special" || role === "messageMan"
+    ? String(entry.name || "").slice(0, 40)
+    : "";
   const user = await getAuth().getUser(auth.uid);
   const claims = { ...(user.customClaims || {}) };
   for (const key of ["mainAdmin", "halfAdmin", "quarterAdmin", "special", "messageMan"]) delete claims[key];
