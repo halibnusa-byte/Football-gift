@@ -7,6 +7,7 @@ checks = {
         f"id:'{token}'" in source
         for token in ("revenge", "footballLoser", "doublegoal", "selfretter", "freistoss", "football")
     ),
+    "confirmed token odds remain unchanged": all(value in source for value in ("id:'revenge',name:'Revenge Token',emoji:'🔥',chance:.00025", "id:'doublegoal',name:'Double Goal Token',emoji:'⚽',chance:.0005", "id:'selfretter',name:'Selbst-Retter-Token',emoji:'🧤',chance:.001", "id:'freistoss',name:'Freistoß-Token',emoji:'🟥',chance:.0015", "id:'football',name:'Football Token',emoji:'🏆',chance:.002")),
     "Football Token uses a global one-time owner transaction": "settings/footballTokenOwner" in source and "v===null?uidTarget:undefined" in source,
     "Galaxy Gift spawn chance is 0.001%": "Math.random()<0.00001" in source,
     "15 gifts per round": "Array.from({length:15}" in source,
