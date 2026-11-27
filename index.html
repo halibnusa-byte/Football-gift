@@ -943,6 +943,8 @@ $('adminAbuseToggle').onclick=async()=>{
  if(role!=='admin'||!isOwner)return msg('adminMsg','Nur der Hauptadmin darf Admin Abuse starten oder stoppen.');
  const next=settings.adminAbuseActive!==true;
  await update(path('settings'),{adminAbuseActive:next,adminAbuseStartedAt:next?Date.now():null});
+ settings.adminAbuseActive=next;
+ updateHeader();
  msg('adminAbuseStatus',next?'Admin Abuse ist aktiv. Tippgeber läuft.':'Admin Abuse wurde beendet.');
 };
 // ===== LIVE CHAT =====
@@ -979,6 +981,7 @@ function watchComeback(){
 }
 async function grantComeback(){
  if(role!=='admin'||!isOwner)return msg('cbAdminMsg','Nur der Hauptadmin darf das.');
+ if(settings.adminAbuseActive!==true)return msg('cbAdminMsg','Starte zuerst den Comeback Admin Abuse. Nur aktuelle Teilnehmer erhalten das Legendary Comeback Gift.');
  try{
   const on=(await get(path('online'))).val()||{};let n=0,skip=0;
   for(const id of Object.keys(on)){
