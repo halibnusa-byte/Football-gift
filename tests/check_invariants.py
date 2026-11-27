@@ -11,6 +11,7 @@ checks = {
     "Galaxy Gift spawn chance is 0.001%": "Math.random()<0.00001" in source,
     "15 gifts per round": "Array.from({length:15}" in source,
     "maximum three box opens": "opened.length>=3" in source,
+    "Ocean event challenge panel is reachable": "available=['pirate'" in source and "'ocean','zombie'" in source,
     "Ocean loot is persisted": "players/'+uid+'/oceanLoot/'+run" in source,
     "Zombie loot is persisted": "players/'+uid+'/zombieLoot/'+run" in source,
     "Zombie event has five serum choices": "for(let i=0;i<5;i++)" in source and "SERUM '+(i+1)" in source,
