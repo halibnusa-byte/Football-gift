@@ -8,6 +8,24 @@ The checked-in `firebase-config.js` is a development draft, not a production sec
 
 **Do not deploy the current rules as a security fix.** The app must be migrated to server-verified Firebase Authentication custom claims and trusted Cloud Functions/Admin SDK operations for sensitive writes. Player-owned cosmetic/profile fields can then be allowed separately, while balances, inventory, tokens, global one-time rewards, event claims, shop purchases, and admin actions are validated on the server. Rules must be tested in the Firebase Emulator before deployment.
 
+
+## 0. Findings from the current app review (2026-11-27)
+
+The current browser app calls Firebase `signInAnonymously(auth)` from its player-entry flow and also automatically signs in anonymously when there is no current user. This confirms that the current app uses Firebase Anonymous Authentication. Anonymous Authentication provides a Firebase UID for a session, but it does not prove a real-world identity or establish who owns the main-admin role.
+
+The current client code also reads `admin/codeHash`, compares a typed code in the browser, and writes `adminProof/<uid>` from the client. Because the database rules allow authenticated clients to write their own `adminProof/<uid>` and the admin hash can be read while the server is open, this proof is not a trusted admin credential. The current rules also allow broad writes to major data branches while the server is open. Do not rely on this mechanism to protect admin controls, balances, tokens, shop purchases, or event rewards.
+
+The app currently defines a fixed client-side gift-box expiry of `2026-11-28T14:30:00+01:00`. Gift boxes become disabled after that timestamp. Confirm that this is an intentional end date before release; it is not a secure server-side expiry because it is enforced in browser code.
+
+### Required migration before public release
+
+- Keep Anonymous Authentication for quick guest entry only if desired; do not use it as proof of the main-admin identity.
+- Identify the intended main-admin Firebase UID through a trusted setup process and grant a signed Firebase Custom Claim from a trusted Admin SDK environment.
+- Move sensitive mutations (admin settings, role assignment, player balances, token inventory, one-time Football Token ownership, gift claims, shop purchases, event rewards, LaserTag results, and lockdown changes) behind trusted Cloud Functions or another server-side authority.
+- Update Realtime Database Rules to permit only the minimum client-owned profile/chat/online operations, and require verified claims for privileged reads/writes. Do not publish permissive rules as a workaround.
+- Add Firebase Emulator tests for unauthenticated, anonymous normal player, half-admin, quarter-admin, Message Man, and main-admin access before deploying rules.
+- Test account recovery expectations: anonymous users can lose their guest identity if app data is cleared or the anonymous account is otherwise lost. Consider account linking if persistent identity is required.
+
 ## 1. Hauptadmin sicher festlegen
 
 Die aktuelle HTML-App enthält clientseitige Rollen-/Code-Logik. Alles, was im Browser ausgeliefert wird, kann von Nutzern eingesehen oder verändert werden. Ein geheimer Code oder Hash im JavaScript ist deshalb kein verlässlicher Berechtigungsnachweis.
