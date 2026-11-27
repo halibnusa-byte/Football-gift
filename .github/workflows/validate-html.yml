@@ -27,3 +27,5 @@ jobs:
           PY
       - name: Check JavaScript syntax
         run: node --check /tmp/football-gift.mjs
+      - name: Check established game invariants
+        run: python3 tests/check_invariants.py
