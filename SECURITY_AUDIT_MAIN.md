@@ -42,3 +42,13 @@ Still not complete:
 - Gift transfers, manual grants, player resets, admin provisioning, announcements, event mini-games, box rounds/rewards, LaserTag, Godzilla votes, and other privileged operations still need trusted server endpoints and client migration.
 
 This branch is a safe working branch created from Main. No production Firebase rules, live data, or Main-branch files have been changed. Do not merge or deploy until the full client migration, private role-code storage, narrow rules, integration tests, and billing review are complete.
+
+
+## Additional migration work recorded on 2026-11-27
+
+- Browser role login now calls `redeemRoleCode` and refreshes the Firebase ID token before reading server-issued custom claims. The former role-check flow that compared codes against Realtime Database hashes has been replaced.
+- Browser event start/stop controls now call `setActiveEvent`; browser server-lock controls now call `setServerControl`.
+- The old browser-side `adminProof/<uid>` wrapper was removed from the role-login flow.
+- Static regression tests now cover the browser callable wiring in addition to backend callable checks.
+
+These changes are a partial migration only. Other legacy admin setup/role management functions and many gameplay, inventory, reward, transfer, settings, and messaging actions still write directly from the browser. The full client/rules migration and emulator/end-to-end testing remain release blockers.
