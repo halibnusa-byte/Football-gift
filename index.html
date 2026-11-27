@@ -109,6 +109,7 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <section class="panel" id="gamePanel"><div class="row"><div><h2>🎁 Deine 15 Geschenkboxen</h2><div class="muted" id="roundText">Öffne 3 Boxen.</div></div><span class="tag" id="rareLabel">Normale Runde</span></div><div class="grid" id="boxGrid"></div><div class="result" id="result">Wähle eine Box!</div><button class="secondary" id="nextRound" disabled>Boxen neu mischen</button></section>
 <section class="panel hidden" id="eventChallengePanel"><h2 id="eventChallengeTitle">🎪 Event</h2><p class="muted" id="eventChallengeDescription"></p><div class="event-challenge" id="eventChallengeBody"></div></section>
 <section class="panel" id="inventoryPanel"><h2>🎒 Deine Sammlung</h2><div class="list" id="inventory"></div></section>
+<section class="panel" id="shopPanel"><h2>🛍️ COMEBACK-SHOP</h2><p class="muted">Für jede geöffnete Geschenkbox bekommst du dauerhaft 1 Shop-Punkt. Punkte werden beim Kauf abgezogen und nicht zurückgesetzt.</p><div class="status">Dein Guthaben: <strong id="shopBalance">0</strong> Punkte</div><div class="list" id="shopItems"></div><div id="shopStatus" class="hint"></div></section>
 <section class="panel" id="chatPanel"><h2>💬 Live-Chat</h2><p class="muted">Schreibe mit allen Spielern. Du kannst eigene Nachrichten löschen und Nachrichten melden.</p><div id="chatMessages" class="list" aria-live="polite"></div><div class="row"><input id="chatInput" maxlength="240" placeholder="Nachricht schreiben…"><button id="chatSend">SENDEN</button></div><div id="chatStatus" class="hint"></div></section>\n<section class="panel" id="livePanel"><h2>📺 Live-Übertragung</h2><p class="muted">Wähle einen Spieler, der online ist. Angezeigt werden nur seine Boxen – keine Sammlung und keine Glückswerte.</p><div class="row"><select id="watchPlayer"><option value="">Spieler auswählen…</option></select><button class="secondary" id="watchBtn">LIVE ANSEHEN</button></div><div id="liveScreen" class="status">Noch keine Übertragung ausgewählt.</div><div class="list" id="activity"></div></section>
 <section class="panel" id="rankingPanel"><h2>🏆 Rangliste der Geschenke</h2><div class="list" id="ranking"></div></section>
 <section class="panel hidden" id="rosterPanel"><h2>👥 Spielerübersicht</h2><p class="muted">Online- und Offline-Spieler. Der Hauptadmin sieht die Namen.</p><div class="roster" id="playerRoster">Wird geladen …</div></section>
@@ -265,7 +266,10 @@ function buildRound(){
 async function saveRound(){if(!uid)return;await update(path('players/'+uid),{lastBoxes:boxes.map((b,i)=>({opened:opened.includes(i),rare:b.rare,galaxy:b.galaxy,blitz:b.blitz})),lastRareType:rareType?.id||null,opensThisRound:opened.length,roundUpdated:Date.now()}).catch(()=>{})}
 async function openBox(i){
  if(opened.length>=3||opened.includes(i)||Date.now()>EXPIRY.getTime())return;
- opened.push(i);boxes[i].opened=true;renderBoxes();$('result').textContent='Die Box wird geöffnet…';
+ opened.push(i);boxes[i].opened=true;renderBoxes();
+ const credit=await runTransaction(path('players/'+uid+'/shopBalance'),v=>(Number(v)||0)+1);
+ if(credit.committed){player.shopBalance=credit.snapshot.val();renderShop();}
+ $('result').textContent='Die Box wird geöffnet…';
  await rollAndAward(uid,(boxes[i].rare?rareType.mult:1)*(boxes[i].blitz?10:1),'Box',!!boxes[i].galaxy);if(boxes[i].blitz)$('result').textContent='⚡ BLITZ! 10× Glück! '+$('result').textContent;
  await saveRound();renderInventory();renderRanking();
 }
@@ -282,17 +286,17 @@ async function enter(){
     boxes=player.lastBoxes.map((b,i)=>({...b,id:i,opened:!!b.opened}));opened=boxes.filter(b=>b.opened).map(b=>b.id);
     rareType=boxes.some(b=>b.rare)?RARE.find(r=>r.id===player.lastRareType)||RARE[0]:null;
   }else buildRound();
-  renderBoxes();subscribe();watchComeback();renderInventory();renderRanking();await addActivity('ist dem Spiel beigetreten');await roleRefresh();await ownerAutoRole();applyServerState();
+  renderBoxes();subscribe();watchComeback();renderInventory();renderShop();renderRanking();await addActivity('ist dem Spiel beigetreten');await roleRefresh();await ownerAutoRole();applyServerState();
  }catch(e){msg('loginMsg','Verbindung fehlgeschlagen: '+e.message)}
 }
 function subscribe(){
  unsubs.forEach(f=>f());unsubs=[];
- unsubs.push(onValue(path('settings'),s=>{settings=s.val()||{};updateHeader();renderInventory();renderRanking();}));
+ unsubs.push(onValue(path('settings'),s=>{settings=s.val()||{};updateHeader();renderInventory();renderShop();renderRanking();}));
  unsubs.push(onValue(path('events'),s=>{eventState=s.val()||{};updateHeader();renderEventChallenge();}));
  unsubs.push(onValue(path('players'),s=>{const all=s.val()||{};renderRanking(all);get(path('online')).then(o=>renderRoster(all,o.val()||{}));}));
  unsubs.push(onValue(path('online'),s=>{get(path('players')).then(p=>renderRoster(p.val()||{},s.val()||{}));renderWatchOptions(s.val()||{});}));
  unsubs.push(onValue(path('activity'),s=>{const a=Object.values(s.val()||{}).sort((x,y)=>(y.at||0)-(x.at||0)).slice(0,10);$('activity').innerHTML='';a.forEach(x=>{const d=document.createElement('div');d.className='item';d.textContent=x.text||'Aktivität';$('activity').append(d)})}));
- unsubs.push(onValue(path('players/'+uid),s=>{if(s.exists()){player=s.val();renderInventory();}}));
+ unsubs.push(onValue(path('players/'+uid),s=>{if(s.exists()){player=s.val();renderInventory();renderShop();}}));
  unsubs.push(onValue(path('announcements/global'),s=>{if(s.exists())showAnnouncement(s.val())}));
  unsubs.push(onValue(path('announcements/users/'+uid),s=>{if(s.exists())showAnnouncement(s.val())}));
  unsubs.push(onValue(path('messages'),s=>{const data=s.val()||{};renderChat(data);const arr=Object.values(data).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,5);if(role==='admin')msg('adminMsg','Letzte Nachricht: '+(arr[0]?.name||'')+' – '+(arr[0]?.text||''));}));
@@ -305,6 +309,35 @@ function updateHeader(){
  $('eventLabel').textContent=EVENT_INFO[ev]?.[0]||'Keins aktiv';$('globalStatus').textContent='ONLINE · '+(EVENT_INFO[ev]?.[0]||'Normalbetrieb')+' · Glück '+luck()+'×';
  $('playerMeta').textContent=role==='special'?'Besonderer Spieler · 2× Glück':role==='admin'?'Hauptadmin':role==='quarterAdmin'?'Viertel-Admin · '+(roleName||name):role==='halfAdmin'?'Halb-Admin · '+(roleName||name):role==='messageMan'?'Message Man':'Spieler';
  renderBoxes();renderServerControl();renderComeback();
+}
+const DEFAULT_SHOP=[
+{id:'magic_remix',name:'MAGIC REMIX',description:'Erlaubt einen neuen Versuch beim Zauberwürfel.',price:12,emoji:'🧊'},
+{id:'lava_shield',name:'LAVA SHIELD',description:'Schützt dich einmal bei einer Lava-Entscheidung.',price:15,emoji:'🛡️'},
+{id:'alien_radar',name:'ALIEN RADAR',description:'Hilft dir bei einer Alien-Invasion.',price:10,emoji:'👽'},
+{id:'pearl_radar',name:'PEARL RADAR',description:'Hilft bei der Schatzsuche im Ocean-Event.',price:10,emoji:'🦪'},
+{id:'zombie_detector',name:'ZOMBIE DETECTOR',description:'Hilft dir beim Erkennen der sicheren Wahl.',price:14,emoji:'🧟'}
+];
+function renderShop(){
+ const bal=Number(player?.shopBalance||0);$('shopBalance').textContent=String(bal);
+ const host=$('shopItems');if(!host)return;host.innerHTML='';
+ (settings.shopCatalog||DEFAULT_SHOP).forEach(item=>{
+  const row=document.createElement('div');row.className='item';
+  const title=document.createElement('strong');title.textContent=item.emoji+' '+item.name+' · '+item.price+' Punkte';
+  const desc=document.createElement('div');desc.className='muted';desc.textContent=item.description||'';
+  const owned=Number(player?.shopItems?.[item.id]||0);
+  const b=document.createElement('button');b.textContent='KAUFEN';b.disabled=bal<Number(item.price)||item.active===false;b.onclick=()=>buyShopItem(item.id);
+  row.append(title,desc,b);if(owned){const tag=document.createElement('div');tag.className='hint';tag.textContent='Besitzt: '+owned;row.insertBefore(tag,b);}host.append(row);
+ });
+}
+async function buyShopItem(id){
+ const catalog=settings.shopCatalog||DEFAULT_SHOP,item=catalog.find(x=>x.id===id);if(!item||item.active===false)return;
+ try{
+  const price=Math.max(0,Math.floor(Number(item.price)||0));
+  const tx=await runTransaction(path('players/'+uid+'/shopBalance'),v=>{v=Number(v)||0;return v>=price?v-price:undefined;});
+  if(!tx.committed)return msg('shopStatus','Du hast nicht genug Punkte.');
+  const inv={...(player.shopItems||{})};inv[id]=(Number(inv[id])||0)+1;
+  await update(path('players/'+uid),{shopItems:inv});player.shopBalance=tx.snapshot.val();player.shopItems=inv;renderShop();msg('shopStatus',item.name+' gekauft!');
+ }catch(e){msg('shopStatus','Kauf fehlgeschlagen: '+e.message);}
 }
 function renderInventory(){
  const inv=player?.inventory||{};$('tokenCount').textContent=Object.values(inv).reduce((a,b)=>a+Number(b||0),0);
@@ -754,6 +787,13 @@ $('awardBtn').onclick=grantTokens;$('giftBtn').onclick=sendGift;$('resetPlayer')
 $('watchBtn').onclick=watch;
 $('messageManSend').onclick=async()=>{const t=$('messageManText').value.trim();if(!t)return msg('messageManStatus','Bitte eine Nachricht eingeben.');await push(path('messages'),{uid,name,text:t,at:Date.now()});await addActivity('hat eine Nachricht geschrieben.');$('messageManText').value='';msg('messageManStatus','Nachricht gesendet.')};
 $('logoutBtn').onclick=async()=>{if(uid)await remove(path('online/'+uid));unsubs.forEach(f=>f());if(watchUnsub)watchUnsub();unsubs=[];await signOut(auth);uid=null;show('app',false);show('loginPanel',true)};
+if(role==='admin'){
+ const adminShop=document.createElement('div');
+ adminShop.innerHTML='<h3>🛍️ Shop-Verwaltung</h3><p class="muted">Produkte, Preise und Angebote verwalten. Änderungen werden für alle gespeichert.</p><div class="row"><input id="shopNewName" placeholder="Produktname"><input id="shopNewPrice" type="number" min="0" placeholder="Preis"></div><input id="shopNewDesc" placeholder="Beschreibung"><button id="shopAddProduct">PRODUKT HINZUFÜGEN</button><div id="shopAdminList" class="list"></div>';
+ $('adminPanel').append(adminShop);
+ const drawAdminShop=()=>{const list=$('shopAdminList');if(!list)return;list.innerHTML='';(settings.shopCatalog||DEFAULT_SHOP).forEach(p=>{const line=document.createElement('div');line.className='item';const label=document.createElement('span');label.textContent=p.name+' · '+p.price+' Punkte';const toggle=document.createElement('button');toggle.textContent=p.active===false?'AKTIVIEREN':'DEAKTIVIEREN';toggle.onclick=async()=>{const arr=(settings.shopCatalog||DEFAULT_SHOP).map(x=>x.id===p.id?{...x,active:x.active===false}:x);await update(path('settings'),{shopCatalog:arr});};const del=document.createElement('button');del.className='danger';del.textContent='LÖSCHEN';del.onclick=async()=>{const arr=(settings.shopCatalog||DEFAULT_SHOP).filter(x=>x.id!==p.id);await update(path('settings'),{shopCatalog:arr});};line.append(label,toggle,del);list.append(line);});};
+ $('shopAddProduct').onclick=async()=>{const n=$('shopNewName').value.trim(),price=Math.floor(Number($('shopNewPrice').value)),desc=$('shopNewDesc').value.trim();if(!n||!Number.isFinite(price)||price<0)return msg('adminMsg','Name und gültiger Preis fehlen.');const arr=[...(settings.shopCatalog||DEFAULT_SHOP),{id:'custom_'+Date.now(),name:n,description:desc,price,emoji:'⭐',active:true}];await update(path('settings'),{shopCatalog:arr});$('shopNewName').value='';$('shopNewPrice').value='';$('shopNewDesc').value='';msg('adminMsg','Shop-Produkt gespeichert.');};
+}
 $('awardPrize').innerHTML='';PRIZES.concat([{id:'diamondGift',name:'Diamond-Geschenk'}]).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;$('awardPrize').append(o)});
 setInterval(()=>{if(uid){update(path('online/'+uid),{name,at:Date.now()}).catch(()=>{});updateHeader();}},30000);
 window.addEventListener('beforeunload',()=>{if(uid)remove(path('online/'+uid));});
