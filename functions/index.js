@@ -4,6 +4,7 @@ const { getDatabase } = require("firebase-admin/database");
 const { getAuth } = require("firebase-admin/auth");
 const { defineSecret } = require("firebase-functions/params");
 const crypto = require("node:crypto");
+const { shouldMarkSkibidiCompleted } = require("./event-state");
 
 // Server-only role map stored in Google Secret Manager.
 const roleCodeMapSecret = defineSecret("ROLE_CODE_MAP");
@@ -67,14 +68,12 @@ exports.setActiveEvent = onCall({ region: "europe-west1" }, async (request) => {
   }
 
   const currentEvent = await db.ref("events/active").get();
-  if (type === null && currentEvent.val() === "skibidi") {
+  if (shouldMarkSkibidiCompleted(currentEvent.val(), type)) {
     await db.ref("settings/completedEvents/skibidi").set(true);
   }
   const now = Date.now();
   await db.ref("events").update({ active: type, startedAt: now, runId: String(now) });
-  if (type === "skibidi") {
-    await db.ref("settings/completedEvents/skibidi").set(true);
-  }
+  // Mark the event as completed only when it is stopped, not when it starts.
   return { active: type, startedAt: now };
 });
 
