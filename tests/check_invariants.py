@@ -28,6 +28,7 @@ checks = {
     "main-admin global luck is capped at 5x": 'id="adminLuck" type="number" min="1" max="5"' in source and "if(v>5)return msg('adminMsg'" in source,
     "Admin Abuse tips are main-admin-only and priority-sorted": "role==='admin'&&settings.adminAbuseActive===true" in source and "level:'DRINGEND'" in source and "level:'EMPFEHLUNG'" in source and "level:'OPTIONAL'" in source and "tips.sort((a,b)=>a.rank-b.rank)" in source,
     "Main-admin luck requires whole-number values": "!Number.isInteger(v)" in source,
+    "shop purchases use the same merged catalog shown to players": "const item=currentShopCatalog().find(x=>x.id===id)" in source,
     "Shop balance is transaction-based": "players/'+uid+'/shopBalance" in source and "runTransaction" in source,
 }
 
