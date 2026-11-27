@@ -460,7 +460,7 @@ async function sendGift(){
   if(id==='football'&&($('giftScope').value==='global'||settings.footballTokenOwner||amount!==1))throw new Error('Football Token kann nur einmal im gesamten Spiel vergeben werden. Wähle einen einzelnen Spieler und Menge 1.');
   if(role==='special'){if(targets.length!==1||targets[0][0]===uid)throw new Error('Wähle einen anderen einzelnen Spieler.');if(Number(player.inventory?.[id]||0)<amount)throw new Error('Du besitzt nicht genug davon.');const inv={...(player.inventory||{})};inv[id]-=amount;await update(path('players/'+uid),{inventory:inv});}
   for(const [idTarget] of targets)await awardPrizeTo(idTarget,id,amount);
-  msg('giftMsg','Geschenk erfolgreich gesendet.');if(role==='admin'&&$('giftPublic').checked)await addActivity('Owner hat Geschenke verteilt.');renderInventory();
+  msg('giftMsg',$('giftScope').value==='random'?'Zufällig ausgewählt: '+(targets[0][1].name||'Spieler')+'. Geschenk gesendet.':'Geschenk erfolgreich gesendet.');if(role==='admin'&&$('giftPublic').checked)await addActivity('Owner hat Geschenke verteilt.');renderInventory();
  }catch(e){msg('giftMsg',e.message)}
 }
 async function grantTokens(){
@@ -469,17 +469,16 @@ async function grantTokens(){
   const id=$('awardPrize').value,amount=Math.max(1,Math.min(50,Number($('awardAmount').value)||1)),targets=await resolveTargets($('awardScope').value,$('awardTarget').value);
   if(id==='football'&&($('awardScope').value==='global'||settings.footballTokenOwner||amount!==1))throw new Error('Football Token darf nur einmal insgesamt und nur an einen einzelnen Spieler vergeben werden.');
   for(const [target] of targets)await awardPrizeTo(target,id,amount);
-  msg('adminMsg','Token an '+targets.length+' Spieler vergeben.');if($('awardPublic').checked)await addActivity('Owner hat Tokens vergeben.');
+  msg('adminMsg',$('awardScope').value==='random'?'Zufällig ausgewählt: '+(targets[0][1].name||'Spieler')+'. Token vergeben.':'Token an '+targets.length+' Spieler vergeben.');if($('awardPublic').checked)await addActivity('Owner hat Tokens vergeben.');
  }catch(e){msg('adminMsg',e.message)}
 }
 async function startEvent(type){
  const quarter=['hacker','unicorn','galaxy','diamond','robot'];const half=['cube','hacker','unicorn','galaxy','diamond','robot','school'];if(role==='quarterAdmin'&&!quarter.includes(type))return msg('adminMsg','Dieses Event darfst du als Viertel-Admin nicht starten.');if(role==='halfAdmin'&&!half.includes(type))return msg('adminMsg','Dieses Event darfst du als Halb-Admin nicht starten.');if(!['admin','quarterAdmin','halfAdmin'].includes(role))return msg('adminMsg','Keine Berechtigung.');
- const now=Date.now();const completed={...(settings.completedEvents||{})};
- if(NEW_EVENT_TYPES.includes(type)){completed[type]=true;await update(path('settings'),{completedEvents:completed});}
+ const now=Date.now();
  if(type==='lasertag')await set(path('events/laserPlayers'),{});await set(path('events'),{active:type,startedAt:now,runId:String(now)});
  msg('adminMsg',(EVENT_INFO[type]?.[0]||type)+' gestartet.');
 }
-async function stopEvent(){const completed={...(settings.completedEvents||{})};if(eventState.active==='skibidi'){completed.skibidi=true;await update(path('settings'),{completedEvents:completed});}await set(path('events'),{active:null,startedAt:Date.now(),runId:String(Date.now())});msg('adminMsg','Event gestoppt. Neue Tokens sind nach dem Skibidi-Event jetzt freigeschaltet.');}
+async function stopEvent(){const completed={...(settings.completedEvents||{})};const skibidiDone=eventState.active==='skibidi';if(skibidiDone){completed.skibidi=true;await update(path('settings'),{completedEvents:completed});settings.completedEvents=completed;}await set(path('events'),{active:null,startedAt:Date.now(),runId:String(Date.now())});msg('adminMsg',skibidiDone?'Skibidi-Event beendet. Die freigeschalteten Tokens sind jetzt verfügbar.':'Event gestoppt.');}
 async function adminAnnouncement(){
  const textValue=$('announcementText').value.trim();if(!textValue)return msg('adminMsg','Bitte eine Nachricht schreiben.');
  if(!['admin','quarterAdmin','halfAdmin'].includes(role))return msg('adminMsg','Keine Berechtigung.');const targets=await resolveTargets($('announcementScope').value,$('announcementTarget').value),a={text:textValue,at:Date.now(),sender:role==='admin'?'OWNER':(roleName||name)};
@@ -490,7 +489,7 @@ async function spawnGalaxy(){
  if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Galaxy-Truhen spawnen.');
  const amount=Math.max(1,Math.min(100,Number($('galaxyAmount').value)||1)),targets=await resolveTargets($('galaxyScope').value,$('galaxyTarget').value);
  for(const [id,p] of targets)await update(path('players/'+id),{pendingGalaxy:Number(p.pendingGalaxy||0)+amount});
- if($('galaxyPublic').checked)await addActivity('Owner hat Galaxy-Truhen gespawnt.');msg('adminMsg','Galaxy-Truhe(n) vorgemerkt. Sie erscheinen in der nächsten Runde.');
+ if($('galaxyPublic').checked)await addActivity('Owner hat Galaxy-Truhen gespawnt.');msg('adminMsg',$('galaxyScope').value==='random'?'Zufällig ausgewählt: '+(targets[0][1].name||'Spieler')+'. Galaxy-Truhe(n) erscheinen in der nächsten Runde.':'Galaxy-Truhe(n) vorgemerkt. Sie erscheinen in der nächsten Runde.')
 }
 async function resetData(){
  if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Spieler zurücksetzen.');
@@ -1145,7 +1144,7 @@ $('saveEventOdds').onclick=async()=>{const v={blitzChance:Number($('blitzChance'
 $('saveDiamondChance').onclick=async()=>{const v=Number($('diamondChance').value);if(!Number.isFinite(v)||v<0||v>100)return msg('adminMsg','Chance muss zwischen 0 und 100 liegen.');await update(path('settings'),{diamondChance:v});msg('adminMsg','Diamond-Chance gespeichert.')};
 $('sendAnnouncement').onclick=()=>adminAnnouncement().catch(e=>msg('adminMsg',e.message));
 $('spawnGalaxy').onclick=()=>spawnGalaxy().catch(e=>msg('adminMsg',e.message));
-$('spawnBlitz').onclick=async()=>{if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Blitze manuell auslösen.');const scope=$('blitzScope').value;let targets;if(scope==='self')targets=[[uid,player]];else targets=await resolveTargets(scope,$('blitzTarget').value);for(const [id,p] of targets)await update(path('players/'+id),{pendingBlitz:Number(p.pendingBlitz||0)+1});msg('adminMsg','Blitz vorgemerkt. Der Einschlag erscheint in der nächsten Runde.');};
+$('spawnBlitz').onclick=async()=>{if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Blitze manuell auslösen.');const scope=$('blitzScope').value;let targets;if(scope==='self')targets=[[uid,player]];else targets=await resolveTargets(scope,$('blitzTarget').value);for(const [id,p] of targets)await update(path('players/'+id),{pendingBlitz:Number(p.pendingBlitz||0)+1});msg('adminMsg',scope==='random'?'Zufällig ausgewählt: '+(targets[0][1].name||'Spieler')+'. Blitz erscheint in der nächsten Runde.':'Blitz vorgemerkt. Der Einschlag erscheint in der nächsten Runde.')};
 $('awardBtn').onclick=grantTokens;$('giftBtn').onclick=sendGift;$('resetPlayer').onclick=()=>resetData().catch(e=>msg('adminMsg',e.message));
 $('watchBtn').onclick=watch;
 $('messageManSend').onclick=async()=>{const t=$('messageManText').value.trim();if(!t)return msg('messageManStatus','Bitte eine Nachricht eingeben.');await push(path('messages'),{uid,name,text:t,at:Date.now()});await addActivity('hat eine Nachricht geschrieben.');$('messageManText').value='';msg('messageManStatus','Nachricht gesendet.')};
