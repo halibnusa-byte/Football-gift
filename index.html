@@ -125,6 +125,7 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <button type="button" class="admin-nav-btn" data-target="admin-settings">⚙️ Event-Werte</button>
 <button type="button" class="admin-nav-btn" data-target="admin-actions">🎁 Aktionen</button>
 </nav>
+<div id="adminAbuseControl"><h3>🔥 ADMIN ABUSE · TIPPgeber</h3><p class="muted">Nur der Hauptadmin sieht die Hinweise. Der Tippgeber analysiert den Live-Chat und schlägt Aktionen vor, führt aber niemals selbst Aktionen aus.</p><button id="adminAbuseToggle" class="secondary">ADMIN ABUSE STARTEN</button><div id="adminAbuseStatus" class="hint"></div><div id="adminAbuseTips" class="list"></div></div>
 <div id="comebackAdminBox" class="hidden"><h3>🏆 COMEBACK ERA · Legendary Comeback Gift</h3><div class="muted">Vergibt einmalig an alle aktuell online befindlichen Spieler (= Teilnehmer am Comeback Admin Abuse) ein Legendary Comeback Gift und den Titel OG COMEBACK PLAYER. Wer es schon bekommen hat, wird übersprungen.</div><button id="cbGrant">COMEBACK GIFT AN TEILNEHMER VERGEBEN</button><div id="cbAdminMsg" class="hint"></div></div>
 <div id="serverControlBox" class="hidden"><h3>🔒 SERVER-KONTROLLE</h3><div id="srvStatus" class="srv unknown">STATUS WIRD GEPRÜFT …</div><div class="muted" id="srvMeta"></div><div class="row"><button id="srvLock" class="danger">SERVER SPERREN</button><button id="srvUnlock">SERVER FREIGEBEN</button></div><div id="srvMsg" class="hint"></div></div>
 <h3 id="admin-roles" class="admin-section-title">🔐 Rollen & Zugang</h3><h3>Admin-Code ändern</h3><input id="newAdminCode" type="password" placeholder="Neuer Admin-Code"><button id="changeAdminCode">Admin-Code speichern</button>
@@ -299,11 +300,12 @@ function subscribe(){
  unsubs.push(onValue(path('players/'+uid),s=>{if(s.exists()){player=s.val();renderInventory();renderShop();}}));
  unsubs.push(onValue(path('announcements/global'),s=>{if(s.exists())showAnnouncement(s.val())}));
  unsubs.push(onValue(path('announcements/users/'+uid),s=>{if(s.exists())showAnnouncement(s.val())}));
- unsubs.push(onValue(path('messages'),s=>{const data=s.val()||{};renderChat(data);const arr=Object.values(data).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,5);if(role==='admin')msg('adminMsg','Letzte Nachricht: '+(arr[0]?.name||'')+' – '+(arr[0]?.text||''));}));
+ unsubs.push(onValue(path('messages'),s=>{const data=s.val()||{};renderChat(data);renderAdminAbuseTips(data);const arr=Object.values(data).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,5);if(role==='admin')msg('adminMsg','Letzte Nachricht: '+(arr[0]?.name||'')+' – '+(arr[0]?.text||''));}));
 }
 function showAnnouncement(a){if(!a?.text||a.targetUid&&a.targetUid!==uid)return;$('ownerBannerLabel').textContent=(a.sender||'OWNER')+':';$('ownerBannerText').textContent=a.text;show('ownerBanner',true);clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>show('ownerBanner',false),3000);}
 function updateHeader(){
  const ev=eventState.active;document.body.classList.toggle('power',isPower()&&!ev);
+ if($('adminAbuseToggle')){$('adminAbuseToggle').textContent=settings.adminAbuseActive?'ADMIN ABUSE BEENDEN':'ADMIN ABUSE STARTEN';$('adminAbuseStatus').textContent=settings.adminAbuseActive?'Aktiv · Live-Chat wird ausgewertet.':'Inaktiv';}
  Object.keys(EVENT_INFO).forEach(k=>document.body.classList.toggle('event-'+k,ev===k));
  $('powerLabel').textContent=isPower()?'AKTIV':'Inaktiv';$('luckLabel').textContent=luck()+'×'+(settings.luckEnabled?' (global)':'');
  $('eventLabel').textContent=EVENT_INFO[ev]?.[0]||'Keins aktiv';$('globalStatus').textContent='ONLINE · '+(EVENT_INFO[ev]?.[0]||'Normalbetrieb')+' · Glück '+luck()+'×';
@@ -495,8 +497,7 @@ async function renderEventChallenge(){
  }else if(type==='cube'){
   const q=document.createElement('p');q.textContent='Rätsel: Ich habe sechs Seiten und farbige Felder. Was bin ich?';const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT';b.onclick=async()=>{b.disabled=true;if(!await claim())return;if(['zauberwürfel','zauberwurfel','rubik cube','rubiks cube'].includes(inp.value.trim().toLowerCase()))await win('Richtig gelöst');else result.textContent='Falsch – keine Belohnung.';inp.disabled=true;};body.append(q,inp,b);
  }else if(type==='time'){
-  const q=document.createElement('p');q.textContent='Wähle deine Zeitreise:';body.append(q);
-  ['Vergangenheit','Gegenwart','Zukunft'].forEach(v=>{const b=document.createElement('button');b.className='secondary';b.textContent=v;b.onclick=async()=>{body.querySelectorAll('button').forEach(x=>x.disabled=true);if(await claim()){if(Math.random()<.45)await win('Zeitreise erfolgreich');else result.textContent='⏳ Niete – keine Belohnung.';}};body.append(b)});
+  renderTimeTravel(body,result,status,claim,win);
  }else if(type==='school'){
   const q=document.createElement('p');q.textContent='Wie viele Spieler einer Mannschaft stehen normalerweise gleichzeitig auf dem Fußballfeld?';const inp=document.createElement('input');inp.placeholder='Antwort als Zahl';const b=document.createElement('button');b.textContent='ANTWORT ABSENDEN';b.onclick=async()=>{b.disabled=true;if(await claim()){if(inp.value.trim()==='11')await win('Richtig');else result.textContent='Falsch – kein Geschenk.';}};body.append(q,inp,b);
  }else if(type==='lava'){
@@ -557,6 +558,34 @@ async function renderEventChallenge(){
  body.append(result,status);
 }
 function youtubeId(url){const m=String(url||'').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);return m?m[1]:'';}
+function renderTimeTravel(body,result,status,claim,win){
+ const clips={
+  'Cristiano Ronaldo':['https://youtube.com/shorts/9N3rLlUqXS4','https://youtube.com/shorts/OpBxzZgZ6v0'],
+  'Lionel Messi':['https://youtube.com/shorts/d2KV4BPoBKY','https://youtube.com/shorts/mdbTyzu__XY'],
+  'Neymar Jr.':['https://youtube.com/shorts/rrY4sMtobGQ','https://youtube.com/shorts/t3UlZ4qY9o0']
+ };
+ const intro=document.createElement('p');intro.textContent='Wähle einen Fußball-Star. Einer seiner zwei Clips wird zufällig ausgewählt und einmal abgespielt.';body.append(intro);
+ Object.keys(clips).forEach(star=>{
+  const b=document.createElement('button');b.className='secondary';b.textContent='⏳ '+star;
+  b.onclick=async()=>{
+   body.querySelectorAll('button').forEach(x=>x.disabled=true);
+   if(!await claim()){status.textContent='Deine Zeitreise wurde bereits benutzt.';return;}
+   const url=clips[star][Math.floor(Math.random()*2)],id=youtubeId(url);
+   const frame=document.createElement('iframe');frame.width='100%';frame.height='420';frame.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';frame.allowFullscreen=true;
+   frame.src='https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&mute=1&playsinline=0&controls=1&rel=0';
+   body.append(frame);
+   const back=document.createElement('button');back.textContent='ZURÜCK ZUM EVENT';back.className='secondary';back.style.display='none';
+   const showBack=()=>{back.style.display='block';};
+   const timer=setTimeout(showBack,25000);
+   back.onclick=async()=>{clearTimeout(timer);frame.remove();back.remove();await win('Zeitreise mit '+star);};
+   body.append(back);
+   try{if(frame.requestFullscreen)await frame.requestFullscreen();}catch(e){}
+   status.textContent='Clip ausgewählt: '+star+'. Falls das Video nicht automatisch startet, tippe im Videoplayer auf Wiedergabe. Du kannst danach zum Event zurückkehren.';
+  };
+  body.append(b);
+ });
+}
+
 function renderGodzilla(body,result,status,claim,win){
  const cfg=eventState.video||settings.eventVideos?.[eventState.active]||settings.godzillaVideo||{};const id=youtubeId(cfg.url);const pause=Math.max(5,Number(cfg.pause)||45),end=Math.max(pause+5,Number(cfg.end)||120);
  if(!id){status.textContent='Der Admin muss zuerst einen gültigen YouTube-Link speichern.';return;}
@@ -603,6 +632,29 @@ async function registerAdminRole(kind){
 }
 
 
+
+function renderAdminAbuseTips(data){
+ const panel=$('adminAbuseTips');if(!panel)return;
+ const active=role==='admin'&&settings.adminAbuseActive===true;
+ show('adminAbuseControl',role==='admin');
+ if(!active){panel.innerHTML='';return;}
+ const rows=Object.values(data||{}).slice(-80),texts=rows.map(x=>String(x.text||'').toLowerCase());
+ const tips=[];
+ if(rows.length>=20)tips.push('Viele Chat-Nachrichten: Starte eine kurze Abstimmung oder ein Überraschungs-Event.');
+ const repeated=texts.filter((x,i)=>x&&texts.indexOf(x)!==i);
+ if(repeated.length>=3)tips.push('Mehrere Nachrichten wiederholen sich. Prüfe den Chat auf Spam und moderiere bei Bedarf.');
+ if(texts.some(x=>/hilfe|bug|fehler|geht nicht|funktioniert nicht/.test(x)))tips.push('Spieler melden möglicherweise ein Problem. Frage nach Gerät und genauer Fehlermeldung.');
+ if(texts.some(x=>/langweilig|nichts los|wann event/.test(x)))tips.push('Spieler wünschen sich Aktivität. Eine kurze Power Hour oder ein Quiz könnte passen.');
+ if(texts.some(x=>/unfair|zu schwer|chance/.test(x)))tips.push('Es gibt Rückmeldungen zu Fairness oder Gewinnchancen. Prüfe die Event-Regeln, bevor du etwas änderst.');
+ if(!tips.length)tips.push('Noch keine auffälligen Chat-Muster. Beobachte die Unterhaltung.');
+ panel.innerHTML='';tips.slice(0,4).forEach(t=>{const d=document.createElement('div');d.className='item';d.textContent='💡 '+t;panel.append(d);});
+}
+$('adminAbuseToggle').onclick=async()=>{
+ if(role!=='admin'||!isOwner)return msg('adminMsg','Nur der Hauptadmin darf Admin Abuse starten oder stoppen.');
+ const next=settings.adminAbuseActive!==true;
+ await update(path('settings'),{adminAbuseActive:next,adminAbuseStartedAt:next?Date.now():null});
+ msg('adminAbuseStatus',next?'Admin Abuse ist aktiv. Tippgeber läuft.':'Admin Abuse wurde beendet.');
+};
 // ===== LIVE CHAT =====
 function renderChat(data){
  const el=$('chatMessages');if(!el)return;el.innerHTML='';
