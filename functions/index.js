@@ -16,7 +16,11 @@ const EVENT_TYPES = new Set([
   "mystery",
 ]);
 
-function hashCode(value) {\n  return crypto.createHash("sha256").update(value, "utf8").digest("hex");\n}\n\nfunction requireAuth(request) {
+function hashCode(value) {
+  return crypto.createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+function requireAuth(request) {
   if (!request.auth) throw new HttpsError("unauthenticated", "Bitte zuerst anmelden.");
   return request.auth;
 }
