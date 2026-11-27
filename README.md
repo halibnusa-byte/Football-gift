@@ -10,6 +10,7 @@ Active work is kept on the draft branch `comeback-era-build-2026-11-27`. The `ma
 
 - 15 shared gift boxes per round and up to 3 opens per player.
 - Existing prize inventory, ranking, global one-time Football Token ownership, and Galaxy event drop.
+- Confirmed Power Hours: Sunday–Friday 15:00–17:00, Saturday all day; ordinary players receive at least 2× luck and main-admin global luck is capped at 5×. Multipliers use the maximum, not multiplication.
 - Event controls and event-specific challenges, including the video-pause vote, Time Travel, School, Lava, Alien Invasion, Ocean, Zombie, 3D LaserTag, and bespoke playable mini-games for 34 standard events (reaction, memory, ordering, map, goal, and knowledge challenges).
 - Persistent shop points, shop items, timed offers, and player inventory.
 - Player roles, admin controls, lockdown UI, live chat, activity feed, and comeback features.
