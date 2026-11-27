@@ -441,17 +441,25 @@ async function adminAnnouncement(){
 }
 async function spawnGalaxy(){
  if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Galaxy-Truhen spawnen.');
- const amount=Math.max(1,Math.min(100,Number($('galaxyAmount').value)||1)),targets=await resolveTargets($('galaxyScope').value,$('galaxyTarget').value);
- for(const [id,p] of targets)await update(path('players/'+id),{pendingGalaxy:Number(p.pendingGalaxy||0)+amount});
- if($('galaxyPublic').checked)await addActivity('Owner hat Galaxy-Truhen gespawnt.');msg('adminMsg','Galaxy-Truhe(n) vorgemerkt. Sie erscheinen in der nächsten Runde.');
+ try{
+  const result=await httpsCallable(functions,'spawnGalaxyGifts')({
+   scope:$('galaxyScope').value,
+   amount:Math.max(1,Math.min(100,Number($('galaxyAmount').value)||1)),
+   targetName:$('galaxyTarget').value.trim(),
+   public:$('galaxyPublic').checked
+  });
+  msg('adminMsg',result.data.queued+' Spieler: Galaxy-Truhe(n) vorgemerkt. Sie erscheinen in der nächsten Runde.');
+ }catch(e){msg('adminMsg',e?.message||'Galaxy-Truhen konnten nicht vorgemerkt werden.');}
 }
 async function resetData(){
  if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Spieler zurücksetzen.');
- const scope=$('resetScope').value,targets=await resolveTargets(scope,$('resetTarget').value);
+ const scope=$('resetScope').value;
+ const targetName=$('resetTarget').value.trim();
  if(!confirm(scope==='global'?'Wirklich ALLE registrierten Spieler (auch offline) zurücksetzen?':'Diesen Spieler vollständig zurücksetzen?'))return;
- for(const [id,p] of targets)await update(path('players/'+id),{inventory:{},firstWon:{},totalWins:0,lastBoxes:[],opensThisRound:0,pendingGalaxy:0,eventClaims:{}});
- if(scope==='global'){await remove(path('settings/footballTokenOwner'));await update(path('settings'),{completedEvents:{}});}else if(settings.footballTokenOwner===targets[0][0]){await remove(path('settings/footballTokenOwner'));}
- msg('adminMsg','Zurückgesetzt: '+targets.length+' Spieler.');
+ try{
+  const result=await httpsCallable(functions,'resetPlayerData')({scope,targetName,confirm:true});
+  msg('adminMsg','Zurückgesetzt: '+result.data.reset+' Spieler.');
+ }catch(e){msg('adminMsg',e?.message||'Zurücksetzen fehlgeschlagen.');}
 }
 async function renderEventChallenge(){
  const type=eventState.active,available=['unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type);
