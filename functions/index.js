@@ -71,7 +71,7 @@ exports.setActiveEvent = onCall({ region: "europe-west1" }, async (request) => {
     await db.ref("settings/completedEvents/skibidi").set(true);
   }
   const now = Date.now();
-  await db.ref("events").set({ active: type, startedAt: now, runId: String(now) });
+  await db.ref("events").update({ active: type, startedAt: now, runId: String(now) });
   if (type === "skibidi") {
     await db.ref("settings/completedEvents/skibidi").set(true);
   }
