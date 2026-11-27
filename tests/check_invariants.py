@@ -15,6 +15,7 @@ checks = {
     "Zombie loot is persisted": "players/'+uid+'/zombieLoot/'+run" in source,
     "Zombie event has five serum choices": "for(let i=0;i<5;i++)" in source and "SERUM '+(i+1)" in source,
     "LaserTag uses Three.js": "three.module.js" in source and "renderLaserTag3D" in source,
+    "all twenty added events have bespoke mini-games": "async function renderThemedEventMiniGame" in source and all(f"{name}:{{mode:" in source for name in ("pirate","carnival","ninja","toy","crystal","wildwest","bakery","comic","safari","cyber","wizard","moon","arcade","samurai","stoneage","masquerade","science","luxury","rainbow","timemachine")),
     "Shop balance is transaction-based": "players/'+uid+'/shopBalance" in source and "runTransaction" in source,
 }
 
