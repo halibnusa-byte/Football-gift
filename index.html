@@ -127,7 +127,7 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <button type="button" class="admin-nav-btn" data-target="admin-actions">🎁 Aktionen</button>
 </nav>
 <div id="adminAbuseControl"><h3>🔥 ADMIN ABUSE · TIPPgeber</h3><p class="muted">Nur der Hauptadmin sieht die Hinweise. Der Tippgeber analysiert den Live-Chat und schlägt Aktionen vor, führt aber niemals selbst Aktionen aus.</p><button id="adminAbuseToggle" class="secondary">ADMIN ABUSE STARTEN</button><div id="adminAbuseStatus" class="hint"></div><div id="adminAbuseTips" class="list"></div></div>
-<div id="comebackAdminBox" class="hidden"><h3>🏆 COMEBACK ERA · Legendary Comeback Gift</h3><div class="muted">Vergibt einmalig an alle aktuell online befindlichen Spieler (= Teilnehmer am Comeback Admin Abuse) ein Legendary Comeback Gift und den Titel OG COMEBACK PLAYER. Wer es schon bekommen hat, wird übersprungen.</div><button id="cbGrant">COMEBACK GIFT AN TEILNEHMER VERGEBEN</button><div id="cbAdminMsg" class="hint"></div></div>
+<div id="comebackAdminBox" class="hidden"><h3>🏆 COMEBACK ERA · Legendary Comeback Gift</h3><div class="muted">Vergibt einmalig an alle gespeicherten Teilnehmer des Comeback Admin Abuse ein Legendary Comeback Gift und den Titel OG COMEBACK PLAYER. Teilnehmer sind Spieler, die beim Start online sind oder während des aktiven Admin Abuse beitreten.</div><button id="cbGrant">COMEBACK GIFT AN TEILNEHMER VERGEBEN</button><div id="cbAdminMsg" class="hint"></div></div>
 <div id="serverControlBox" class="hidden"><h3>🔒 SERVER-KONTROLLE</h3><div id="srvStatus" class="srv unknown">STATUS WIRD GEPRÜFT …</div><div class="muted" id="srvMeta"></div><div class="row"><button id="srvLock" class="danger">SERVER SPERREN</button><button id="srvUnlock">SERVER FREIGEBEN</button></div><div id="srvMsg" class="hint"></div></div>
 <h3 id="admin-roles" class="admin-section-title">🔐 Rollen & Zugang</h3><h3>Admin-Code ändern</h3><input id="newAdminCode" type="password" placeholder="Neuer Admin-Code"><button id="changeAdminCode">Admin-Code speichern</button>
 <h3>Besonderen Spieler (dauerhaft 2× Glück)</h3><input id="specialName" placeholder="Spielername"><input id="newSpecialCode" type="password" placeholder="Code des besonderen Spielers"><button id="setSpecial">Besonderen Spieler speichern</button>
@@ -284,6 +284,8 @@ async function enter(){
   const snap=await get(path('players/'+uid));player=snap.val()||{name,inventory:{},firstWon:{},totalWins:0,created:Date.now()};
   player.name=name;await update(path('players/'+uid),{name,created:player.created||Date.now()});
   await set(path('online/'+uid),{name,at:Date.now()});
+  const abuseState=(await get(path('settings'))).val()||{};
+  if(abuseState.adminAbuseActive===true&&abuseState.adminAbuseRunId)await set(path('settings/adminAbuseParticipants/'+abuseState.adminAbuseRunId+'/'+uid),{name,joinedAt:Date.now()});
   show('loginPanel',false);show('app',true);$('hello').textContent='Willkommen, '+name+'!';
   if(Array.isArray(player.lastBoxes)&&player.lastBoxes.length===15){
     boxes=player.lastBoxes.map((b,i)=>({...b,id:i,opened:!!b.opened}));opened=boxes.filter(b=>b.opened).map(b=>b.id);
@@ -954,10 +956,18 @@ function renderAdminAbuseTips(data){
 $('adminAbuseToggle').onclick=async()=>{
  if(role!=='admin'||!isOwner)return msg('adminMsg','Nur der Hauptadmin darf Admin Abuse starten oder stoppen.');
  const next=settings.adminAbuseActive!==true;
- await update(path('settings'),{adminAbuseActive:next,adminAbuseStartedAt:next?Date.now():null});
- settings.adminAbuseActive=next;
+ if(next){
+  const online=(await get(path('online'))).val()||{},runId=String(Date.now()),participants={};
+  Object.entries(online).forEach(([id,p])=>{participants[id]={name:p.name||'Spieler',joinedAt:p.at||Date.now()};});
+  await set(path('settings/adminAbuseParticipants/'+runId),participants);
+  await update(path('settings'),{adminAbuseActive:true,adminAbuseStartedAt:Date.now(),adminAbuseRunId:runId});
+  settings.adminAbuseActive=true;settings.adminAbuseRunId=runId;
+ }else{
+  await update(path('settings'),{adminAbuseActive:false,adminAbuseEndedAt:Date.now()});
+  settings.adminAbuseActive=false;
+ }
  updateHeader();
- msg('adminAbuseStatus',next?'Admin Abuse ist aktiv. Tippgeber läuft.':'Admin Abuse wurde beendet.');
+ msg('adminAbuseStatus',next?'Admin Abuse ist aktiv. Teilnehmer werden gespeichert; Tippgeber läuft.':'Admin Abuse wurde beendet.');
 };
 // ===== LIVE CHAT =====
 function renderChat(data){
@@ -995,12 +1005,13 @@ async function grantComeback(){
  if(role!=='admin'||!isOwner)return msg('cbAdminMsg','Nur der Hauptadmin darf das.');
  if(settings.adminAbuseActive!==true)return msg('cbAdminMsg','Starte zuerst den Comeback Admin Abuse. Nur aktuelle Teilnehmer erhalten das Legendary Comeback Gift.');
  try{
-  const on=(await get(path('online'))).val()||{};let n=0,skip=0;
-  for(const id of Object.keys(on)){
+  const runId=settings.adminAbuseRunId;if(!runId)throw new Error('Es wurde noch kein Admin-Abuse-Durchlauf gestartet.');
+  const participants=(await get(path('settings/adminAbuseParticipants/'+runId))).val()||{};let n=0,skip=0;
+  for(const id of Object.keys(participants)){
    const tx=await runTransaction(path('players/'+id+'/comebackGift'),v=>v===null?'ready':undefined);
    if(tx.committed){await update(path('players/'+id),{title:'OG COMEBACK PLAYER',comebackAccessory:'golden_comeback_cape'});n++;}else skip++;
   }
-  msg('cbAdminMsg',n+' Spieler erhalten das Gift'+(skip?', '+skip+' hatten es schon':'')+'.');
+  msg('cbAdminMsg',n+' teilnehmende Spieler erhalten das Gift'+(skip?', '+skip+' hatten es schon':'')+'.');
  }catch(e){msg('cbAdminMsg','Fehler: '+(e?.message||e));}
 }
 function openComeback(){
