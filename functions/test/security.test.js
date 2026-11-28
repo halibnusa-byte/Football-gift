@@ -206,3 +206,18 @@ test("browser join uses the server callable instead of direct profile and presen
   assert.ok(!enter.includes("update(path('players/'"));
   assert.ok(!enter.includes("set(path('online/'"));
 });
+
+
+test("gift rounds are created and opened only through server-authoritative callables", () => {
+  assert.match(source, /exports\.startPlayerRound\s*=\s*onCall/);
+  assert.match(source, /exports\.openPlayerGift\s*=\s*onCall/);
+  assert.match(source, /Array\.from\(\{ length: 15 \}/);
+  assert.match(source, /round\.openedCount >= 3/);
+  assert.match(source, /crypto\.randomInt/);
+  assert.match(source, /roundState/);
+  assert.match(source, /inventory,\s*firstWon/);
+  assert.match(client, /httpsCallable\(functions,'startPlayerRound'\)/);
+  assert.match(client, /httpsCallable\(functions,'openPlayerGift'\)/);
+  assert.doesNotMatch(client, /async function saveRound\(\)\{if\(!uid\)return;await update\(path\('players\/'\+uid\)/);
+  assert.doesNotMatch(client, /async function openBox\(i\)[\s\S]*?await rollAndAward\(uid/);
+});
