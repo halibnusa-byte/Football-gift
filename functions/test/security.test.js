@@ -480,3 +480,18 @@ test("Lava Survival server-validates the timed path and consumes a shield only o
   assert.match(client, /chooseLavaPath/);
   assert.match(client, /startLavaChallenge/);
 });
+
+test("Alien Invasion validates the UFO and four-digit recovery code on the server", () => {
+  const start = source.slice(source.indexOf("exports.startAlienChallenge"), source.indexOf("exports.openOceanChest"));
+  const choose = source.slice(source.indexOf("exports.chooseAlienUfo"), source.indexOf("exports.recoverAlienGift"));
+  const recover = source.slice(source.indexOf("exports.recoverAlienGift"), source.indexOf("exports.openOceanChest"));
+  const awardStart = source.indexOf("exports.awardEventReward");
+  const award = source.slice(awardStart, source.indexOf("exports.", awardStart + 10));
+  assert.match(start, /safeIndex: crypto\.randomInt\(3\)/);
+  assert.match(start, /code: codes\[crypto\.randomInt\(codes\.length\)\]/);
+  assert.match(choose, /Number\.isInteger\(c\.chosenIndex\)/);
+  assert.match(recover, /c\.chosenIndex === c\.safeIndex && code === c\.code/);
+  assert.match(award, /eventId === "alien"/);
+  assert.match(client, /scanAlienRadar/);
+  assert.match(client, /recoverAlienGift/);
+});
