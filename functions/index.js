@@ -1179,13 +1179,15 @@ exports.openOceanChest = onCall({ region: "europe-west1" }, async (request) => {
   await assertMainAdminDuringLock(auth);
   const chestIndex = Number(request.data?.chestIndex);
   if (!Number.isInteger(chestIndex) || chestIndex < 0 || chestIndex > 2) throw new HttpsError("invalid-argument", "Ungültige Schatztruhe.");
-  const [eventsSnap, settingsSnap, playerSnap] = await Promise.all([
-    db.ref("events").get(), db.ref("settings").get(), db.ref("players/" + auth.uid).get()
+  const [eventsSnap, settingsSnap] = await Promise.all([
+    db.ref("events").get(), db.ref("settings").get()
   ]);
   const eventState = eventsSnap.val() || {};
   if (eventState.active !== "ocean") throw new HttpsError("failed-precondition", "Ocean-Event ist nicht aktiv.");
   const runId = String(eventState.runId || eventState.startedAt || "");
-  if (!playerSnap.val()?.eventClaims?.["ocean:" + runId]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
+  const claimRef = db.ref("players/" + auth.uid + "/eventClaims/ocean:" + runId);
+  const claimTx = await claimRef.transaction((existing) => existing || { at: Date.now(), status: "claimed" });
+  if (!claimTx.snapshot.exists()) throw new HttpsError("failed-precondition", "Event-Teilnahme konnte nicht gespeichert werden.");
   const chance = Math.max(0, Math.min(1, Number(settingsSnap.val()?.oceanGoldenSharkChance) || 0));
   const ref = db.ref("events/oceanChests/" + runId + "/" + auth.uid);
   const randomTreasureIndex = crypto.randomInt(3);
