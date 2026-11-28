@@ -778,8 +778,9 @@ async function renderEventChallenge(){
   visual.innerHTML='<div class="pinata-model"><div class="pinata-body"></div><div class="pinata-face">✦ ◉‿◉ ✦</div></div><div class="pinata-caption">🌈 RAINBOW PIÑATA 🌈</div><div class="muted">Ein Schlag pro Spieler · Die Piñata behält ihr eigenes Design</div>';body.append(visual);
   const b=document.createElement('button');b.textContent='🪅 PINATA EINMAL SCHLAGEN';b.onclick=async()=>{b.disabled=true;if(!await claim()){status.textContent='Schon benutzt.';return;}await win('Die Piñata spuckt aus');status.textContent='Dein Schlag ist verbraucht.';};body.append(b);
  }else if(type==='cube'){
-  const configured=['A','B','C'].every(k=>Number.isFinite(Number(settings['magicCube'+k+'Chance'])));
-  if(!configured){const note=document.createElement('p');note.textContent='THE MAGIC MIX ist bereit. Der Hauptadmin muss zuerst die unterschiedlichen Chancen für Würfel A, B und C einstellen.';body.append(note);status.textContent='Würfel-Chancen fehlen noch in den Admin-Einstellungen.';return;}
+  const cubeChances=['A','B','C'].map(k=>Number(settings['magicCube'+k+'Chance']));
+  const configured=cubeChances.every(Number.isFinite)&&new Set(cubeChances).size===3;
+  if(!configured){const note=document.createElement('p');note.textContent='THE MAGIC MIX ist bereit. Der Hauptadmin muss zuerst drei unterschiedliche Gewinnchancen für Würfel A, B und C einstellen.';body.append(note);status.textContent='Drei verschiedene Würfel-Chancen fehlen noch in den Admin-Einstellungen.';return;}
   const puzzles=[
    {q:'Wie heißt der berühmte Würfel mit sechs farbigen Seiten?',a:['Rubik’s Cube','Zauberball','Farbpyramide'],right:0},
    {q:'Wie viele Seiten hat ein normaler Rubik’s Cube?',a:['4','6','8'],right:1},
