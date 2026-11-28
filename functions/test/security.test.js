@@ -379,10 +379,13 @@ test("Magic Cube uses three separately configured chances and server-stored outc
   assert.match(client, /magicCubeAChance/);
 });
 
-test("Golden Cup is a randomized penalty challenge rather than a fixed-answer quiz", () => {
+test("Golden Cup is a server-authoritative penalty challenge rather than a fixed-answer quiz", () => {
+  const start = source.slice(source.indexOf("exports.startPenaltyChallenge"), source.indexOf("async function finalizeRacingEvent"));
+  const shoot = source.slice(source.indexOf("exports.shootPenalty"), source.indexOf("async function finalizeRacingEvent"));
   assert.match(client, /football:\{title:'GOLDEN CUP · ELFMETER',mode:'penalty'/);
-  assert.match(client, /const keeper=Math\.floor\(Math\.random\(\)\*3\)/);
-  assert.match(client, /if\(i===keeper\)fail/);
+  assert.match(start, /keeperPath: crypto\.randomInt\(3\)/);
+  assert.match(shoot, /path !== challenge\.keeperPath/);
+  assert.match(client, /shootPenalty/);
 });
 
 test("Diamond Gift uses the specified rare rewards without adding a seventh main token", () => {
