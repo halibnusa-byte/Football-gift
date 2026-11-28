@@ -105,6 +105,7 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <div id="app" class="hidden">
 <section class="panel"><div class="row"><div><b id="hello">Willkommen!</b><div class="muted" id="playerMeta"></div></div><button class="secondary small" id="logoutBtn">Abmelden</button></div>
 <div class="cards"><div class="mini"><b>Deine Öffnungen</b><div id="opens">0 / 3</div></div><div class="mini"><b>Deine Tokens</b><div id="tokenCount">0</div></div><div class="mini"><b>Globales Glück</b><div id="luckLabel">1×</div></div><div class="mini"><b>Power Hours</b><div id="powerLabel">Inaktiv</div></div><div class="mini"><b>Event</b><div id="eventLabel">Keins aktiv</div></div></div></section>
+<section class="panel" id="shopPlayer"><b>🛒 ADMIN SHOP</b><div class="muted">Dein Budget: <b id="shopPBudget">0</b> Punkte (1 Punkt pro geöffnetem Geschenk)</div><div id="shopPList"></div><div id="shopPMsg" class="hint"></div></section>
 <section class="panel" id="chatPanel"><b>💬 LIVE-CHAT</b><div id="chatList" style="max-height:220px;overflow:auto;margin:8px 0"></div><div class="row"><input id="chatInput" maxlength="200" placeholder="Nachricht schreiben …"><button id="chatSend">SENDEN</button></div></section>
 <section class="panel hidden" id="comebackBox"><div class="row"><div><b>🏆 LEGENDARY COMEBACK GIFT</b><div class="muted">Danke fürs Mitmachen beim Comeback Admin Abuse!</div></div><button id="cbOpen">ÖFFNEN</button></div></section>
 <section class="panel" id="gamePanel"><div class="row"><div><h2>🎁 Deine 15 Geschenkboxen</h2><div class="muted" id="roundText">Öffne 3 Boxen.</div></div><span class="tag" id="rareLabel">Normale Runde</span></div><div class="grid" id="boxGrid"></div><div class="result" id="result">Wähle eine Box!</div><button class="secondary" id="nextRound" disabled>Boxen neu mischen</button></section>
@@ -125,9 +126,10 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <button type="button" class="admin-nav-btn" data-target="admin-settings">⚙️ Event-Werte</button>
 <button type="button" class="admin-nav-btn" data-target="admin-actions">🎁 Aktionen</button>
 </nav>
-<div id="shopPanel" class="hidden"><h3>🛒 ADMIN SHOP</h3><div class="muted">Budget: <b id="shopBudget">0</b> Punkte (1 Punkt pro geöffnetem Geschenk)</div><div id="shopList"></div><div class="row"><button id="shopAddBtn" class="secondary">PRODUKT HINZUFÜGEN</button><button id="shopSeedBtn" class="secondary">FESTGELEGTE PRODUKTE ANLEGEN</button></div><div id="shopMsg" class="hint"></div></div>
+<div id="shopPanel" class="hidden"><h3>🛒 ADMIN SHOP</h3><div class="muted">Hier verwaltest du die Produkte (Preise, Bestände). Spieler kaufen sie selbst mit ihrem Budget (1 Punkt pro geöffnetem Geschenk).<b id="shopBudget" class="hidden"></b></div><div id="shopList"></div><div class="row"><button id="shopAddBtn" class="secondary">PRODUKT HINZUFÜGEN</button><button id="shopSeedBtn" class="secondary">FESTGELEGTE PRODUKTE ANLEGEN</button></div><div id="shopMsg" class="hint"></div></div>
 <div id="comebackAdminBox" class="hidden"><h3>🏆 COMEBACK ERA · Legendary Comeback Gift</h3><div class="muted">Vergibt einmalig an alle aktuell online befindlichen Spieler (= Teilnehmer am Comeback Admin Abuse) ein Legendary Comeback Gift und den Titel OG COMEBACK PLAYER. Wer es schon bekommen hat, wird übersprungen.</div><button id="cbGrant">COMEBACK GIFT AN TEILNEHMER VERGEBEN</button><div id="cbAdminMsg" class="hint"></div></div>
 <div id="serverControlBox" class="hidden"><h3>🔒 SERVER-KONTROLLE</h3><div id="srvStatus" class="srv unknown">STATUS WIRD GEPRÜFT …</div><div class="muted" id="srvMeta"></div><div class="row"><button id="srvLock" class="danger">SERVER SPERREN</button><button id="srvUnlock">SERVER FREIGEBEN</button></div><div id="srvMsg" class="hint"></div></div>
+<div id="moreEventsBox"><h3>🎪 Weitere Events (31–50)</h3><div class="row" id="moreEventsBtns"></div></div>
 <h3 id="admin-roles" class="admin-section-title">🔐 Rollen & Zugang</h3><h3>Admin-Code ändern</h3><input id="newAdminCode" type="password" placeholder="Neuer Admin-Code"><button id="changeAdminCode">Admin-Code speichern</button>
 <h3>Besonderen Spieler (dauerhaft 2× Glück)</h3><input id="specialName" placeholder="Spielername"><input id="newSpecialCode" type="password" placeholder="Code des besonderen Spielers"><button id="setSpecial">Besonderen Spieler speichern</button>
 <h3>Viertel-Admin</h3><p class="muted">Kann Hacker, Einhorn, Galaxy, Diamond und Roboter starten sowie Ankündigungen senden. Es reicht, einen Code festzulegen.</p><input id="quarterCode" type="password" placeholder="Viertel-Admin-Code (mind. 4 Zeichen)"><button id="saveQuarter">VIERTEL-ADMIN-CODE SPEICHERN</button><h3>Halb-Admins – maximal 2</h3><p class="muted">Dürfen Glück bis 50× einstellen und Magic Cube, Hacker, Einhorn, Galaxy, Diamond, Roboter und School starten. Jeder braucht nur einen eigenen Code.</p><div class="row"><input id="halfCode1" type="password" placeholder="Halb-Admin-Code 1"></div><div class="row"><input id="halfCode2" type="password" placeholder="Halb-Admin-Code 2"></div><button id="saveHalves">HALB-ADMIN-CODES SPEICHERN</button><h3>Message Man – maximal 2 Spieler</h3><p class="muted">Trage bis zu zwei Spielernamen und ihre eigenen Zugangscodes ein. Sie geben den Code anschließend selbst im Rollenfeld ein.</p>
@@ -193,6 +195,9 @@ const NEW_EVENT_TYPES=['skibidi'];
 const EVENT_INFO={
 galaxy:['🌌 Galaxy','🌌'],diamond:['💎 Diamond','💎'],hacker:['💻 Hacker','0101'],unicorn:['🦄 Einhorn','🦄'],robot:['🤖 Roboter','🤖'],cube:['🧊 Zauberwürfel','🧊'],skibidi:['🚽 Skibidi Toilet','🚽'],godzilla:['🦖 Godzilla vs. Kong','🦖'],time:['⏳ Time Travel','⏳'],school:['🏫 School','🎒'],lava:['🌋 Lava','🌋'],alien:['👾 Alien Invasion','👾'],blitz:['⚡ Blitz Event','⚡'],lasertag:['🔫 LaserTag Event','🔫'],spiderman:['🕷️ Spider-Man Event','🕸️'],cocacola:['🥤 Coca-Cola Event','🥤'],plants:['🌿 Pflanzen Event','🌿'],elephant:['🐘 Elefanten Event','🐘'],ocean:['🌊 Ocean Event','🌊'],zombie:['🧟 Zombie Event','🧟'],multiverse:['🌌 Multiverse Event','🌌'],football:['⚽ Football Event','⚽'],dinosaur:['🦖 Dinosaur Event','🦖'],candy:['🍬 Candy Event','🍬'],castle:['🏰 Castle Event','🏰'],space:['🚀 Space Event','🚀'],ghost:['👻 Ghost Event','👻'],winter:['❄️ Winter Event','❄️'],egypt:['🐪 Egypt Event','🐪'],superhero:['🦸 Superhero Event','🦸'],racing:['🏎️ Racing Event','🏎️'],dragon:['🐉 Dragon Event','🐉'],music:['🎵 Music Event','🎵'],mystery:['🎭 Mystery Event','🎭']
 };
+const MORE_EVENTS=[["pirate","🏴‍☠️ Pirate Event","🏴‍☠️","Schatzkarten-Suche: Wähle einen Ort auf der Karte.",["🗺️ Nordinsel","🏝️ Totenkopf-Bucht","⚓ Geisterschiff"],"#1d3b5c","#6fc3ff"],["carnival","🎡 Carnival Event","🎡","Jahrmarkt: Wähle ein Spiel.",["🎯 Dosenwerfen","🎡 Riesenrad","🎟️ Losbude"],"#5a1d4a","#ff8ad8"],["ninja","🥷 Ninja Event","🥷","Geheime Ninja-Aufgabe: Wähle deinen Weg.",["🌑 Schattenpfad","🏯 Dachsprung","💨 Rauchbombe"],"#2a2a3a","#b8b8ff"],["toy","🧸 Toy Event","🧸","Baue dein Spielzeug: Wähle ein Einzelteil.",["🧩 Kopfteil","🚗 Räderteil","⚙️ Zahnrad"],"#6a3d12","#ffc56b"],["crystal","💎 Crystal Event","💎","Wähle einen Kristall.",["🔴 Rubin","🔵 Saphir","🟢 Smaragd"],"#2b2a5c","#c6b8ff"],["wildwest","🤠 Wild West Event","🤠","Goldsuche: Wähle einen Ort.",["⛏️ Goldmine","🌊 Fluss","🍺 Saloon"],"#5c3a16","#e8b46a"],["bakery","🎂 Bakery Event","🎂","Kuchen dekorieren: Wähle eine Dekoration.",["🍓 Erdbeeren","🍫 Schokolade","🍦 Sahne"],"#6b2d3d","#ffb3c6"],["comic","💥 Comic Event","💥","Entscheide, wie die Geschichte weitergeht.",["⬅️ Links abbiegen","➡️ Rechts abbiegen","⬆️ Geradeaus"],"#6b5a12","#ffe36b"],["safari","🦁 Safari Event","🦁","Tiere fotografieren: Wähle ein Tier.",["🦁 Löwe","🐘 Elefant","🦒 Giraffe"],"#5a4a1a","#e8d27a"],["cyber","🔐 Cyber Event","🔐","Code entschlüsseln: Wähle einen Code.",["🔑 Code ALPHA","🔑 Code BETA","🔑 Code GAMMA"],"#103a4a","#6fe0ff"],["wizard","🧙 Wizard Event","🧙","Wähle einen Zauberspruch.",["🔥 Feuerzauber","❄️ Eiszauber","⚡ Blitzzauber"],"#3a1d5c","#d0a8ff"],["moon","🌙 Moon Event","🌙","Mondsteine und Sternbilder: Wähle eines.",["🌙 Mondstein","⭐ Großer Wagen","✨ Orion"],"#1d2a4a","#a8c0ff"],["arcade","🕹️ Arcade Event","🕹️","Mini-Game: Wähle einen Automaten.",["👾 Automat 1","🏓 Automat 2","🎱 Automat 3"],"#4a1d5c","#ff9cf0"],["samurai","⚔️ Samurai Event","⚔️","Wähle deine Samurai-Prüfung.",["⚔️ Schwert","🏹 Bogen","🛡️ Schild"],"#5c1d1d","#ff9a9a"],["stoneage","🪨 Stone Age Event","🪨","Steinplatten: Wähle eine Platte.",["🪨 Platte 1","🪨 Platte 2","🪨 Platte 3"],"#4a3d2a","#d2b48c"],["masquerade","🎭 Masquerade Event","🎭","Geheime Masken: Wähle eine Maske.",["🟡 Goldmaske","⚪ Silbermaske","⚫ Schwarze Maske"],"#4a1d3a","#ffd36a"],["science","🧪 Science Event","🧪","Experiment: Wähle eine Zutat.",["🧪 Zutat A","🔬 Zutat B","⚗️ Zutat C"],"#1d4a3a","#8affd0"],["luxury","💰 Luxury Event","💰","Luxus-Aufgabe: Wähle dein Luxusgut.",["💎 Diamant","🛥️ Yacht","🏰 Villa"],"#4a3a10","#ffd36a"],["rainbow","🌈 Rainbow Event","🌈","Farbfolge: Wähle eine Farbe.",["🔴 Rot","🟡 Gelb","🔵 Blau"],"#3a1d5c","#ff9ad0"],["timemachine","🕰️ Time Machine Event","🕰️","Zeitmaschine: Wähle ein Zeitalter.",["🦕 Urzeit","🏰 Mittelalter","🚀 Zukunft"],"#2a3a4a","#9ad0ff"]];
+MORE_EVENTS.forEach(e=>{EVENT_INFO[e[0]]=[e[1],e[2]];});
+(()=>{const st=document.createElement('style');st.textContent=MORE_EVENTS.map(e=>`body.event-${e[0]}{background:radial-gradient(ellipse at top,${e[5]} 0,#0a0907 65%);--green:${e[6]};--line:${e[6]}66}`).join('\n');document.head.append(st);})();
 let uid=null,name='',player={},role='normal',roleName='',settings={},eventState={},boxes=[],opened=[],rareType=null,unsubs=[],watchUnsub=null,bannerTimer=null,challengeTimer=null;
 const path=p=>ref(db,p),clean=s=>String(s||'').trim().replace(/[.#$\[\]/]/g,'').slice(0,24);
 const show=(id,on)=>$(id)?.classList.toggle('hidden',!on),msg=(id,t)=>{if($(id))$(id).textContent=t};
@@ -442,18 +447,18 @@ async function resetData(){
  msg('adminMsg','Zurückgesetzt: '+targets.length+' Spieler.');
 }
 async function renderEventChallenge(){
- const type=eventState.active,available=['unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type);
+ const type=eventState.active,available=['unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].concat(MORE_EVENTS.map(e=>e[0])).includes(type);
  show('eventChallengePanel',available);if(!available||!uid)return;
  const body=$('eventChallengeBody');body.innerHTML='';$('eventChallengeTitle').textContent=EVENT_INFO[type]?.[0]||'Event';
  const descriptions={unicorn:'Wähle deinen Einhorn-Drop. Jeder Spieler kann pro Event einmal eine Belohnung erhalten.',cube:'Löse das Rätsel. Ein Versuch pro Event.',skibidi:'Klicke dich durch fünf Boss-Stufen. Jeder Boss hat einen eigenen Timer von zwei Minuten.',godzilla:'Sieh den Videoclip. Er stoppt mitten im Kampf. Danach tippst du einmal auf Godzilla oder Kong.',time:'Wähle einmal Vergangenheit, Gegenwart oder Zukunft.',school:'Beantworte die Schulfrage. Richtig: normales Geschenk. Falsch: nichts.',lava:'Wähle eine von drei Lava-Kisten. Ein Versuch.',alien:'Löse das Alien-Rätsel. Ein Versuch.',ocean:'Wähle eine Schatztruhe aus dem Ozean.',zombie:'Beantworte die Zombie-Frage.',multiverse:'Wähle dein Universum.',football:'Beantworte die Fußballfrage.',dinosaur:'Erkenne den Dinosaurier.',candy:'Wähle eine Süßigkeiten-Überraschung.',castle:'Löse das Burg-Rätsel.',space:'Wähle einen Planeten.',ghost:'Löse das Geister-Rätsel.',winter:'Beantworte die Winterfrage.',egypt:'Löse das Pyramiden-Rätsel.',superhero:'Wähle deine Helden-Mission.',racing:'Starte dein kurzes Reaktionsrennen.',dragon:'Wähle einen Drachentyp.',music:'Erkenne die Musikrichtung anhand eines Rhythmus-Musters.',mystery:'Wähle eine geheimnisvolle Tür.'};
- $('eventChallengeDescription').textContent=descriptions[type]||'Event-Aktion';
+ $('eventChallengeDescription').textContent=descriptions[type]||MORE_EVENTS.find(e=>e[0]===type)?.[3]||'Event-Aktion';
  const result=document.createElement('div');result.className='challenge-result';const status=document.createElement('div');status.className='hint';
  const run=String(eventState.runId||eventState.startedAt||'x');
  const claimPath='players/'+uid+'/eventClaims/'+type+'/'+run;
  async function claim(){const token=String(Date.now())+Math.random();const tx=await runTransaction(path(claimPath),v=>v||{token,at:Date.now()});return tx.committed&&tx.snapshot.val()?.token===token;}
  async function win(label){const prize=await rollAndAward(uid,1,'Event');result.textContent=prize?label+' – '+prize.name+'!':label+' – Niete!';await addActivity('hat am '+(EVENT_INFO[type]?.[0]||'Event')+' teilgenommen.');}
  const already=await get(path(claimPath));if(already.exists()){status.textContent='Du hast deine einmalige Aktion in diesem Event bereits benutzt.';body.append(status);return;}
- if(type==='unicorn'){
+ if(NEWTYPES.includes(type)){await renderNewEvent(type,body,result,status,claim,win);}else if(type==='unicorn'){
   const b=document.createElement('button');b.textContent='🪅 PINATA EINMAL SCHLAGEN';b.onclick=async()=>{b.disabled=true;if(!await claim()){status.textContent='Schon benutzt.';return;}if(Math.random()<.5)await win('Die Pinata spuckt aus');else result.textContent='🪅 Niete!';status.textContent='Dein Schlag ist verbraucht.';};body.append(b);
  }else if(type==='cube'){
   const q=document.createElement('p');q.textContent='Rätsel: Ich habe sechs Seiten und farbige Felder. Was bin ich?';const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT';b.onclick=async()=>{b.disabled=true;if(!await claim())return;if(['zauberwürfel','zauberwurfel','rubik cube','rubiks cube'].includes(inp.value.trim().toLowerCase()))await win('Richtig gelöst');else result.textContent='Falsch – keine Belohnung.';inp.disabled=true;};body.append(q,inp,b);
@@ -491,6 +496,18 @@ async function renderEventChallenge(){
   fire.onclick=async()=>{if(Date.now()-Number(eventState.startedAt||Date.now())<30000)return;const mine=(await get(path('events/laserPlayers/'+uid))).val()||{skin:Math.floor(Math.random()*5),score:0};await update(path('events/laserPlayers/'+uid),{name:'Spieler',skin:mine.skin??Math.floor(Math.random()*5),score:Number(mine.score||0)+1});result.textContent='Treffer! +1 Punkt';};
   status.textContent='Gemeinsame Browser-Arena: 30 Sekunden Skin-Auswahl, danach 5 Minuten. Bei Gleichstand gilt Golden Point; Top 3 erhalten eine Belohnung nach Event-Ende. Das ist eine gemeinsame Punkte-Arena, keine echte 3D-Teleport-Lobby.';
   const finish=setInterval(async()=>{if(Date.now()-Number(eventState.startedAt||Date.now())>=330000){clearInterval(finish);const arr=Object.entries((await get(arenaRef)).val()||{}).sort((a,b)=>(b[1].score||0)-(a[1].score||0));for(const [id] of arr.slice(0,3)){const prize=weightedPrize(1);if(prize)await awardPrizeTo(id,prize.id,1);}status.textContent='LaserTag beendet – Top 3 wurden belohnt.';}},2000);
+ }else if(type==='ocean'){
+  const q=document.createElement('p');q.textContent='Drei versunkene Schatztruhen – wähle genau eine:';body.append(q);let used=false;
+  ['🧰 Truhe 1','🧰 Truhe 2','🧰 Truhe 3'].forEach(v=>{const b=document.createElement('button');b.className='secondary';b.textContent=v;b.onclick=async()=>{if(used)return;used=true;body.querySelectorAll('button').forEach(x=>x.disabled=true);if(await claim())await win(v);};body.append(b);});
+ }else if(type==='multiverse'){
+  const DIMS=[['🌌 Kristallwelt','#2b2a5c'],['🤖 Roboterwelt','#103a4a'],['🐉 Drachenwelt','#5c1d1d'],['🔥 Feuerwelt','#5c2d10'],['❄️ Eiswelt','#1d3b5c']];
+  const info=document.createElement('p'),b=document.createElement('button');b.textContent='🌀 DURCH DEN DIMENSIONSRISS SPRINGEN';
+  const t0=Number(eventState.startedAt)||Date.now(),cur=()=>Math.floor((Date.now()-t0)/30000)%DIMS.length;
+  clearInterval(challengeTimer);
+  const tick=()=>{if(eventState.active!=='multiverse'||!uid){clearInterval(challengeTimer);document.body.style.background='';return;}const d=DIMS[cur()];info.textContent='Aktuelle Dimension: '+d[0]+' – wechselt alle 30 Sekunden.';document.body.style.background='radial-gradient(ellipse at top,'+d[1]+' 0,#0a0907 65%)';};
+  tick();challengeTimer=setInterval(tick,1000);
+  let used=false;b.onclick=async()=>{if(used)return;used=true;b.disabled=true;if(await claim())await win(DIMS[cur()][0]);};
+  body.append(info,b);
  }else if(['ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type)){
   const games={
    ocean:{q:'Welche dieser Kreaturen lebt im Meer?',a:['Delfin','Kamel','Adler'],correct:0},
@@ -514,6 +531,10 @@ async function renderEventChallenge(){
   if(type==='racing'){const b=document.createElement('button');b.textContent='START';let count=0;b.onclick=async()=>{if(used)return;count++;b.textContent='Noch '+(5-count)+'…';if(count>=5){used=true;b.disabled=true;if(await claim()){if(Math.random()<.65)await win('Rennen geschafft');else result.textContent='🏎️ Knapp verloren – Niete.';}}};body.append(b);status.textContent='Ein Klick zählt pro Tastendruck. Fünf Klicks beenden die Challenge.';}
   else{g.a.forEach((v,i)=>{const b=document.createElement('button');b.className='secondary';b.textContent=v;b.onclick=async()=>{if(used)return;used=true;body.querySelectorAll('button').forEach(x=>x.disabled=true);if(!await claim())return;const correct=g.correct===null?Math.random()<.5:i===g.correct;if(correct)await win('Challenge geschafft');else result.textContent='Diesmal keine Belohnung.';};body.append(b);});}
   if(type==='multiverse'||type==='candy'||type==='superhero'||type==='dragon'||type==='mystery')status.textContent='Bei dieser Auswahl entscheidet das Event-Glück über die Belohnung.';
+ }else if(MORE_EVENTS.some(e=>e[0]===type)){
+  const E=MORE_EVENTS.find(e=>e[0]===type);const q=document.createElement('p');q.textContent='Wähle genau eine Option:';body.append(q);let used=false;
+  E[4].forEach(v=>{const b=document.createElement('button');b.className='secondary';b.textContent=v;b.onclick=async()=>{if(used)return;used=true;body.querySelectorAll('button').forEach(x=>x.disabled=true);if(await claim())await win(v);};body.append(b);});
+  status.textContent='Einfache Version: Die Belohnung kommt aus der normalen Gewinntabelle.';
  }else if(type==='godzilla'){
   renderGodzilla(body,result,status,claim,win);
  }
@@ -565,9 +586,70 @@ async function registerAdminRole(kind){
  msg('adminMsg',half?'Halb-Admin-Code(s) gespeichert. Die Spieler müssen nur ihren Code im Rollen-Zugang eingeben.':'Viertel-Admin-Code gespeichert. Der Spieler muss nur seinen Code im Rollen-Zugang eingeben.');
 }
 
+// ===== SPIELER-SHOP & EVENT-ABLÄUFE =====
+let myItems={},myBudget=0;
+const hasItem=id=>Number(myItems[id]||0)>0;
+async function useItem(id){try{const tx=await runTransaction(path('players/'+uid+'/shopItems/'+id),v=>(Number(v)||0)>0?v-1:undefined);return tx.committed;}catch(e){return false;}}
+const NEWTYPES=['school','cube','lava','alien','zombie'];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+function btnRow(body,labels,fn){const bs=labels.map((t,i)=>{const b=document.createElement('button');b.className='secondary';b.textContent=t;b.onclick=()=>fn(i,bs);body.append(b);return b;});return bs;}
+function renderShopPlayer(){
+ const l=$('shopPList');if(!l)return;$('shopPBudget').textContent=myBudget;l.innerHTML='';
+ Object.entries(settings.shop||{}).forEach(([id,p])=>{const d=document.createElement('div');d.style.margin='8px 0';
+  d.textContent=p.name+(p.desc?' – '+p.desc:'')+' | '+(p.price==null?'Preis offen':p.price+' Punkte')+' | Bestand '+(p.stock==null?'∞':p.stock)+' | du hast: '+(myItems[id]||0)+' ';
+  const b=document.createElement('button');b.className='secondary small';b.textContent='Kaufen';b.disabled=p.price==null||(p.stock!=null&&p.stock<=0);b.onclick=()=>shopBuyP(id);d.append(b);l.append(d);});
+}
+async function shopBuyP(id){
+ const p=(settings.shop||{})[id];if(!p||p.price==null||!uid)return;
+ if(p.stock!=null&&p.stock<=0)return msg('shopPMsg','Nicht auf Lager.');
+ const tx=await runTransaction(path('players/'+uid+'/budget'),v=>(Number(v)||0)>=p.price?(Number(v)||0)-p.price:undefined);
+ if(!tx.committed)return msg('shopPMsg','Nicht genug Budgetpunkte.');
+ if(p.stock!=null){const st=await runTransaction(path('settings/shop/'+id+'/stock'),v=>v>0?v-1:undefined);if(!st.committed){await runTransaction(path('players/'+uid+'/budget'),v=>(Number(v)||0)+p.price);return msg('shopPMsg','Nicht auf Lager.');}}
+ await runTransaction(path('players/'+uid+'/shopItems/'+id),v=>(Number(v)||0)+1);
+ msg('shopPMsg','Gekauft: '+p.name);
+}
+async function renderNewEvent(type,body,result,status,claim,win){
+ const P=t=>{const p=document.createElement('p');p.textContent=t;body.append(p);return p;};
+ const lock=bs=>bs.forEach(x=>x.disabled=true);
+ if(type==='school'){
+  const L=Number(settings.roleLuck?.[uid])||1,tier=L>1?0:L<1?2:1;
+  const Q=[[['5 × 6',['25','30','35'],1],['7 × 8',['54','56','64'],1]],[['Wie viel sind 15 % von 200?',['20','30','45'],1],['Wie viel sind 10 % von 350?',['25','35','45'],1]],[['Ein Artikel kostet 80 €. Er wird um 25 % reduziert. Wie viel kostet er danach?',['55 €','60 €','65 €'],1],['Ein Artikel kostet 120 €. Er wird um 20 % reduziert. Wie viel kostet er danach?',['90 €','96 €','100 €'],1]]];
+  const q=Q[tier][Math.floor(Math.random()*2)];let first=true,retry=true;P('🎒 '+q[0]);
+  const ask=()=>{const bs=btnRow(body,q[1],async i=>{lock(bs);if(first){first=false;if(!await claim())return;}
+   if(i===q[2]){P('Richtig! Wähle einen Überraschungs-Schulranzen:');const bags=btnRow(body,['🎒 Ranzen 1','🎒 Ranzen 2','🎒 Ranzen 3'],async()=>{lock(bags);await win('Ranzen geöffnet');});}
+   else if(retry&&hasItem('report')){retry=false;const r=document.createElement('button');r.textContent='⭐ GOLDEN REPORT CARD einsetzen';r.onclick=async()=>{r.remove();if(await useItem('report')){first=false;ask();}else result.textContent='Karte nicht verfügbar.';};body.append(r);result.textContent='Falsch.';}
+   else result.textContent='Falsch – Niete.';});};
+  ask();
+ }else if(type==='cube'){
+  P('🧊 Rätsel: Ich habe sechs Seiten und farbige Felder. Was bin ich?');
+  const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT';body.append(inp,b);
+  b.onclick=async()=>{b.disabled=true;inp.disabled=true;if(!await claim())return;
+   if(!['zauberwürfel','zauberwurfel','rubik cube','rubiks cube',"rubik's cube"].includes(inp.value.trim().toLowerCase())){result.textContent='Falsch – Niete.';return;}
+   P('Richtig! Wähle einen von drei Würfeln:');let order=shuffle([1,2,3]),rm=null;const box=document.createElement('div');body.append(box);
+   const draw=()=>{box.innerHTML='';const bs=btnRow(box,['🧊 Würfel A','🧊 Würfel B','🧊 Würfel C'],async i=>{lock(bs);if(rm)rm.remove();const prize=await rollAndAward(uid,order[i],'Event');result.textContent=prize?'🧊 '+prize.name+'!':'🧊 Niete!';await addActivity('hat am Magic Cube teilgenommen.');});};
+   draw();
+   if(hasItem('remix')){rm=document.createElement('button');rm.textContent='🔀 MAGIC REMIX (einmal)';rm.onclick=async()=>{rm.remove();rm=null;if(await useItem('remix')){order=shuffle([1,2,3]);draw();}};body.append(rm);}
+  };
+ }else if(type==='lava'){
+  const wait=()=>{P('🌋 Warte auf den Lava-Alarm …');setTimeout(()=>{if(eventState.active!=='lava')return;
+   P('🚨 LAVA-ALARM! Entscheide dich in 5 Sekunden!');const opts=shuffle(['🏃 FLIEHEN','🧱 BLEIBEN']);let over=false;
+   const bs=btnRow(body,opts,async i=>{if(over)return;over=true;clearTimeout(tm);lock(bs);if(opts[i]==='🏃 FLIEHEN')chest();else await fail();});
+   const tm=setTimeout(async()=>{if(over)return;over=true;lock(bs);await fail();},5000);
+  },5000+Math.random()*10000);};
+  const fail=async()=>{if(hasItem('lava')&&await useItem('lava')){P('🛡️ LAVA SHIELD hat dich gerettet – neuer Alarm!');wait();}else if(await claim())result.textContent='🌋 Falsche Entscheidung – Niete.';};
+  const chest=async()=>{if(!await claim())return;P('Richtig! Öffne eine Lava-Truhe:');const bs=btnRow(body,['🔥 Truhe 1','🔥 Truhe 2','🔥 Truhe 3'],async()=>{lock(bs);await win('Lava-Truhe');});};
+  wait();
+ }else if(type==='alien'){
+  P('👾 Aliens haben dein Geschenk entführt! In welchem UFO ist es?');const k=Math.floor(Math.random()*3);
+  const bs=btnRow(body,['🛸 UFO 1','🛸 UFO 2','🛸 UFO 3'],async i=>{lock(bs);if(!await claim())return;if(i===k)await win('Geschenk zurückgeholt');else result.textContent='🛸 Leer – Niete.';});
+ }else if(type==='zombie'){
+  P('🧟 Fünf geheimnisvolle Fläschchen – drei enthalten Impfstoff. Wähle eines:');const good=new Set(shuffle([0,1,2,3,4]).slice(0,3));
+  const bs=btnRow(body,['🧪 1','🧪 2','🧪 3','🧪 4','🧪 5'],async i=>{lock(bs);if(!await claim())return;if(good.has(i))await win('Impfstoff gefunden');else result.textContent='🧪 Leeres Fläschchen – Niete.';});
+ }
+}
 // ===== CHAT & ADMIN SHOP =====
 let chatAll={},chatLast=0;
-const bumpBudget=()=>runTransaction(path('settings/shopBudget'),v=>(Number(v)||0)+1).catch(()=>{});
+const bumpBudget=()=>runTransaction(path('players/'+uid+'/budget'),v=>(Number(v)||0)+1).catch(()=>{});
 const shopOk=()=>role==='admin'&&isOwner;
 const SHOP_DEFAULTS={hacker:['Hacker Scanner','Scannt ein Geschenk: Token oder Niete, nicht welches Token.'],robot:['Robot Scanner','Zeigt bei allen Geschenken die Seltenheit, nicht das genaue Token.'],remix:['MAGIC REMIX','Mischt einmal die drei Auswahlmöglichkeiten beim Magic-Cube-Event neu.'],report:['GOLDEN REPORT CARD','Lässt eine beantwortete Frage neu bewerten. Extrem selten.'],lava:['LAVA SHIELD','Schützt einmal vor einer falschen Entscheidung im Lava-Event.'],alien:['ALIEN RADAR','Hilft, entführte Geschenke zu lokalisieren.'],pearl:['PEARL RADAR','Gibt beim Ocean-Event einen Hinweis auf eine der drei Truhen.']};
 function renderChat(){
@@ -597,7 +679,7 @@ function renderShop(){
   const d=document.createElement('div');d.style.margin='8px 0';
   d.textContent=p.name+' – '+(p.price==null?'Preis offen':p.price+' Punkte')+' – Bestand '+(p.stock==null?'∞':p.stock)+' – gekauft '+(own[id]||0)+' ';
   const mk=(t,f)=>{const b=document.createElement('button');b.className='secondary small';b.textContent=t;b.onclick=f;d.append(b,' ');};
-  mk('Kaufen',()=>shopBuy(id));mk('Preis',()=>shopSet(id,'price'));mk('Bestand',()=>shopSet(id,'stock'));mk('Entfernen',()=>shopDel(id));
+  mk('Preis',()=>shopSet(id,'price'));mk('Bestand',()=>shopSet(id,'stock'));mk('Entfernen',()=>shopDel(id));
   l.append(d);
  });
 }
@@ -617,7 +699,7 @@ async function shopBuy(id){
 }
 function watchChatShop(){
  unsubs.push(onValue(path('chat'),s=>{chatAll=s.val()||{};renderChat();}));
- unsubs.push(onValue(path('settings'),()=>renderShop()));
+ unsubs.push(onValue(path('settings'),()=>{renderShop();renderShopPlayer();}));
 }
 $('chatSend').onclick=sendChat;$('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat();});
 $('shopAddBtn').onclick=shopAdd;$('shopSeedBtn').onclick=shopSeed;
@@ -634,7 +716,7 @@ function renderComeback(){
 }
 function watchComeback(){
  watchChatShop();
- unsubs.push(onValue(path('players/'+uid),s=>{const v=s.val()||{};cbState=v.comebackGift||null;cbTitle=v.title||'';renderComeback();}));
+ unsubs.push(onValue(path('players/'+uid),s=>{const v=s.val()||{};cbState=v.comebackGift||null;cbTitle=v.title||'';myItems=v.shopItems||{};myBudget=Number(v.budget)||0;renderShopPlayer();renderComeback();}));
 }
 async function grantComeback(){
  if(role!=='admin'||!isOwner)return msg('cbAdminMsg','Nur der Hauptadmin darf das.');
@@ -761,6 +843,7 @@ $('logoutBtn').addEventListener('click',()=>{isOwner=false;ownerCode='';resumeNa
 onAuthStateChanged(auth,u=>{if(u)startServerWatch();else signInAnonymously(auth).catch(()=>{serverState='unknown';applyServerState();});});
 // ===== ENDE SERVER LOCKDOWN 1.0 =====
 
+MORE_EVENTS.forEach(e=>{const b=document.createElement('button');b.className='secondary';b.textContent=e[1];b.onclick=()=>startEvent(e[0]);$('moreEventsBtns').append(b);});
 $('joinBtn').onclick=enter;$('playerName').addEventListener('keydown',e=>{if(e.key==='Enter')enter()});
 $('nextRound').onclick=()=>{if(opened.length===3){buildRound();$('result').textContent='Neue Runde! Viel Glück.';saveRound();}};
 
