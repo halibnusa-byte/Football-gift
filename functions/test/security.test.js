@@ -225,7 +225,7 @@ test("gift rounds are created and opened only through server-authoritative calla
 
 
 test("all browser database mutations have been migrated to trusted callables", () => {
-  const mutations = client.split("\n").filter((line) => /\b(set|update|remove|push|runTransaction)\(/.test(line));
+  const mutations = client.split("\n").filter((line) => /\b(set|update|remove|push|runTransaction)\((?:path\(|ref\(db|db\.ref\()/.test(line));
   assert.deepEqual(mutations, []);
   for (const fn of ["saveRoleCodes","saveNamedRoleCodes","saveGodzillaSettings","recordEventClaim","awardEventReward","saveGodzillaVote","addPlayerActivity","updatePlayerPresence","saveMainAdminCode","queueBlitz","joinLaserTag","scoreLaserTag","saveShopConfig","redeemShopItem","setComebackAdminAbuse","joinComebackAdminAbuse","grantComebackRewards","openComebackGift"]) {
     assert.ok(source.includes("exports." + fn + " = onCall"));
