@@ -461,3 +461,55 @@ exports.resetPlayerData = onCall({ region: "europe-west1" }, async (request) => 
   }
   return { reset, scope };
 });
+
+
+// Announcement delivery is performed by the trusted backend.
+exports.sendAnnouncement = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireRole(request, ["mainAdmin", "halfAdmin", "quarterAdmin"]);
+  const data = request.data || {};
+  const message = typeof data.text === "string" ? data.text.trim() : "";
+  const scope = data.scope;
+  const targetName = typeof data.targetName === "string" ? data.targetName.trim().slice(0, 24) : "";
+  const isPublic = data.public === true;
+  if (!message || message.length > 240) {
+    throw new HttpsError("invalid-argument", "Die Nachricht muss 1 bis 240 Zeichen lang sein.");
+  }
+  if (scope !== "single" && scope !== "global") {
+    throw new HttpsError("invalid-argument", "Ungültiger Empfängerbereich.");
+  }
+  const players = (await db.ref("players").get()).val() || {};
+  let targets;
+  if (scope === "global") {
+    targets = Object.keys(players);
+    if (targets.length > 200) {
+      throw new HttpsError("failed-precondition", "Zu viele Spieler für eine globale Ankündigung.");
+    }
+  } else {
+    if (!targetName) throw new HttpsError("invalid-argument", "Bitte einen Spielernamen eingeben.");
+    const normalized = targetName.toLowerCase();
+    const found = Object.entries(players).find(([, player]) =>
+      String(player && player.name || "").trim().toLowerCase() === normalized
+    );
+    if (!found) throw new HttpsError("not-found", "Spieler nicht gefunden.");
+    targets = [found[0]];
+  }
+  if (targets.length === 0) throw new HttpsError("failed-precondition", "Es gibt keine Empfänger.");
+  const roleName = auth.token && auth.token.roleName;
+  const sender = auth.token && auth.token.mainAdmin === true ? "OWNER" :
+    String(roleName || (auth.token && auth.token.halfAdmin ? "HALB-ADMIN" : "VIERTEL-ADMIN")).slice(0, 40);
+  const announcement = { text: message, at: Date.now(), sender };
+  if (scope === "global") {
+    await db.ref("announcements/global").set(announcement);
+  } else {
+    const targetUid = targets[0];
+    await db.ref("announcements/users/" + targetUid).set({ ...announcement, targetUid });
+  }
+  if (isPublic) {
+    await db.ref("activity").push({
+      name: sender,
+      text: sender + " hat eine Ankündigung gesendet.",
+      at: Date.now(),
+    });
+  }
+  return { delivered: targets.length, scope };
+});
