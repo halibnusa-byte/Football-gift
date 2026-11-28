@@ -55,8 +55,8 @@ exports.rollAndAward = onCall({ region: "europe-west1" }, async () => {
 });
 
 exports.setActiveEvent = onCall({ region: "europe-west1" }, async (request) => {
-  await assertMainAdminDuringLock(auth);
   const auth = requireRole(request, ["mainAdmin", "halfAdmin", "quarterAdmin"]);
+  await assertMainAdminDuringLock(auth);
   const type = request.data && request.data.type;
   const claims = auth.token || {};
   if (type !== null && !EVENT_TYPES.has(type)) {
@@ -247,8 +247,8 @@ exports.grantAdminTokens = onCall({ region: "europe-west1" }, async (request) =>
 
 // Gift transfers are authorized and applied by the trusted backend.
 exports.sendGift = onCall({ region: "europe-west1" }, async (request) => {
-  await assertMainAdminDuringLock(auth);
   const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
   const claims = auth.token || {};
   const isMainAdmin = claims.mainAdmin === true;
   const isSpecial = claims.special === true;
@@ -619,7 +619,7 @@ exports.reportChatMessage = onCall({ region: "europe-west1" }, async (request) =
 
 exports.moderateChatMessage = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireRole(request, ["mainAdmin"]);
-  await assertGameUnlocked();
+  await assertMainAdminDuringLock(auth);
   const messageId = request.data?.messageId;
   const action = request.data?.action;
   if (!validMessageId(messageId) || !["hide", "restore", "delete"].includes(action)) {
