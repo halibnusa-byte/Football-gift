@@ -305,7 +305,7 @@ test("LaserTag uses ten-second skin selection, three lives, eliminations and top
   const finish = source.slice(source.indexOf("exports.finishLaserTag"), source.indexOf("exports.setComebackAdminAbuse"));
   assert.match(join, /elapsed > 10000/);
   assert.match(join, /lives: 3/);
-  assert.match(hit, /lives - 1/);
+  assert.match(hit, /Number\(p\.lives \?\? 3\) - 1/);
   assert.match(hit, /spectator: lives === 0/);
   assert.match(finish, /slice\(0,3\)/);
   assert.match(finish, /inventory\.diamondGift/);
