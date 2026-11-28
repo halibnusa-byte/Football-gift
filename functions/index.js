@@ -122,6 +122,7 @@ exports.startPlayerRound = onCall({ region: "europe-west1" }, async (request) =>
   const auth = requireAuth(request);
   await assertMainAdminDuringLock(auth);
   if (Date.now() > GAME_EXPIRY_MS) throw new HttpsError("failed-precondition", "Das Spiel ist seit dem 28.11.2026 um 14:30 Uhr beendet.");
+  const activeEvent = (await db.ref("events/active").get()).val();
   const playerRef = db.ref("players/" + auth.uid);
   const tx = await playerRef.transaction((current) => {
     if (!current) return;
@@ -136,7 +137,7 @@ exports.startPlayerRound = onCall({ region: "europe-west1" }, async (request) =>
     let pendingBlitz = Math.max(0, Number(current.pendingBlitz) || 0);
     if (pendingBlitz > 0) { boxes[crypto.randomInt(15)].blitz = true; pendingBlitz--; }
     let pendingGalaxy = Math.max(0, Number(current.pendingGalaxy) || 0);
-    if (pendingGalaxy > 0) {
+    if (activeEvent === "galaxy" && pendingGalaxy > 0) {
       const candidates = boxes.map((b, i) => b.rare ? -1 : i).filter((i) => i >= 0);
       if (candidates.length) { boxes[candidates[crypto.randomInt(candidates.length)]].galaxy = true; pendingGalaxy--; }
     }
@@ -546,6 +547,8 @@ exports.sendGift = onCall({ region: "europe-west1" }, async (request) => {
 exports.spawnGalaxyGifts = onCall({ region: "europe-west1" }, async (request) => {
   requireRole(request, ["mainAdmin"]);
   const data = request.data || {};
+  const activeEvent = (await db.ref("events/active").get()).val();
+  if (activeEvent !== "galaxy") throw new HttpsError("failed-precondition", "Galaxy-Geschenke können nur während des Galaxy-Events gespawnt werden.");
   const scope = data.scope;
   const amount = Number(data.amount);
   const targetName = typeof data.targetName === "string" ? data.targetName.trim().slice(0, 24) : "";
