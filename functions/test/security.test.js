@@ -176,6 +176,7 @@ test("main admin random recipient grant selects a player server-side without ran
   assert.ok(section.includes('scope !== "random"'));
   assert.ok(section.includes("crypto.randomInt(candidates.length)"));
   assert.ok(section.includes("const prizeId ="));
-  assert.ok(client.includes('option value="random">ZUFÄLLIG'));
+  assert.ok(client.includes('id="awardRandom"'));
+  assert.ok(client.includes("grantTokens(true)"));
   assert.ok(client.includes("prizeId:$('awardPrize').value"));
 });
