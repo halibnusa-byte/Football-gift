@@ -389,3 +389,11 @@ test("Diamond Gift uses the specified rare rewards without adding a seventh main
   assert.match(client, /openDiamondGift/);
   assert.match(client, /Torwart-Switch-Token · Sonder-Token/);
 });
+
+test("Comic World branches into different story outcomes", () => {
+  assert.match(client, /comic:\{title:'COMIC WORLD · STORY-ENTSCHEIDUNG',mode:'story'/);
+  assert.match(client, /SEITE 1 · Dein Held entdeckt/);
+  assert.match(client, /SEITE 2 · Das Rettungsteam ist da/);
+  assert.match(client, /Leuchtsignal setzen/);
+  assert.match(client, /Fluchtweg auf der Karte markieren/);
+});
