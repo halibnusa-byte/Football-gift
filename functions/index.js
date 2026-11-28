@@ -1387,6 +1387,10 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
       throw new HttpsError("failed-precondition", "Die gemeinsame Zombie-Rettung ist noch nicht abgeschlossen oder du bist nicht der Geschenkbesitzer.");
     }
   }
+  if (eventId === "football") {
+    const challenge = (await db.ref("events/penalties/" + runId + "/" + auth.uid).get()).val();
+    if (!challenge || challenge.completed !== true || challenge.scored !== true) throw new HttpsError("failed-precondition", "Du musst zuerst ein Tor im Elfmeterschießen erzielen.");
+  }
   if (eventId === "alien") {
     const challenge = (await db.ref("events/alienChallenges/" + runId + "/" + auth.uid).get()).val();
     if (!challenge || challenge.recovered !== true) throw new HttpsError("failed-precondition", "Hole zuerst das Geschenk aus dem richtigen UFO zurück.");
@@ -1513,6 +1517,36 @@ async function finalizeLaserTagIfComplete() {
   await db.ref("events/laserFinished").set(true);
   return { finished: true, winners: winnerIds };
 }
+
+exports.startPenaltyChallenge = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "football") throw new HttpsError("failed-precondition", "Golden Cup ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const ref = db.ref("events/penalties/" + runId + "/" + auth.uid);
+  const tx = await ref.transaction((existing) => existing || { keeperPath: crypto.randomInt(3), startedAt: Date.now() });
+  return { started: tx.snapshot.exists() };
+});
+
+exports.shootPenalty = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const path = Number(request.data?.path);
+  if (!Number.isInteger(path) || path < 0 || path > 2) throw new HttpsError("invalid-argument", "Ungültige Schussrichtung.");
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "football") throw new HttpsError("failed-precondition", "Golden Cup ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const player = (await db.ref("players/" + auth.uid).get()).val();
+  if (!player?.eventClaims?.["football:" + runId]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
+  const ref = db.ref("events/penalties/" + runId + "/" + auth.uid);
+  const tx = await ref.transaction((challenge) => {
+    if (!challenge || challenge.completed) return;
+    return { ...challenge, path, scored: path !== challenge.keeperPath, completed: true, completedAt: Date.now() };
+  });
+  if (!tx.committed) throw new HttpsError("already-exists", "Du hast bereits geschossen.");
+  return { scored: tx.snapshot.val().scored === true };
+});
 
 async function finalizeRacingEvent(runId) {
   const results = (await db.ref("events/racingResults/" + runId).get()).val() || {};
