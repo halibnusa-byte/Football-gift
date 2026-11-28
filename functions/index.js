@@ -1098,8 +1098,9 @@ exports.chooseZombieVial = onCall({ region: "europe-west1" }, async (request) =>
   if (events.active !== "zombie") throw new HttpsError("failed-precondition", "Zombie-Event ist nicht aktiv.");
   const runId = String(events.runId || events.startedAt || "");
   const claimKey = "zombie:" + runId;
-  const player = (await db.ref("players/" + auth.uid).get()).val();
-  if (!player?.eventClaims?.[claimKey]) throw new HttpsError("failed-precondition", "Bitte nimm zuerst am Zombie-Event teil.");
+  const claimRef = db.ref("players/" + auth.uid + "/eventClaims/" + claimKey);
+  const claimTx = await claimRef.transaction((existing) => existing || { at: Date.now(), status: "claimed" });
+  if (!claimTx.snapshot.exists()) throw new HttpsError("failed-precondition", "Event-Teilnahme konnte nicht gespeichert werden.");
   const vialRef = db.ref("events/zombieVials/" + runId + "/" + auth.uid);
   const safe = new Set();
   while (safe.size < 3) safe.add(crypto.randomInt(5));
