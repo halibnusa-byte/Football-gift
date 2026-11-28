@@ -322,3 +322,16 @@ test("LaserTag ends on last player standing and has no invented five-minute time
   assert.doesNotMatch(hit, /310000/);
   assert.match(client, /Letzter Spieler mit Leben gewinnt/);
 });
+
+test("Zombie vials are server-selected and reward requires a completed two-player rescue", () => {
+  const choose = source.slice(source.indexOf("exports.chooseZombieVial"), source.indexOf("exports.submitZombieRescue"));
+  const rescue = source.slice(source.indexOf("exports.submitZombieRescue"), source.indexOf("exports.awardEventReward"));
+  const award = source.slice(source.indexOf("exports.awardEventReward"), source.indexOf("exports.addPlayerActivity"));
+  assert.match(choose, /crypto\.randomInt\(5\)/);
+  assert.match(choose, /safe\.size < 3/);
+  assert.match(rescue, /Object\.keys\(votes\)\.length >= 2/);
+  assert.match(award, /rescue\.completed !== true/);
+  assert.match(award, /rescue\.ownerUid !== auth\.uid/);
+  assert.match(client, /submitZombieRescue/);
+  assert.match(client, /chooseZombieVial/);
+});
