@@ -709,7 +709,7 @@ exports.joinGame = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
   await assertMainAdminDuringLock(auth);
   const name = typeof request.data?.name === "string" ? request.data.name.trim().slice(0, 24) : "";
-  if (name.length < 2 || /[.#$\[\]/]/.test(name)) {
+  if (name.length < 2 || [".", "#", "$", "/", "[", "]"].some((char) => name.includes(char))) {
     throw new HttpsError("invalid-argument", "Der Spielername muss 2 bis 24 Zeichen lang sein und darf keine Firebase-Sonderzeichen enthalten.");
   }
   const playerRef = db.ref("players/" + auth.uid);
