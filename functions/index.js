@@ -513,3 +513,115 @@ exports.sendAnnouncement = onCall({ region: "europe-west1" }, async (request) =>
   }
   return { delivered: targets.length, scope };
 });
+
+
+// Live chat writes are server-authoritative. The database client is read-only
+// for messages once the matching rules are deployed.
+async function assertGameUnlocked() {
+  const snapshot = await db.ref("serverControl/locked").get();
+  if (snapshot.val() === true) {
+    throw new HttpsError("failed-precondition", "Das Spiel ist gerade gesperrt.");
+  }
+}
+
+function validMessageId(value) {
+  return typeof value === "string" && /^[A-Za-z0-9_-]{8,64}$/.test(value);
+}
+
+exports.sendChatMessage = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertGameUnlocked();
+  const text = typeof request.data?.text === "string" ? request.data.text.trim() : "";
+  if (!text || text.length > 240) {
+    throw new HttpsError("invalid-argument", "Eine Nachricht darf 1 bis 240 Zeichen lang sein.");
+  }
+  const playerSnapshot = await db.ref("players/" + auth.uid).get();
+  if (!playerSnapshot.exists()) {
+    throw new HttpsError("failed-precondition", "Dein Spielerprofil wurde nicht gefunden.");
+  }
+  const player = playerSnapshot.val() || {};
+  const name = String(player.name || "Spieler").trim().slice(0, 24) || "Spieler";
+  const rateRef = db.ref("chatRateLimit/" + auth.uid);
+  const now = Date.now();
+  const rate = await rateRef.transaction((lastAt) => {
+    if (Number(lastAt) && now - Number(lastAt) < 1500) return;
+    return now;
+  });
+  if (!rate.committed) {
+    throw new HttpsError("resource-exhausted", "Bitte warte kurz vor deiner nächsten Nachricht.");
+  }
+  const messageRef = db.ref("messages").push();
+  await messageRef.set({
+    uid: auth.uid,
+    name,
+    text,
+    at: now,
+  });
+  return { messageId: messageRef.key };
+});
+
+exports.deleteChatMessage = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertGameUnlocked();
+  const messageId = request.data?.messageId;
+  if (!validMessageId(messageId)) {
+    throw new HttpsError("invalid-argument", "Ungültige Nachricht.");
+  }
+  const ref = db.ref("messages/" + messageId);
+  const snapshot = await ref.get();
+  if (!snapshot.exists()) throw new HttpsError("not-found", "Nachricht nicht gefunden.");
+  const message = snapshot.val() || {};
+  if (message.uid !== auth.uid && auth.token?.mainAdmin !== true) {
+    throw new HttpsError("permission-denied", "Du kannst nur deine eigenen Nachrichten löschen.");
+  }
+  await ref.remove();
+  return { deleted: true };
+});
+
+exports.reportChatMessage = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertGameUnlocked();
+  const messageId = request.data?.messageId;
+  const reason = typeof request.data?.reason === "string" ? request.data.reason.trim().slice(0, 120) : "";
+  if (!validMessageId(messageId)) {
+    throw new HttpsError("invalid-argument", "Ungültige Nachricht.");
+  }
+  const snapshot = await db.ref("messages/" + messageId).get();
+  if (!snapshot.exists()) throw new HttpsError("not-found", "Nachricht nicht gefunden.");
+  if ((snapshot.val() || {}).uid === auth.uid) {
+    throw new HttpsError("failed-precondition", "Du kannst deine eigene Nachricht nicht melden.");
+  }
+  const reportRef = db.ref("messageReports/" + messageId + "/" + auth.uid);
+  const tx = await reportRef.transaction((current) => current || {
+    uid: auth.uid,
+    reason,
+    at: Date.now(),
+  });
+  if (!tx.committed) {
+    throw new HttpsError("already-exists", "Du hast diese Nachricht bereits gemeldet.");
+  }
+  return { reported: true };
+});
+
+exports.moderateChatMessage = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireRole(request, ["mainAdmin"]);
+  await assertGameUnlocked();
+  const messageId = request.data?.messageId;
+  const action = request.data?.action;
+  if (!validMessageId(messageId) || !["hide", "restore", "delete"].includes(action)) {
+    throw new HttpsError("invalid-argument", "Ungültige Moderationsaktion.");
+  }
+  const ref = db.ref("messages/" + messageId);
+  const snapshot = await ref.get();
+  if (!snapshot.exists()) throw new HttpsError("not-found", "Nachricht nicht gefunden.");
+  if (action === "delete") {
+    await ref.remove();
+  } else {
+    await ref.update({
+      hidden: action === "hide",
+      moderatedAt: Date.now(),
+      moderatedBy: auth.uid,
+    });
+  }
+  return { action };
+});
