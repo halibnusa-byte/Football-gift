@@ -156,6 +156,11 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <div class="row"><button id="castleOn">🏰 Castle</button><button id="spaceOn">🚀 Space</button><button id="ghostOn">👻 Ghost</button></div>
 <div class="row"><button id="winterOn">❄️ Winter</button><button id="egyptOn">🐪 Egypt</button><button id="superheroOn">🦸 Superhero</button></div>
 <div class="row"><button id="racingOn">🏎️ Racing</button><button id="dragonOn">🐉 Dragon</button><button id="musicOn">🎵 Music</button><button id="mysteryOn">🎭 Mystery</button></div>
+<div class="row"><button id="pirateOn">🏴‍☠️ Pirate</button><button id="carnivalOn">🎪 Carnival</button><button id="ninjaOn">🥷 Ninja</button><button id="toyOn">🧸 Toy</button></div>
+<div class="row"><button id="crystalOn">💠 Crystal</button><button id="wildwestOn">🤠 Wild West</button><button id="bakeryOn">🧁 Bakery</button><button id="comicOn">💥 Comic</button></div>
+<div class="row"><button id="safariOn">🦒 Safari</button><button id="cyberOn">🖥️ Cyber</button><button id="wizardOn">🧙 Wizard</button><button id="moonOn">🌙 Moon</button></div>
+<div class="row"><button id="arcadeOn">🕹️ Arcade</button><button id="samuraiOn">⚔️ Samurai</button><button id="stoneageOn">🪨 Stone Age</button><button id="masqueradeOn">🎭 Masquerade</button></div>
+<div class="row"><button id="scienceOn">🔬 Science</button><button id="luxuryOn">💎 Luxury</button><button id="rainbowOn">🌈 Rainbow</button><button id="timemachineOn">⌛ Time Machine</button></div>
 <h3>YouTube-Eventvideo</h3><label>Video gehört zu diesem Event</label><select id="videoEvent"><option value="godzilla">Godzilla vs. Kong</option><option value="spiderman">Spider-Man</option><option value="cocacola">Coca-Cola</option><option value="plants">Pflanzen</option><option value="lasertag">LaserTag</option><option value="blitz">Blitz</option></select><input id="godzillaUrl" placeholder="YouTube-Link"><div class="row"><input id="godzillaPause" type="number" min="5" value="45" placeholder="Abstimmung nach Sekunden"><input id="godzillaEnd" type="number" min="10" value="120" placeholder="Video-Ende (Sekunden)"></div><select id="godzillaWinner"><option value="godzilla">Godzilla gewinnt</option><option value="kong">Kong gewinnt</option></select><button id="saveGodzillaVideo">VIDEO-EINSTELLUNGEN SPEICHERN</button>
 <h3 id="admin-settings" class="admin-section-title">⚙️ Event-Einstellungen</h3><h3>Event-Chancen & Glück</h3><div class="row"><label>Blitz-Chance %<input id="blitzChance" type="number" step="0.001" value="1.5"></label><label>Spider-Man-Chance %<input id="spiderChance" type="number" step="0.001" value="1"></label></div><div class="row"><label>Spider-Man Glück ×<input id="spiderLuck" type="number" value="5"></label><label>Coca-Cola Chance %<input id="colaChance" type="number" step="0.001" value="1"></label></div><div class="row"><label>Coca-Cola Glück ×<input id="colaLuck" type="number" value="5"></label><label>Ranken-Chance %<input id="vineChance" type="number" step="0.001" value="1"></label></div><div class="row"><label>Pflanzen Glück ×<input id="plantLuck" type="number" value="5"></label><label>Elefanten-Truhe %<input id="elephantChance" type="number" step="0.0001" value="0.001"></label></div><button id="saveEventOdds">EVENT-WERTE SPEICHERN</button><h3>Blitz-Einschlag manuell auslösen</h3><p class="muted">„Eigener Raum“ bedeutet hier deinen eigenen Spielerraum. Es gibt in dieser Web-App keine getrennten echten Server.</p><div class="row"><select id="blitzScope"><option value="self">Eigener Spielerraum</option><option value="single">Einzelner Spieler</option><option value="global">Global – alle Spieler</option></select><input id="blitzTarget" placeholder="Spielername (einzeln)"></div><button id="spawnBlitz">⚡ BLITZ EINSCHLAGEN LASSEN</button><h3>Diamond-Geschenk</h3><label>Spawnchance während Diamond Event (%)</label><input id="diamondChance" type="number" min="0" max="100" step="0.001" value="0.1"><button id="saveDiamondChance">CHANCE SPEICHERN</button><p class="muted">Galaxy-Geschenk: 0,001 % pro Box und nur während Galaxy Event. Admin kann Galaxy-Truhen zusätzlich manuell spawnen.</p>
 <h3 id="admin-actions" class="admin-section-title">🎁 Admin-Aktionen</h3><h3>Owner Announcement</h3><textarea id="announcementText" rows="2" maxlength="240" placeholder="Deine Nachricht…"></textarea><div class="row"><select id="announcementScope"><option value="global">Alle Spieler</option><option value="single">Einzelner Spieler</option></select><input id="announcementTarget" placeholder="Spielername (einzeln)"></div><label><input id="announcementPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="sendAnnouncement">ANNOUNCEMENT SENDEN</button>
@@ -204,7 +209,60 @@ const PRIZES=[
 const RARE=[{id:'bronze',name:'Bronze',mult:2,p:.70,emoji:'🥉'},{id:'silver',name:'Silber',mult:3,p:.20,emoji:'🥈'},{id:'gold',name:'Gold',mult:4,p:.08,emoji:'🥇'},{id:'diamond',name:'Diamond',mult:5,p:.02,emoji:'💎'}];
 const NEW_EVENT_TYPES=['skibidi'];
 const EVENT_INFO={
-galaxy:['🌌 Galaxy','🌌'],diamond:['💎 Diamond','💎'],hacker:['💻 Hacker','0101'],unicorn:['🦄 Einhorn','🦄'],robot:['🤖 Roboter','🤖'],cube:['🧊 Zauberwürfel','🧊'],skibidi:['🚽 Skibidi Toilet','🚽'],godzilla:['🦖 Godzilla vs. Kong','🦖'],time:['⏳ Time Travel','⏳'],school:['🏫 School','🎒'],lava:['🌋 Lava','🌋'],alien:['👾 Alien Invasion','👾'],blitz:['⚡ Blitz Event','⚡'],lasertag:['🔫 LaserTag Event','🔫'],spiderman:['🕷️ Spider-Man Event','🕸️'],cocacola:['🥤 Coca-Cola Event','🥤'],plants:['🌿 Pflanzen Event','🌿'],elephant:['🐘 Elefanten Event','🐘'],ocean:['🌊 Ocean Event','🌊'],zombie:['🧟 Zombie Event','🧟'],multiverse:['🌌 Multiverse Event','🌌'],football:['⚽ Football Event','⚽'],dinosaur:['🦖 Dinosaur Event','🦖'],candy:['🍬 Candy Event','🍬'],castle:['🏰 Castle Event','🏰'],space:['🚀 Space Event','🚀'],ghost:['👻 Ghost Event','👻'],winter:['❄️ Winter Event','❄️'],egypt:['🐪 Egypt Event','🐪'],superhero:['🦸 Superhero Event','🦸'],racing:['🏎️ Racing Event','🏎️'],dragon:['🐉 Dragon Event','🐉'],music:['🎵 Music Event','🎵'],mystery:['🎭 Mystery Event','🎭']
+galaxy:["🌌 GALAXY","🌌"],
+unicorn:["🦄 UNICORN","🦄"],
+hacker:["💻 HACKER","0101"],
+robot:["🤖 ROBOT","🤖"],
+cube:["🧊 THE MAGIC MIX","🧊"],
+diamond:["💎 DIAMOND","💎"],
+time:["⏳ TIME TRAVEL","⏳"],
+school:["🎒 THE FINAL EXAM","🎒"],
+lava:["🌋 LAVA SURVIVAL","🌋"],
+alien:["👽 ALIEN INVASION","👽"],
+lasertag:["🔫 LASERTAG","🔫"],
+ocean:["🌊 THE LOST TREASURE","🌊"],
+zombie:["🧟 THE LAST SURVIVOR","🧟"],
+multiverse:["🌀 DIMENSION BREAK","🌀"],
+football:["⚽ FOOTBALL","⚽"],
+dinosaur:["🦖 JURASSIC TREASURE","🦖"],
+candy:["🍬 SWEET CHAOS","🍬"],
+castle:["🏰 THE ROYAL SECRET","🏰"],
+space:["🚀 GALACTIC MISSION","🚀"],
+ghost:["👻 HAUNTED GIFTS","👻"],
+winter:["❄️ FROZEN KINGDOM","❄️"],
+egypt:["𓂀 THE PHARAOH'S SECRET","𓂀"],
+superhero:["🦸 HERO ACADEMY","🦸"],
+racing:["🏁 TURBO CHALLENGE","🏁"],
+dragon:["🐉 DRAGON EGGS","🐉"],
+music:["🎵 BEAT MASTER","🎵"],
+mystery:["🕵️ THE UNKNOWN","🕵️"],
+blitz:["⚡ 60 SECOND MADNESS","⚡"],
+plants:["🌱 SECRET GARDEN","🌱"],
+elephant:["🐘 ELEPHANT PARADE","🐘"],
+pirate:["🏴‍☠️ PIRATE TREASURE","🏴‍☠️"],
+carnival:["🎪 CARNIVAL","🎪"],
+ninja:["🥷 NINJA","🥷"],
+toy:["🧸 TOY MAKER","🧸"],
+crystal:["💠 CRYSTAL","💠"],
+wildwest:["🤠 WILD WEST","🤠"],
+bakery:["🧁 BAKERY","🧁"],
+comic:["💥 COMIC","💥"],
+safari:["🦒 SAFARI","🦒"],
+cyber:["🖥️ CYBER","🖥️"],
+wizard:["🧙 WIZARD","🧙"],
+moon:["🌙 MOON","🌙"],
+arcade:["🕹️ ARCADE","🕹️"],
+samurai:["⚔️ SAMURAI","⚔️"],
+stoneage:["🪨 STONE AGE","🪨"],
+masquerade:["🎭 MASQUERADE","🎭"],
+science:["🔬 SCIENCE","🔬"],
+luxury:["💎 LUXURY","💎"],
+rainbow:["🌈 RAINBOW","🌈"],
+timemachine:["⌛ TIME MACHINE","⌛"],
+skibidi:["🚽 Skibidi Toilet","🚽"],
+godzilla:["🦖 Godzilla vs. Kong","🦖"],
+spiderman:["🕷️ Spider-Man Event","🕸️"],
+cocacola:["🥤 Coca-Cola Event","🥤"]
 };
 let uid=null,name='',player={},role='normal',roleName='',settings={},eventState={},boxes=[],opened=[],rareType=null,unsubs=[],watchUnsub=null,bannerTimer=null,challengeTimer=null;
 const path=p=>ref(db,p),clean=s=>String(s||'').trim().replace(/[.#$\[\]/]/g,'').slice(0,24);
@@ -807,6 +865,7 @@ $('saveLuck').onclick=async()=>{const v=Number($('adminLuck').value);try{if(role
 $('oceanOn').onclick=()=>startEvent('ocean');$('zombieOn').onclick=()=>startEvent('zombie');$('multiverseOn').onclick=()=>startEvent('multiverse');$('footballOn').onclick=()=>startEvent('football');$('dinosaurOn').onclick=()=>startEvent('dinosaur');$('candyOn').onclick=()=>startEvent('candy');$('castleOn').onclick=()=>startEvent('castle');$('spaceOn').onclick=()=>startEvent('space');$('ghostOn').onclick=()=>startEvent('ghost');$('winterOn').onclick=()=>startEvent('winter');$('egyptOn').onclick=()=>startEvent('egypt');$('superheroOn').onclick=()=>startEvent('superhero');$('racingOn').onclick=()=>startEvent('racing');$('dragonOn').onclick=()=>startEvent('dragon');$('musicOn').onclick=()=>startEvent('music');$('mysteryOn').onclick=()=>startEvent('mystery');
 $('galaxyOn').onclick=()=>startEvent('galaxy');$('diamondOn').onclick=()=>startEvent('diamond');$('eventsOff').onclick=stopEvent;
 $('hackerOn').onclick=()=>startEvent('hacker');$('unicornOn').onclick=()=>startEvent('unicorn');$('robotOn').onclick=()=>startEvent('robot');$('cubeOn').onclick=()=>startEvent('cube');$('skibidiOn').onclick=()=>startEvent('skibidi');$('godzillaOn').onclick=()=>startEvent('godzilla');$('blitzOn').onclick=()=>startEvent('blitz');$('laserOn').onclick=()=>startEvent('lasertag');$('spiderOn').onclick=()=>startEvent('spiderman');$('colaOn').onclick=()=>startEvent('cocacola');$('plantsOn').onclick=()=>startEvent('plants');$('elephantOn').onclick=()=>startEvent('elephant');$('timeOn').onclick=()=>startEvent('time');$('schoolOn').onclick=()=>startEvent('school');$('lavaOn').onclick=()=>startEvent('lava');$('alienOn').onclick=()=>startEvent('alien');
+$('pirateOn').onclick=()=>startEvent('pirate');$('carnivalOn').onclick=()=>startEvent('carnival');$('ninjaOn').onclick=()=>startEvent('ninja');$('toyOn').onclick=()=>startEvent('toy');$('crystalOn').onclick=()=>startEvent('crystal');$('wildwestOn').onclick=()=>startEvent('wildwest');$('bakeryOn').onclick=()=>startEvent('bakery');$('comicOn').onclick=()=>startEvent('comic');$('safariOn').onclick=()=>startEvent('safari');$('cyberOn').onclick=()=>startEvent('cyber');$('wizardOn').onclick=()=>startEvent('wizard');$('moonOn').onclick=()=>startEvent('moon');$('arcadeOn').onclick=()=>startEvent('arcade');$('samuraiOn').onclick=()=>startEvent('samurai');$('stoneageOn').onclick=()=>startEvent('stoneage');$('masqueradeOn').onclick=()=>startEvent('masquerade');$('scienceOn').onclick=()=>startEvent('science');$('luxuryOn').onclick=()=>startEvent('luxury');$('rainbowOn').onclick=()=>startEvent('rainbow');$('timemachineOn').onclick=()=>startEvent('timemachine');
 $('saveGodzillaVideo').onclick=saveGodzilla;
 $('saveEventOdds').onclick=async()=>{const v={blitzChance:Number($('blitzChance').value)/100,spiderChance:Number($('spiderChance').value)/100,spiderLuck:Math.max(1,Number($('spiderLuck').value)||5),colaChance:Number($('colaChance').value)/100,colaLuck:Math.max(1,Number($('colaLuck').value)||5),vineChance:Number($('vineChance').value)/100,plantLuck:Math.max(1,Number($('plantLuck').value)||5),elephantChestChance:Number($('elephantChance').value)/100};try{await httpsCallable(functions,'saveGameSettings')(v);msg('adminMsg','Event-Chancen und Multiplikatoren gespeichert.');}catch(e){msg('adminMsg',e?.message||'Einstellungen konnten nicht gespeichert werden.');}};
 $('saveDiamondChance').onclick=async()=>{const v=Number($('diamondChance').value);try{await httpsCallable(functions,'saveGameSettings')({diamondChance:v});msg('adminMsg','Diamond-Chance gespeichert.');}catch(e){msg('adminMsg',e?.message||'Diamond-Chance konnte nicht gespeichert werden.');}};
