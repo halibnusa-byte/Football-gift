@@ -1114,7 +1114,7 @@ exports.chooseZombieVial = onCall({ region: "europe-west1" }, async (request) =>
     const state = current || { votes: {}, startedAt: Date.now() };
     const ownerUid = state.ownerUid || auth.uid;
     const votes = { ...(state.votes || {}) };
-    const completed = Object.keys(votes).length >= 2;
+    const completed = Boolean(votes[ownerUid]) && Object.keys(votes).length >= 2;
     return { ...state, ownerUid, votes, completed, completedAt: completed ? (state.completedAt || Date.now()) : null };
   });
   const rescue = (await rescueRef.get()).val();
@@ -1136,7 +1136,7 @@ exports.submitZombieRescue = onCall({ region: "europe-west1" }, async (request) 
     if (current?.completed) return;
     const state = current || { ownerUid: null, votes: {}, startedAt: Date.now() };
     const votes = { ...(state.votes || {}), [auth.uid]: true };
-    const completed = Boolean(state.ownerUid) && Object.keys(votes).length >= 2;
+    const completed = Boolean(state.ownerUid && votes[state.ownerUid]) && Object.keys(votes).length >= 2;
     return { ...state, votes, completed, completedAt: completed ? (state.completedAt || Date.now()) : null };
   });
   const state = tx.snapshot.val();
