@@ -163,3 +163,10 @@ test("browser admin settings no longer write directly to settings", () => {
     assert.ok(section.includes("httpsCallable(functions,'saveGameSettings')"));
   }
 });
+
+test("admin live chat exposes report moderation controls", () => {
+  assert.ok(client.includes('id="chatReportsPanel"'));
+  assert.ok(client.includes("onValue(path('messageReports')"));
+  assert.ok(client.includes("function renderChatReports"));
+  assert.ok(client.includes("action:'restore'"));
+});
