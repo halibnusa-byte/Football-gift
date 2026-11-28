@@ -837,7 +837,7 @@ exports.saveGameSettings = onCall({ region: "europe-west1" }, async (request) =>
   } else if (data.luckMultiplier !== undefined) {
     throw new HttpsError("failed-precondition", "Die Server-Sperre verhindert diese Änderung.");
   }
-  const decimalOdds = ["blitzChance", "spiderChance", "colaChance", "vineChance", "elephantChestChance", "oceanGoldenSharkChance"];
+  const decimalOdds = ["blitzChance", "spiderChance", "colaChance", "vineChance", "elephantChestChance", "oceanGoldenSharkChance", "magicCubeAChance", "magicCubeBChance", "magicCubeCChance"];
   for (const key of decimalOdds) {
     if (data[key] === undefined) continue;
     const value = Number(data[key]);
@@ -1152,6 +1152,32 @@ exports.openOceanChest = onCall({ region: "europe-west1" }, async (request) => {
   return { goldenShark: outcome.goldenShark === true };
 });
 
+exports.openMagicCube = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const cube = String(request.data?.cube || "").toUpperCase();
+  if (!["A", "B", "C"].includes(cube)) throw new HttpsError("invalid-argument", "Ungültiger Zauberwürfel.");
+  const [eventsSnap, settingsSnap, playerSnap] = await Promise.all([
+    db.ref("events").get(), db.ref("settings").get(), db.ref("players/" + auth.uid).get()
+  ]);
+  const events = eventsSnap.val() || {}, settings = settingsSnap.val() || {}, player = playerSnap.val();
+  if (events.active !== "cube") throw new HttpsError("failed-precondition", "Magic-Cube-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  if (!player?.eventClaims?.["cube:" + runId]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
+  const chances = { A: settings.magicCubeAChance, B: settings.magicCubeBChance, C: settings.magicCubeCChance };
+  if (Object.values(chances).some((v) => !Number.isFinite(Number(v)) || Number(v) < 0 || Number(v) > 1)) {
+    throw new HttpsError("failed-precondition", "Der Hauptadmin muss zuerst die drei Würfel-Chancen einstellen.");
+  }
+  const ref = db.ref("events/magicCubes/" + runId + "/" + auth.uid);
+  const won = secureUnit() < Number(chances[cube]);
+  const reward = won ? pickRoundPrize(1000000, "cube", { ...settings, footballTokenOwner: "reserved" }, player) : null;
+  const proposed = { cube, won: Boolean(reward), rewardId: reward?.id || null, openedAt: Date.now() };
+  const tx = await ref.transaction((existing) => existing || proposed);
+  const outcome = tx.snapshot.val();
+  if (outcome.cube !== cube) throw new HttpsError("already-exists", "Du hast bereits einen anderen Zauberwürfel geöffnet.");
+  return { won: outcome.won === true };
+});
+
 exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
   await assertMainAdminDuringLock(auth);
@@ -1176,9 +1202,18 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
       throw new HttpsError("failed-precondition", "Öffne zuerst eine Schatztruhe im Ocean-Event.");
     }
   }
+  let magicCubeOutcome = null;
+  if (eventId === "cube") {
+    magicCubeOutcome = (await db.ref("events/magicCubes/" + runId + "/" + auth.uid).get()).val();
+    if (!magicCubeOutcome || !["A", "B", "C"].includes(magicCubeOutcome.cube)) {
+      throw new HttpsError("failed-precondition", "Öffne zuerst einen Zauberwürfel.");
+    }
+  }
   if (!before?.eventClaims?.[claimKey]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
   if (before.eventClaims[claimKey].rewarded) throw new HttpsError("already-exists", "Belohnung bereits abgeholt.");
-  const reward = pickRoundPrize(currentLuck(auth, before, settings), eventId, settings, before);
+  const reward = eventId === "cube"
+    ? (magicCubeOutcome.rewardId ? ROUND_PRIZES.find((p) => p.id === magicCubeOutcome.rewardId) || null : null)
+    : pickRoundPrize(currentLuck(auth, before, settings), eventId, settings, before);
   let reserved = false;
   if (reward?.id === "football") {
     const txOwner = await db.ref("settings/footballTokenOwner").transaction((v) => v == null ? auth.uid : undefined);
