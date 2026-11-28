@@ -1096,3 +1096,70 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
     throw e;
   }
 });
+
+exports.saveMainAdminCode = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireRole(request, ["mainAdmin"]);
+  await assertMainAdminDuringLock(auth);
+  const code = String(request.data?.code || "").trim();
+  if (code.length < 8 || code.length > 128) throw new HttpsError("invalid-argument", "Der Hauptadmin-Code muss mindestens 8 Zeichen haben.");
+  const digest = hashCode(code);
+  const all = (await db.ref("admin/roleCodes").get()).val() || {};
+  if (all[digest] && all[digest].role !== "mainAdmin") throw new HttpsError("already-exists", "Dieser Code wird bereits verwendet.");
+  all[digest] = { role: "mainAdmin", uid: auth.uid, createdAt: Date.now() };
+  await db.ref("admin/roleCodes").set(all);
+  await db.ref("admin/codeHash").set(digest);
+  await db.ref("adminProof/" + auth.uid).set(digest);
+  return { saved: true };
+});
+exports.queueBlitz = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireRole(request, ["mainAdmin"]);
+  await assertMainAdminDuringLock(auth);
+  const scope = request.data?.scope;
+  const targetName = String(request.data?.targetName || "").trim().slice(0, 24);
+  const players = (await db.ref("players").get()).val() || {};
+  let targets;
+  if (scope === "self") targets = [auth.uid];
+  else if (scope === "global") targets = Object.keys(players);
+  else if (scope === "single") {
+    const found = Object.entries(players).find(([,p]) => String(p?.name || "").trim().toLowerCase() === targetName.toLowerCase());
+    if (!found) throw new HttpsError("not-found", "Spieler nicht gefunden.");
+    targets = [found[0]];
+  } else throw new HttpsError("invalid-argument", "Ungültiger Blitz-Bereich.");
+  if (!targets.length || targets.length > 200) throw new HttpsError("failed-precondition", "Ungültige Anzahl Spieler.");
+  let queued = 0;
+  for (const id of targets) {
+    const tx = await db.ref("players/" + id).transaction((p) => p ? { ...p, pendingBlitz: Math.max(0, Number(p.pendingBlitz) || 0) + 1 } : undefined);
+    if (tx.committed) queued++;
+  }
+  return { queued };
+});
+exports.joinLaserTag = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const skin = Number(request.data?.skin);
+  if (!Number.isInteger(skin) || skin < 0 || skin > 4) throw new HttpsError("invalid-argument", "Ungültiger LaserTag-Skin.");
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "lasertag") throw new HttpsError("failed-precondition", "LaserTag ist nicht aktiv.");
+  const elapsed = Date.now() - Number(events.startedAt || Date.now());
+  if (elapsed < 0 || elapsed > 30000) throw new HttpsError("deadline-exceeded", "Die Skin-Auswahl ist beendet.");
+  const name = String((await db.ref("players/" + auth.uid + "/name").get()).val() || "Spieler").slice(0,24);
+  await db.ref("events/laserPlayers/" + auth.uid).set({ name, skin, score: 0, joinedAt: Date.now(), spectator: false, lastShotAt: 0 });
+  return { joined: true };
+});
+exports.scoreLaserTag = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "lasertag") throw new HttpsError("failed-precondition", "LaserTag ist nicht aktiv.");
+  const elapsed = Date.now() - Number(events.startedAt || Date.now());
+  if (elapsed < 30000 || elapsed >= 330000) throw new HttpsError("deadline-exceeded", "LaserTag-Punkte können gerade nicht gesammelt werden.");
+  const ref = db.ref("events/laserPlayers/" + auth.uid);
+  const tx = await ref.transaction((p) => {
+    if (!p || p.spectator) return;
+    const now = Date.now();
+    if (now - Number(p.lastShotAt || 0) < 900) return;
+    return { ...p, score: Math.max(0, Number(p.score) || 0) + 1, lastShotAt: now };
+  });
+  if (!tx.committed) throw new HttpsError("resource-exhausted", "Bitte warte kurz vor dem nächsten Schuss.");
+  return { score: tx.snapshot.val().score };
+});
