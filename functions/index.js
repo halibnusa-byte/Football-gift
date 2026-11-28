@@ -1303,27 +1303,32 @@ exports.queueBlitz = onCall({ region: "europe-west1" }, async (request) => {
   return { queued };
 });
 async function finalizeLaserTagIfComplete() {
+  const events = (await db.ref("events").get()).val() || {};
+  const runId = String(events.runId || events.startedAt || "");
+  if (events.laserFinished === true) {
+    return { finished: true, winners: (await db.ref("events/laserWinners").get()).val() || [] };
+  }
   const players = (await db.ref("events/laserPlayers").get()).val() || {};
   const entries = Object.entries(players);
   const alive = entries.filter(([, p]) => !p?.spectator && Number(p?.lives ?? 3) > 0);
   if (entries.length < 2 || alive.length > 1) return { finished: false, winners: [] };
-  const lock = await db.ref("events/laserFinished").transaction((v) => v === true ? undefined : true);
-  if (!lock.committed) return { finished: true, alreadyFinished: true, winners: [] };
   const ranked = entries.sort((a,b) =>
     (Number(b[1]?.lives)||0) - (Number(a[1]?.lives)||0) ||
     (Number(b[1]?.hits)||0) - (Number(a[1]?.hits)||0) ||
     (Number(a[1]?.joinedAt)||0) - (Number(b[1]?.joinedAt)||0)
   ).slice(0,3);
+  const winnerIds = ranked.map(([uid]) => uid);
+  await db.ref("events/laserWinners").set(winnerIds);
   for (const [uid] of ranked) {
     await db.ref("players/" + uid).transaction((p) => {
-      if (!p) return;
+      if (!p || p.laserTagGiftRunId === runId) return;
       const inventory = { ...(p.inventory || {}) };
       inventory.diamondGift = (Number(inventory.diamondGift) || 0) + 1;
-      return { ...p, inventory };
+      return { ...p, inventory, laserTagGiftRunId: runId };
     });
   }
-  await db.ref("events/laserWinners").set(ranked.map(([uid]) => uid));
-  return { finished: true, winners: ranked.map(([uid]) => uid) };
+  await db.ref("events/laserFinished").set(true);
+  return { finished: true, winners: winnerIds };
 }
 
 exports.joinLaserTag = onCall({ region: "europe-west1" }, async (request) => {
