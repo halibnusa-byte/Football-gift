@@ -460,3 +460,9 @@ test("Dinosaur event hatches an egg and requires matching fossil fragments", () 
   assert.match(client, /Fossil-Teile gesammelt/);
   assert.match(client, /Dieses Fossil gehört zu einer anderen Dinosaurier-Art/);
 });
+
+test("Candy and Crystal matching use their own themed symbols", () => {
+  assert.match(client, /candy:\{title:'SWEET CHAOS · SÜSSIGKEITEN-KOMBI',mode:'pairs',pairs:\['🍬','🍭','🍫'\]/);
+  assert.match(client, /crystal:\{title:'CRYSTAL CAVE · KRISTALL-KOMBI',mode:'pairs',pairs:\['💎','🔮','🟣'\]/);
+  assert.match(client, /const icons=spec\.pairs\|\|\['🍬','🍭','🍫'\]/);
+});
