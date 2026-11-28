@@ -1191,6 +1191,33 @@ exports.startMultiverseChallenge = onCall({ region: "europe-west1" }, async (req
   return { startedAt: tx.snapshot.val().startedAt };
 });
 
+exports.submitMultiverseAnswer = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const dimension = Number(request.data?.dimension), answer = Number(request.data?.answer);
+  if (!Number.isInteger(dimension) || dimension < 0 || dimension > 2 || !Number.isInteger(answer) || answer < 0 || answer > 2) {
+    throw new HttpsError("invalid-argument", "Ungültige Dimensionsantwort.");
+  }
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "multiverse") throw new HttpsError("failed-precondition", "Multiverse-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const player = (await db.ref("players/" + auth.uid).get()).val();
+  if (!player?.eventClaims?.["multiverse:" + runId]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
+  const ref = db.ref("events/multiverseChallenges/" + runId + "/" + auth.uid);
+  const tx = await ref.transaction((challenge) => {
+    if (!challenge || challenge.failed || challenge.completed) return;
+    const currentDimension = Math.floor((Date.now() - Number(challenge.startedAt || 0)) / 30000) % 3;
+    if (dimension !== currentDimension || challenge.solvedDimensions?.[dimension]) return;
+    if (answer !== 0) return { ...challenge, failed: true, failedAt: Date.now() };
+    const solvedDimensions = { ...(challenge.solvedDimensions || {}), [dimension]: true };
+    const completed = Object.keys(solvedDimensions).length === 3;
+    return { ...challenge, solvedDimensions, completed, completedAt: completed ? Date.now() : null };
+  });
+  const result = tx.snapshot.val();
+  if (!tx.committed) throw new HttpsError("failed-precondition", "Diese Dimension ist gerade nicht aktiv oder wurde bereits gelöst.");
+  return { correct: result.failed !== true, completed: result.completed === true, solved: Object.keys(result.solvedDimensions || {}).length };
+});
+
 exports.discoverMultiverseSecret = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
   await assertMainAdminDuringLock(auth);
@@ -1420,6 +1447,12 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
     const rescue = (await db.ref("events/zombieRescue/" + runId).get()).val();
     if (!rescue || rescue.completed !== true || rescue.ownerUid !== auth.uid || rescue.votes?.[auth.uid] !== true) {
       throw new HttpsError("failed-precondition", "Die gemeinsame Zombie-Rettung ist noch nicht abgeschlossen oder du bist nicht der Geschenkbesitzer.");
+    }
+  }
+  if (eventId === "multiverse") {
+    const challenge = (await db.ref("events/multiverseChallenges/" + runId + "/" + auth.uid).get()).val();
+    if (!challenge || challenge.failed === true || (challenge.completed !== true && challenge.secretDiscovered !== true)) {
+      throw new HttpsError("failed-precondition", "Löse alle drei Dimensionen oder entdecke den geheimen Dimensionsriss.");
     }
   }
   if (eventId === "football") {
