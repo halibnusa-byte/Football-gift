@@ -1449,6 +1449,13 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
       throw new HttpsError("failed-precondition", "Die gemeinsame Zombie-Rettung ist noch nicht abgeschlossen oder du bist nicht der Geschenkbesitzer.");
     }
   }
+  if (eventId === "godzilla") {
+    const vote = (await db.ref("events/godzillaVotes/" + auth.uid).get()).val();
+    const video = events.video || settings.eventVideos?.godzilla || settings.godzillaVideo || {};
+    if (!vote || vote.runId !== runId || !["godzilla", "kong"].includes(video.winner) || vote.side !== video.winner) {
+      throw new HttpsError("failed-precondition", "Dein Godzilla-Tipp war nicht richtig.");
+    }
+  }
   if (eventId === "multiverse") {
     const challenge = (await db.ref("events/multiverseChallenges/" + runId + "/" + auth.uid).get()).val();
     if (!challenge || challenge.failed === true || (challenge.completed !== true && challenge.secretDiscovered !== true)) {
