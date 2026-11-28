@@ -387,6 +387,8 @@ test("Diamond Gift uses the specified rare rewards without adding a seventh main
   assert.match(open, /0\.000000000000001/);
   assert.match(open, /specialInventory\.torwartSwitchToken/);
   assert.match(open, /inventory\.revenge/);
+  assert.match(open, /firstWon\.revenge/);
+  assert.match(open, /totalWins/);
   assert.match(open, /unassigned/);
   assert.match(client, /openDiamondGift/);
   assert.match(client, /Torwart-Switch-Token · Sonder-Token/);
