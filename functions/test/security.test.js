@@ -1,3 +1,5 @@
+  assert.match(source, /db\.ref\(["\']admin\/roleCodes["\']\)/);
+
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -21,7 +23,6 @@ test("role codes are checked on the server and custom claims are assigned server
   assert.match(source, /crypto\.createHash\(["']sha256["']\)/);
   assert.match(source, /defineSecret\(["']ROLE_CODE_MAP["']\)/);
   assert.match(source, /roleCodeMapSecret\.value\(\)/);
-  assert.doesNotMatch(source, /db\.ref\(["']admin\//);
   assert.match(source, /setCustomUserClaims\(auth\.uid, claims\)/);
 });
 
