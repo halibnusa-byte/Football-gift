@@ -125,7 +125,7 @@ exports.startPlayerRound = onCall({ region: "europe-west1" }, async (request) =>
   const tx = await playerRef.transaction((current) => {
     if (!current) return;
     const existing = current.roundState;
-    if (existing && Array.isArray(existing.boxes) && existing.boxes.length === 15 && Number(existing.openedCount || 0) < 3) return;
+    if (existing && Array.isArray(existing.boxes) && existing.boxes.length === 15 && Number(existing.openedCount || 0) < 3) return current;
     const boxes = Array.from({ length: 15 }, (_, id) => ({ id, opened: false, rare: false, galaxy: false, blitz: false }));
     let rareType = null;
     if (secureUnit() < 0.01) {
