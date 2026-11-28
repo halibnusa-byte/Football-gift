@@ -837,10 +837,10 @@ async function renderEventChallenge(){
   let chosen=false,rescueOwner=false,rewardRequested=false,rescueUnsub=null;
   const rescueRef=path('events/zombieRescue/'+run);
   const showTask=()=>{
-   task.textContent='🧟 ZOMBIE-HAND! Teamaufgabe: Wie viele Buchstaben hat das Wort ZOMBIE? Zwei Spieler müssen die richtige Antwort gemeinsam bestätigen.';
+   task.textContent='🧟 ZOMBIE-HAND! Teamaufgabe: Wie viele Buchstaben hat das Wort ZOMBIE? Der Geschenkbesitzer und mindestens ein weiterer Spieler müssen richtig antworten.';
    const input=document.createElement('input');input.placeholder='Antwort: 6';input.inputMode='numeric';
    const send=document.createElement('button');send.textContent='🤝 TEAMANTWORT SENDEN';
-   send.onclick=async()=>{send.disabled=true;try{const r=await httpsCallable(functions,'submitZombieRescue')({answer:input.value});task.textContent='Teamantwort gespeichert: '+r.data.votes+' / 2. '+(r.data.completed?'Das Geschenk wurde gerettet!':'Ein weiterer Spieler muss helfen.');}catch(e){send.disabled=false;result.textContent=e?.message||'Teamantwort fehlgeschlagen.';}};
+   send.onclick=async()=>{send.disabled=true;try{const r=await httpsCallable(functions,'submitZombieRescue')({answer:input.value});task.textContent='Teamantwort gespeichert: '+r.data.votes+' Stimme(n). '+(r.data.completed?'Das Geschenk wurde gerettet!':'Der Geschenkbesitzer und mindestens ein weiterer Spieler müssen richtig antworten.');}catch(e){send.disabled=false;result.textContent=e?.message||'Teamantwort fehlgeschlagen.';}};
    task.append(input,send);
   };
   for(let i=0;i<5;i++){
