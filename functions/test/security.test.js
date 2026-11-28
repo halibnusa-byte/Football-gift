@@ -372,6 +372,7 @@ test("Magic Cube uses three separately configured chances and server-stored outc
   assert.match(open, /magicCubeBChance/);
   assert.match(open, /magicCubeCChance/);
   assert.match(open, /secureUnit\(\) < Number\(chances\[cube\]\)/);
+  assert.match(open, /new Set\(Object\.values\(chances\)\.map\(Number\)\)\.size !== 3/);
   assert.match(award, /events\/magicCubes/);
   assert.match(award, /magicCubeOutcome\.rewardId/);
   assert.match(settings, /magicCubeAChance/);
