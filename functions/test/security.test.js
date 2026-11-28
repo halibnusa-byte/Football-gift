@@ -495,3 +495,11 @@ test("Alien Invasion validates the UFO and four-digit recovery code on the serve
   assert.match(client, /scanAlienRadar/);
   assert.match(client, /recoverAlienGift/);
 });
+
+test("Empty Ocean chests cannot be used to claim an event prize", () => {
+  const start = source.indexOf("exports.awardEventReward");
+  const award = source.slice(start, source.indexOf("exports.", start + 10));
+  assert.match(award, /oceanChestOutcome\.treasure !== true && oceanChestOutcome\.goldenShark !== true/);
+  assert.match(client, /Die Schatztruhe war leer – diesmal eine Niete/);
+  assert.doesNotMatch(client, /Leere Schatztruhe/);
+});
