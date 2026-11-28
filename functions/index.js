@@ -1198,9 +1198,13 @@ exports.openDiamondGift = onCall({ region: "europe-west1" }, async (request) => 
     if (count === 1) delete inventory.diamondGift;
     else inventory.diamondGift = count - 1;
     const specialInventory = { ...(p.specialInventory || {}) };
+    const firstWon = { ...(p.firstWon || {}) };
     if (outcome === "torwartSwitchToken") specialInventory.torwartSwitchToken = (Number(specialInventory.torwartSwitchToken) || 0) + 1;
-    if (outcome === "revenge") inventory.revenge = (Number(inventory.revenge) || 0) + 1;
-    return { ...p, inventory, specialInventory };
+    if (outcome === "revenge") {
+      inventory.revenge = (Number(inventory.revenge) || 0) + 1;
+      if (!firstWon.revenge) firstWon.revenge = Date.now();
+    }
+    return { ...p, inventory, specialInventory, firstWon, totalWins: (Number(p.totalWins) || 0) + (outcome === "revenge" ? 1 : 0) };
   });
   if (!tx.committed) throw new HttpsError("failed-precondition", "Du besitzt kein Diamond-Geschenk.");
   return { outcome, inventory: tx.snapshot.val().inventory, specialInventory: tx.snapshot.val().specialInventory || {} };
