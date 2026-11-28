@@ -881,6 +881,8 @@ exports.joinGame = onCall({ region: "europe-west1" }, async (request) => {
   }));
   if (!tx.committed) throw new HttpsError("aborted", "Dein Spielerprofil konnte nicht gespeichert werden.");
   await db.ref("online/" + auth.uid).set({ name, at: Date.now() });
+  const comeback = (await db.ref("events/comebackAdminAbuse").get()).val() || {};
+  if (comeback.active === true) await db.ref("events/comebackAdminAbuse/participants/" + auth.uid).set({ joinedAt: Date.now() });
   return { player: tx.snapshot.val() };
 });
 
