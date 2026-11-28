@@ -1380,6 +1380,7 @@ exports.startRacing = onCall({ region: "europe-west1" }, async (request) => {
 exports.finishRacing = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
   await assertMainAdminDuringLock(auth);
+  if (Number(request.data?.tapCount) !== 12) throw new HttpsError("invalid-argument", "Du musst alle zwölf Turbo-Treffer schaffen.");
   const events = (await db.ref("events").get()).val() || {};
   if (events.active !== "racing") throw new HttpsError("failed-precondition", "Racing-Event ist nicht aktiv.");
   const runId = String(events.runId || events.startedAt || "");
