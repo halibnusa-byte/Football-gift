@@ -837,7 +837,7 @@ exports.saveGameSettings = onCall({ region: "europe-west1" }, async (request) =>
   } else if (data.luckMultiplier !== undefined) {
     throw new HttpsError("failed-precondition", "Die Server-Sperre verhindert diese Änderung.");
   }
-  const decimalOdds = ["blitzChance", "spiderChance", "colaChance", "vineChance", "elephantChestChance"];
+  const decimalOdds = ["blitzChance", "spiderChance", "colaChance", "vineChance", "elephantChestChance", "oceanGoldenSharkChance"];
   for (const key of decimalOdds) {
     if (data[key] === undefined) continue;
     const value = Number(data[key]);
@@ -1129,6 +1129,27 @@ exports.submitZombieRescue = onCall({ region: "europe-west1" }, async (request) 
   });
   const state = tx.snapshot.val();
   return { votes: Object.keys(state?.votes || {}).length, completed: state?.completed === true };
+});
+
+exports.openOceanChest = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const chestIndex = Number(request.data?.chestIndex);
+  if (!Number.isInteger(chestIndex) || chestIndex < 0 || chestIndex > 2) throw new HttpsError("invalid-argument", "Ungültige Schatztruhe.");
+  const [events, settings, player] = await Promise.all([
+    db.ref("events").get(), db.ref("settings").get(), db.ref("players/" + auth.uid).get()
+  ]);
+  const eventState = events.val() || {};
+  if (eventState.active !== "ocean") throw new HttpsError("failed-precondition", "Ocean-Event ist nicht aktiv.");
+  const runId = String(eventState.runId || eventState.startedAt || "");
+  if (!player.val()?.eventClaims?.["ocean:" + runId]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
+  const chance = Math.max(0, Math.min(1, Number(settings.val()?.oceanGoldenSharkChance) || 0));
+  const ref = db.ref("events/oceanChests/" + runId + "/" + auth.uid);
+  const proposed = { chestIndex, goldenShark: secureUnit() < chance, openedAt: Date.now() };
+  const tx = await ref.transaction((existing) => existing || proposed);
+  const outcome = tx.snapshot.val();
+  if (Number(outcome.chestIndex) !== chestIndex) throw new HttpsError("already-exists", "Du hast bereits eine andere Schatztruhe geöffnet.");
+  return { goldenShark: outcome.goldenShark === true };
 });
 
 exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) => {
