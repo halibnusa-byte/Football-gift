@@ -1449,6 +1449,12 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
       throw new HttpsError("failed-precondition", "Die gemeinsame Zombie-Rettung ist noch nicht abgeschlossen oder du bist nicht der Geschenkbesitzer.");
     }
   }
+  if (eventId === "school") {
+    const exam = (await db.ref("events/schoolExams/" + runId + "/" + auth.uid).get()).val();
+    if (!exam || exam.completed !== true || (exam.firstCorrect !== true && exam.retryCorrect !== true)) {
+      throw new HttpsError("failed-precondition", "Die Abschlussprüfung wurde nicht bestanden.");
+    }
+  }
   if (eventId === "unicorn") {
     const hit = (await db.ref("events/unicornHits/" + runId + "/" + auth.uid).get()).val();
     if (!hit || hit.hit !== true) throw new HttpsError("failed-precondition", "Schlage zuerst die Piñata.");
@@ -1602,6 +1608,72 @@ async function finalizeLaserTagIfComplete() {
   await db.ref("events/laserFinished").set(true);
   return { finished: true, winners: winnerIds };
 }
+
+exports.startSchoolExam = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "school") throw new HttpsError("failed-precondition", "School-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const [settingsSnap, playerSnap] = await Promise.all([
+    db.ref("settings").get(), db.ref("players/" + auth.uid).get()
+  ]);
+  const settings = settingsSnap.val() || {}, player = playerSnap.val() || {};
+  const multiplier = currentLuck({ uid: auth.uid, token: request.auth?.token || {} }, player, settings);
+  const difficulty = multiplier >= 3 ? "leicht" : multiplier >= 2 ? "mittel" : "schwer";
+  const bank = {
+    leicht: [["Wie viele Tage hat eine Woche?", ["5", "7", "9"], 1], ["Welche Zahl ist gerade?", ["3", "6", "9"], 1]],
+    mittel: [["Wie viel ist 8 × 7?", ["54", "56", "64"], 1], ["Wie viele Minuten hat eine Stunde?", ["30", "60", "90"], 1]],
+    schwer: [["Wie viel ist 144 ÷ 12?", ["10", "12", "14"], 1], ["Wie heißt die Hauptstadt von Australien?", ["Sydney", "Canberra", "Melbourne"], 1]]
+  };
+  const question = bank[difficulty][crypto.randomInt(bank[difficulty].length)];
+  const ref = db.ref("events/schoolExams/" + runId + "/" + auth.uid);
+  const tx = await ref.transaction((existing) => existing || {
+    difficulty, question: question[0], options: question[1], correctIndex: question[2], startedAt: Date.now(),
+    firstAnswered: false, retryUsed: false, completed: false
+  });
+  const exam = tx.snapshot.val();
+  return { difficulty: exam.difficulty, question: exam.question, options: exam.options, retryAvailable: Number(player.shopInventory?.goldenReportCard || 0) > 0 };
+});
+
+exports.submitSchoolExam = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const answerIndex = Number(request.data?.answerIndex), retry = request.data?.retry === true;
+  if (!Number.isInteger(answerIndex) || answerIndex < 0 || answerIndex > 2) throw new HttpsError("invalid-argument", "Ungültige Prüfungsantwort.");
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "school") throw new HttpsError("failed-precondition", "School-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const playerRef = db.ref("players/" + auth.uid);
+  if (!retry) {
+    const player = (await playerRef.get()).val();
+    if (!player?.eventClaims?.["school:" + runId]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
+  } else {
+    const itemTx = await playerRef.transaction((p) => {
+      if (!p) return;
+      const inventory = { ...(p.shopInventory || {}) };
+      if (Number(inventory.goldenReportCard || 0) < 1) return;
+      inventory.goldenReportCard = Number(inventory.goldenReportCard) - 1;
+      return { ...p, shopInventory: inventory };
+    });
+    if (!itemTx.committed) throw new HttpsError("failed-precondition", "Du besitzt keine Golden Report Card.");
+  }
+  const ref = db.ref("events/schoolExams/" + runId + "/" + auth.uid);
+  const tx = await ref.transaction((exam) => {
+    if (!exam || exam.completed) return;
+    if (retry) {
+      if (!exam.firstAnswered || exam.firstCorrect === true || exam.retryUsed) return;
+      const correct = answerIndex === Number(exam.correctIndex);
+      return { ...exam, retryUsed: true, retryCorrect: correct, completed: true, completedAt: Date.now() };
+    }
+    if (exam.firstAnswered) return;
+    const correct = answerIndex === Number(exam.correctIndex);
+    return { ...exam, firstAnswered: true, firstCorrect: correct, completed: correct, completedAt: correct ? Date.now() : null };
+  });
+  if (!tx.committed) throw new HttpsError("failed-precondition", "Diese Antwort wurde bereits abgegeben oder die Report Card ist nicht verfügbar.");
+  const exam = tx.snapshot.val();
+  return { correct: retry ? exam.retryCorrect === true : exam.firstCorrect === true, retryAvailable: !retry && exam.firstCorrect !== true };
+});
 
 exports.hitUnicornPinata = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
