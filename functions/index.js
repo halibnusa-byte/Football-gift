@@ -1174,6 +1174,53 @@ exports.scanOceanPearlRadar = onCall({ region: "europe-west1" }, async (request)
   return { treasureIndex: result.treasureIndex, remaining };
 });
 
+exports.startLavaChallenge = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "lava") throw new HttpsError("failed-precondition", "Lava-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const ref = db.ref("events/lavaChallenges/" + runId + "/" + auth.uid);
+  const tx = await ref.transaction((existing) => existing || { safePath: crypto.randomInt(3), startedAt: Date.now() });
+  return { startedAt: tx.snapshot.val().startedAt };
+});
+
+exports.chooseLavaPath = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const index = Number(request.data?.index);
+  if (!Number.isInteger(index) || index < 0 || index > 2) throw new HttpsError("invalid-argument", "Ungültiger Fluchtweg.");
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "lava") throw new HttpsError("failed-precondition", "Lava-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const playerRef = db.ref("players/" + auth.uid);
+  const player = (await playerRef.get()).val();
+  if (!player?.eventClaims?.["lava:" + runId]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
+  const ref = db.ref("events/lavaChallenges/" + runId + "/" + auth.uid);
+  const tx = await ref.transaction((challenge) => {
+    if (!challenge || challenge.completed || Date.now() - Number(challenge.startedAt || 0) > 5000) return;
+    const safe = index === Number(challenge.safePath);
+    const inventory = { ...(player.shopInventory || {}) };
+    let shieldUsed = false;
+    if (!safe && Number(inventory.lavaShield || 0) > 0) {
+      inventory.lavaShield = Number(inventory.lavaShield) - 1;
+      shieldUsed = true;
+    }
+    return { ...challenge, selectedPath: index, safe, shieldUsed, completed: true, completedAt: Date.now() };
+  });
+  const outcome = tx.snapshot.val();
+  if (!tx.committed || !outcome?.completed) throw new HttpsError("deadline-exceeded", "Der Alarm ist abgelaufen oder du hast bereits gewählt.");
+  if (outcome.shieldUsed) {
+    await playerRef.transaction((current) => {
+      if (!current) return;
+      const inventory = { ...(current.shopInventory || {}) };
+      inventory.lavaShield = Math.max(0, Number(inventory.lavaShield || 0) - 1);
+      return { ...current, shopInventory: inventory };
+    });
+  }
+  return { safe: outcome.safe === true, shieldUsed: outcome.shieldUsed === true };
+});
+
 exports.openOceanChest = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
   await assertMainAdminDuringLock(auth);
@@ -1272,6 +1319,12 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
     const rescue = (await db.ref("events/zombieRescue/" + runId).get()).val();
     if (!rescue || rescue.completed !== true || rescue.ownerUid !== auth.uid || rescue.votes?.[auth.uid] !== true) {
       throw new HttpsError("failed-precondition", "Die gemeinsame Zombie-Rettung ist noch nicht abgeschlossen oder du bist nicht der Geschenkbesitzer.");
+    }
+  }
+  if (eventId === "lava") {
+    const challenge = (await db.ref("events/lavaChallenges/" + runId + "/" + auth.uid).get()).val();
+    if (!challenge || challenge.completed !== true || (challenge.safe !== true && challenge.shieldUsed !== true)) {
+      throw new HttpsError("failed-precondition", "Wähle zuerst innerhalb der Alarmzeit einen Fluchtweg.");
     }
   }
   let oceanChestOutcome = null;
