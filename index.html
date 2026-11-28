@@ -669,7 +669,7 @@ function renderPlannedMiniGame(type,body,result,status,claim,win){
 }
 
 async function renderEventChallenge(){
- const type=eventState.active,available=['unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery','madness','secretgarden','elephantparade','pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type);
+ const type=eventState.active,available=['hacker','robot','unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery','madness','secretgarden','elephantparade','pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type);
  show('eventChallengePanel',available);if(!available||!uid)return;
  const body=$('eventChallengeBody');body.innerHTML='';$('eventChallengeTitle').textContent=EVENT_INFO[type]?.[0]||'Event';
  const descriptions={unicorn:'Wähle deinen Einhorn-Drop. Jeder Spieler kann pro Event einmal eine Belohnung erhalten.',cube:'Löse das Rätsel. Ein Versuch pro Event.',skibidi:'Klicke dich durch fünf Boss-Stufen. Jeder Boss hat einen eigenen Timer von zwei Minuten.',godzilla:'Sieh den Videoclip. Er stoppt mitten im Kampf. Danach tippst du einmal auf Godzilla oder Kong.',time:'Wähle einmal Vergangenheit, Gegenwart oder Zukunft.',school:'Beantworte die Schulfrage. Richtig: normales Geschenk. Falsch: nichts.',lava:'Wähle eine von drei Lava-Kisten. Ein Versuch.',alien:'Löse das Alien-Rätsel. Ein Versuch.',ocean:'Wähle eine Schatztruhe aus dem Ozean.',zombie:'Beantworte die Zombie-Frage.',multiverse:'Wähle dein Universum.',football:'Beantworte die Fußballfrage.',dinosaur:'Erkenne den Dinosaurier.',candy:'Wähle eine Süßigkeiten-Überraschung.',castle:'Löse das Burg-Rätsel.',space:'Wähle einen Planeten.',ghost:'Löse das Geister-Rätsel.',winter:'Beantworte die Winterfrage.',egypt:'Löse das Pyramiden-Rätsel.',superhero:'Wähle deine Helden-Mission.',racing:'Starte dein kurzes Reaktionsrennen.',dragon:'Wähle einen Drachentyp.',music:'Erkenne die Musikrichtung anhand eines Rhythmus-Musters.',mystery:'Wähle eine geheimnisvolle Tür.'};
@@ -688,7 +688,18 @@ async function renderEventChallenge(){
  }catch(e){result.textContent=e?.message||'Belohnung konnte nicht vergeben werden.';}
 }
 
- if(type==='unicorn'){
+ if(type==='hacker'||type==='robot'){
+  const hacker=type==='hacker',title=hacker?'HACKER EVENT · DIGITAL GIFT SCAN':'ROBOT EVENT · FACTORY SCAN';
+  $('eventChallengeTitle').textContent=title;
+  const visual=document.createElement('div');visual.className='status';visual.style.cssText='font-size:20px;text-align:center;letter-spacing:2px;line-height:1.8;white-space:pre-wrap';
+  visual.textContent=hacker?'01001000 01000001 01000011 01001011\\n🟩 GIFT FIREWALL 🟩\\n01010100 01001111 01001011 01000101 01001110':'🤖 FACTORY SCAN ONLINE\\n[ LED ● ]  [ LED ● ]\\nMETALLIC GIFT HELMET';
+  body.append(visual);
+  const desc=document.createElement('p');desc.textContent=hacker?'Grüne Hacker-Geschenke, Binärcode und Scan-Effekt. Der Scanner zeigt nur TOKEN oder NIETE.':'Roboterhelm-Geschenke mit LED-Augen. Der Scanner zeigt die Seltenheitsstufe, nicht das genaue Token.';body.append(desc);
+  const owned=Number(player?.shopInventory?.[hacker?'hackerScanner':'robotScanner']||0)>0;
+  const scan=document.createElement('button');scan.textContent=owned?(hacker?'💻 HACKER SCANNER BENUTZEN':'🤖 ROBOT SCANNER BENUTZEN'):'🎁 GESCHENK ÖFFNEN';
+  scan.onclick=async()=>{scan.disabled=true;if(!await claim())return;try{const response=await httpsCallable(functions,'awardEventReward')({eventId:type});const id=response.data.reward;const prize=PRIZES.find(p=>p.id===id);if(!id){result.textContent='Scanner-Ergebnis: NIETE.';}else if(hacker){result.textContent='Scanner-Ergebnis: TOKEN! (Der genaue Token bleibt geheim.)';}else{const rarity=prize?.rarity||prize?.tier||'Seltenheit nicht hinterlegt';result.textContent='Robot Scanner: '+rarity+'. Das genaue Token bleibt geheim.';}await addActivity('hat am '+(EVENT_INFO[type]?.[0]||'Event')+' teilgenommen.');renderInventory();renderRanking();}catch(e){result.textContent=e?.message||'Scan fehlgeschlagen.';}};
+  body.append(scan);
+ }else if(type==='unicorn'){
   const b=document.createElement('button');b.textContent='🪅 PINATA EINMAL SCHLAGEN';b.onclick=async()=>{b.disabled=true;if(!await claim()){status.textContent='Schon benutzt.';return;}await win('Die Piñata spuckt aus');status.textContent='Dein Schlag ist verbraucht.';};body.append(b);
  }else if(type==='cube'){
   const q=document.createElement('p');q.textContent='THE MAGIC MIX: Löse das Rätsel. Danach wählst du einen von drei Zauberwürfeln.';const inp=document.createElement('input');inp.placeholder='Wie heißt der Würfel mit sechs farbigen Seiten?';const b=document.createElement('button');b.textContent='RÄTSEL LÖSEN';body.append(q,inp,b);
