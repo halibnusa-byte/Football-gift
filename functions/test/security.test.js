@@ -437,3 +437,10 @@ test("Mystery and Egypt events use clue and hieroglyph challenges", () => {
   assert.match(client, /egypt:\{title:"THE PHARAOH'S SECRET · HIEROGLYPHEN",mode:'hieroglyph'/);
   assert.match(client, /HIEROGLYPHEN-TAFEL/);
 });
+
+test("Frozen Kingdom melts three ice blocks through sequential puzzles", () => {
+  assert.match(client, /winter:\{title:'FROZEN KINGDOM · EIS-RÄTSEL',mode:'ice'/);
+  assert.match(client, /Eisblock 1/);
+  assert.match(client, /Eisblock 2/);
+  assert.match(client, /Eisblock 3/);
+});
