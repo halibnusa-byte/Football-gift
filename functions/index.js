@@ -1400,8 +1400,9 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
   let oceanChestOutcome = null;
   if (eventId === "ocean") {
     oceanChestOutcome = (await db.ref("events/oceanChests/" + runId + "/" + auth.uid).get()).val();
-    if (!oceanChestOutcome || !Number.isInteger(Number(oceanChestOutcome.chestIndex))) {
-      throw new HttpsError("failed-precondition", "Öffne zuerst eine Schatztruhe im Ocean-Event.");
+    if (!oceanChestOutcome || !Number.isInteger(Number(oceanChestOutcome.chestIndex)) ||
+        (oceanChestOutcome.treasure !== true && oceanChestOutcome.goldenShark !== true)) {
+      throw new HttpsError("failed-precondition", "Diese Schatztruhe war leer. Es gibt keine Belohnung.");
     }
   }
   let magicCubeOutcome = null;
