@@ -589,7 +589,15 @@ async function renderEventChallenge(){
  const run=String(eventState.runId||eventState.startedAt||'x');
  const claimPath='players/'+uid+'/eventClaims/'+type+'/'+run;
  async function claim(){try{await httpsCallable(functions,'recordEventClaim')({eventId:type});return true;}catch(e){return false;}}
- async function win(label){const prize=await rollAndAward(uid,1,'Event');result.textContent=prize?label+' – '+prize.name+'!':label+' – Niete!';await addActivity('hat am '+(EVENT_INFO[type]?.[0]||'Event')+' teilgenommen.');}
+ async function win(label){
+ try{
+  const response=await httpsCallable(functions,'awardEventReward')({eventId:type});
+  const id=response.data.reward,prize=PRIZES.find(p=>p.id===id)||(id==='diamondGift'?{name:'Diamond-Geschenk',emoji:'💎'}:null);
+  result.textContent=prize?label+' – '+prize.emoji+' '+prize.name+'!':label+' – Niete!';
+  await addActivity('hat am '+(EVENT_INFO[type]?.[0]||'Event')+' teilgenommen.');
+  renderInventory();renderRanking();
+ }catch(e){result.textContent=e?.message||'Belohnung konnte nicht vergeben werden.';}
+}
 
  if(type==='unicorn'){
   const b=document.createElement('button');b.textContent='🪅 PINATA EINMAL SCHLAGEN';b.onclick=async()=>{b.disabled=true;if(!await claim()){status.textContent='Schon benutzt.';return;}if(Math.random()<.5)await win('Die Pinata spuckt aus');else result.textContent='🪅 Niete!';status.textContent='Dein Schlag ist verbraucht.';};body.append(b);
