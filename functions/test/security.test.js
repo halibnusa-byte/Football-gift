@@ -348,3 +348,11 @@ test("Ocean Golden Shark uses only the admin-configured chance and one chest per
   assert.match(client, /openOceanChest/);
   assert.match(client, /oceanSharkChance/);
 });
+
+test("Ocean reward requires a recorded chest opening", () => {
+  const start = source.indexOf("exports.awardEventReward");
+  const award = source.slice(start, source.indexOf("exports.", start + 10));
+  assert.match(award, /eventId === "ocean"/);
+  assert.match(award, /events\/oceanChests/);
+  assert.match(award, /Öffne zuerst eine Schatztruhe/);
+});
