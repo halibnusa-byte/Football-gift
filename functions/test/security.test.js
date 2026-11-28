@@ -335,3 +335,14 @@ test("Zombie vials are server-selected and reward requires a completed two-playe
   assert.match(client, /submitZombieRescue/);
   assert.match(client, /chooseZombieVial/);
 });
+
+test("Ocean Golden Shark uses only the admin-configured chance and one chest per player", () => {
+  const open = source.slice(source.indexOf("exports.openOceanChest"), source.indexOf("exports.awardEventReward"));
+  const settings = source.slice(source.indexOf("exports.saveGameSettings"), source.indexOf("exports.saveShopConfig"));
+  assert.match(open, /oceanGoldenSharkChance/);
+  assert.match(open, /secureUnit\(\) < chance/);
+  assert.match(open, /events\/oceanChests/);
+  assert.match(settings, /oceanGoldenSharkChance/);
+  assert.match(client, /openOceanChest/);
+  assert.match(client, /oceanSharkChance/);
+});
