@@ -378,3 +378,14 @@ test("Golden Cup is a randomized penalty challenge rather than a fixed-answer qu
   assert.match(client, /const keeper=Math\.floor\(Math\.random\(\)\*3\)/);
   assert.match(client, /if\(i===keeper\)fail/);
 });
+
+test("Diamond Gift uses the specified rare rewards without adding a seventh main token", () => {
+  const open = source.slice(source.indexOf("exports.openDiamondGift"), source.indexOf("exports.", source.indexOf("exports.openDiamondGift") + 10));
+  assert.match(open, /roll < 0\.9999/);
+  assert.match(open, /0\.000000000000001/);
+  assert.match(open, /specialInventory\.torwartSwitchToken/);
+  assert.match(open, /inventory\.revenge/);
+  assert.match(open, /unassigned/);
+  assert.match(client, /openDiamondGift/);
+  assert.match(client, /Torwart-Switch-Token · Sonder-Token/);
+});
