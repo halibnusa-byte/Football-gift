@@ -562,3 +562,14 @@ test("Godzilla vs Kong reward requires a correct vote for the current event run"
   assert.match(award, /vote\.runId !== runId/);
   assert.match(award, /vote\.side !== video\.winner/);
 });
+
+test("Hacker and Robot scanner responses never expose the exact token ID", () => {
+  const start = source.indexOf("exports.awardEventReward");
+  const award = source.slice(start, source.indexOf("exports.", start + 10));
+  assert.match(award, /const hiddenReward = eventId === "hacker" \|\| eventId === "robot"/);
+  assert.match(award, /reward: hiddenReward \? null/);
+  assert.match(award, /hasReward: Boolean\(reward\)/);
+  assert.match(award, /rarityRank:/);
+  assert.match(client, /response\.data\.hasReward/);
+  assert.match(client, /response\.data\.rarityRank/);
+});
