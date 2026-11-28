@@ -466,3 +466,17 @@ test("Candy and Crystal matching use their own themed symbols", () => {
   assert.match(client, /crystal:\{title:'CRYSTAL CAVE · KRISTALL-KOMBI',mode:'pairs',pairs:\['💎','🔮','🟣'\]/);
   assert.match(client, /const icons=spec\.pairs\|\|\['🍬','🍭','🍫'\]/);
 });
+
+test("Lava Survival server-validates the timed path and consumes a shield only on a wrong path", () => {
+  const start = source.slice(source.indexOf("exports.startLavaChallenge"), source.indexOf("exports.openOceanChest"));
+  const choose = source.slice(source.indexOf("exports.chooseLavaPath"), source.indexOf("exports.openOceanChest"));
+  const awardStart = source.indexOf("exports.awardEventReward");
+  const award = source.slice(awardStart, source.indexOf("exports.", awardStart + 10));
+  assert.match(start, /safePath: crypto\.randomInt\(3\)/);
+  assert.match(choose, /Date\.now\(\) - Number\(challenge\.startedAt \|\| 0\) > 5000/);
+  assert.match(choose, /inventory\.lavaShield/);
+  assert.match(award, /eventId === "lava"/);
+  assert.match(award, /challenge\.shieldUsed !== true/);
+  assert.match(client, /chooseLavaPath/);
+  assert.match(client, /startLavaChallenge/);
+});
