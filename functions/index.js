@@ -1331,6 +1331,9 @@ exports.openMagicCube = onCall({ region: "europe-west1" }, async (request) => {
   if (Object.values(chances).some((v) => !Number.isFinite(Number(v)) || Number(v) < 0 || Number(v) > 1)) {
     throw new HttpsError("failed-precondition", "Der Hauptadmin muss zuerst die drei Würfel-Chancen einstellen.");
   }
+  if (new Set(Object.values(chances).map(Number)).size !== 3) {
+    throw new HttpsError("failed-precondition", "Die drei Zauberwürfel brauchen drei unterschiedliche Gewinnchancen.");
+  }
   const ref = db.ref("events/magicCubes/" + runId + "/" + auth.uid);
   const won = secureUnit() < Number(chances[cube]);
   const reward = won ? pickRoundPrize(1000000, "cube", { ...settings, footballTokenOwner: "reserved" }, player) : null;
