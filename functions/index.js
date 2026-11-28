@@ -228,8 +228,12 @@ exports.setActiveEvent = onCall({ region: "europe-west1" }, async (request) => {
     throw new HttpsError("permission-denied", "Dieses Event ist für Halb-Admins nicht freigegeben.");
   }
 
-  const currentEvent = await db.ref("events/active").get();
-  if (type === null && currentEvent.val() === "skibidi") {
+  const currentEventSnap = await db.ref("events").get();
+  const currentEventState = currentEventSnap.val() || {};
+  if (currentEventState.active === "racing" && type !== "racing") {
+    await finalizeRacingEvent(String(currentEventState.runId || currentEventState.startedAt || ""));
+  }
+  if (type === null && currentEventState.active === "skibidi") {
     await db.ref("settings/completedEvents/skibidi").set(true);
   }
   const now = Date.now();
@@ -1330,6 +1334,72 @@ async function finalizeLaserTagIfComplete() {
   await db.ref("events/laserFinished").set(true);
   return { finished: true, winners: winnerIds };
 }
+
+async function finalizeRacingEvent(runId) {
+  const results = (await db.ref("events/racingResults/" + runId).get()).val() || {};
+  const ranked = Object.entries(results).sort((a,b) => Number(a[1]?.timeMs || Infinity) - Number(b[1]?.timeMs || Infinity)).slice(0,3);
+  const winners = ranked.map(([uid]) => uid);
+  await db.ref("events/racingWinners/" + runId).set(winners);
+  const settings = (await db.ref("settings").get()).val() || {};
+  for (const [uid] of ranked) {
+    const playerRef = db.ref("players/" + uid);
+    const player = (await playerRef.get()).val();
+    if (!player || player.racingRewardRunId === runId) continue;
+    const reward = pickRoundPrize(1000000, "racing", { ...settings, footballTokenOwner: "reserved" }, player);
+    await playerRef.transaction((current) => {
+      if (!current || current.racingRewardRunId === runId) return;
+      const inventory = { ...(current.inventory || {}) };
+      const firstWon = { ...(current.firstWon || {}) };
+      if (reward) {
+        inventory[reward.id] = (Number(inventory[reward.id]) || 0) + 1;
+        if (!firstWon[reward.id]) firstWon[reward.id] = Date.now();
+      }
+      const claims = { ...(current.eventClaims || {}) };
+      const key = "racing:" + runId;
+      if (claims[key]) claims[key] = { ...claims[key], rewarded: true, rewardId: reward?.id || null, rewardedAt: Date.now() };
+      return { ...current, inventory, firstWon, eventClaims: claims, totalWins: (Number(current.totalWins) || 0) + (reward ? 1 : 0), racingRewardRunId: runId };
+    });
+  }
+  await db.ref("events/racingRewardsFinalized/" + runId).set(true);
+  return winners;
+}
+
+exports.startRacing = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "racing") throw new HttpsError("failed-precondition", "Racing-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const player = (await db.ref("players/" + auth.uid).get()).val();
+  if (!player?.eventClaims?.["racing:" + runId]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
+  const ref = db.ref("events/racingStarts/" + runId + "/" + auth.uid);
+  const tx = await ref.transaction((v) => v || { startedAt: Date.now() });
+  return { startedAt: tx.snapshot.val().startedAt };
+});
+
+exports.finishRacing = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "racing") throw new HttpsError("failed-precondition", "Racing-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const [startSnap, playerSnap] = await Promise.all([
+    db.ref("events/racingStarts/" + runId + "/" + auth.uid).get(),
+    db.ref("players/" + auth.uid).get()
+  ]);
+  if (!playerSnap.val()?.eventClaims?.["racing:" + runId]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
+  const startedAt = Number(startSnap.val()?.startedAt || 0);
+  if (!startedAt) throw new HttpsError("failed-precondition", "Starte zuerst das Rennen.");
+  const timeMs = Date.now() - startedAt;
+  if (timeMs < 1 || timeMs > 15000) throw new HttpsError("deadline-exceeded", "Die Rennzeit ist abgelaufen.");
+  const ref = db.ref("events/racingResults/" + runId + "/" + auth.uid);
+  const tx = await ref.transaction((v) => v || { timeMs, finishedAt: Date.now() });
+  const result = tx.snapshot.val();
+  const all = (await db.ref("events/racingResults/" + runId).get()).val() || {};
+  const ranking = Object.entries(all).sort((a,b) => Number(a[1]?.timeMs || Infinity) - Number(b[1]?.timeMs || Infinity)).slice(0,3)
+    .map(([uid, item], index) => ({ rank: index + 1, uid, timeMs: item.timeMs }));
+  return { timeMs: result.timeMs, ranking };
+});
 
 exports.joinLaserTag = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
