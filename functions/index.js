@@ -274,6 +274,9 @@ exports.redeemRoleCode = onCall({ region: "europe-west1", secrets: [roleCodeMapS
     throw new HttpsError("permission-denied", "Dieser Code ist an ein anderes Konto gebunden.");
   }
 
+  if (entry.role === "mainAdmin" && entry.uid !== auth.uid) {
+    throw new HttpsError("permission-denied", "Dieser Hauptadmin-Code ist an ein anderes Konto gebunden.");
+  }
   const role = entry.role;
   const roleName = role === "special" || role === "messageMan"
     ? String(entry.name || "").slice(0, 40)
