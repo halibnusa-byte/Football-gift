@@ -139,7 +139,7 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <button type="button" class="admin-nav-btn" data-target="admin-settings">⚙️ Event-Werte</button>
 <button type="button" class="admin-nav-btn" data-target="admin-actions">🎁 Aktionen</button>
 </nav>
-<div id="comebackAdminBox" class="hidden"><h3>🏆 COMEBACK ERA · Legendary Comeback Gift</h3><div class="muted">Vergibt einmalig an alle aktuell online befindlichen Spieler (= Teilnehmer am Comeback Admin Abuse) ein Legendary Comeback Gift und den Titel OG COMEBACK PLAYER. Wer es schon bekommen hat, wird übersprungen.</div><button id="cbGrant">COMEBACK GIFT AN TEILNEHMER VERGEBEN</button><div id="cbAdminMsg" class="hint"></div></div>
+<div id="comebackAdminBox" class="hidden"><h3>🏆 COMEBACK ERA · Legendary Comeback Gift</h3><div class="muted">Vergibt einmalig an alle aktuell online befindlichen Spieler (= Teilnehmer am Comeback Admin Abuse) ein Legendary Comeback Gift und den Titel OG COMEBACK PLAYER. Wer es schon bekommen hat, wird übersprungen.</div><button id="cbStart">COMEBACK ADMIN ABUSE STARTEN</button><button id="cbGrant">GIFTS AN TEILNEHMER VERGEBEN</button><div id="cbAdminMsg" class="hint"></div></div>
 <div id="serverControlBox" class="hidden"><h3>🔒 SERVER-KONTROLLE</h3><div id="srvStatus" class="srv unknown">STATUS WIRD GEPRÜFT …</div><div class="muted" id="srvMeta"></div><div class="row"><button id="srvLock" class="danger">SERVER SPERREN</button><button id="srvUnlock">SERVER FREIGEBEN</button></div><div id="srvMsg" class="hint"></div></div>
 <h3 id="admin-roles" class="admin-section-title">🔐 Rollen & Zugang</h3><h3>Admin-Code ändern</h3><input id="newAdminCode" type="password" placeholder="Neuer Admin-Code"><button id="changeAdminCode">Admin-Code speichern</button>
 <h3>Besonderen Spieler (dauerhaft 2× Glück)</h3><input id="specialName" placeholder="Spielername"><input id="newSpecialCode" type="password" placeholder="Code des besonderen Spielers"><button id="setSpecial">Besonderen Spieler speichern</button>
@@ -708,17 +708,17 @@ function renderComeback(){
 function watchComeback(){
  unsubs.push(onValue(path('players/'+uid),s=>{const v=s.val()||{};cbState=v.comebackGift||null;cbTitle=v.title||'';renderComeback();}));
 }
+async function startComeback(){
+ if(role!=='admin'||!isOwner)return msg('cbAdminMsg','Nur der Hauptadmin darf das.');
+ try{await httpsCallable(functions,'setComebackAdminAbuse')({active:true});msg('cbAdminMsg','Comeback Admin Abuse gestartet. Spieler, die jetzt beitreten, werden als Teilnehmer registriert.');}
+ catch(e){msg('cbAdminMsg',e?.message||'Start fehlgeschlagen.');}
+}
 async function grantComeback(){
  if(role!=='admin'||!isOwner)return msg('cbAdminMsg','Nur der Hauptadmin darf das.');
- try{
-  const on=(await get(path('online'))).val()||{};let n=0,skip=0;
-  for(const id of Object.keys(on)){
-   const tx=await runTransaction(path('players/'+id+'/comebackGift'),v=>v===null?'ready':undefined);
-   if(tx.committed){await update(path('players/'+id),{title:'OG COMEBACK PLAYER'});n++;}else skip++;
-  }
-  msg('cbAdminMsg',n+' Spieler erhalten das Gift'+(skip?', '+skip+' hatten es schon':'')+'.');
- }catch(e){msg('cbAdminMsg','Fehler: '+(e?.message||e));}
+ try{const r=await httpsCallable(functions,'grantComebackRewards')({});msg('cbAdminMsg',r.data.granted+' Comeback Gifts vergeben; '+r.data.skipped+' übersprungen.');}
+ catch(e){msg('cbAdminMsg',e?.message||'Vergabe fehlgeschlagen.');}
 }
+
 function openComeback(){
  if(cbState!=='ready')return;
  $('cbText').textContent='Wähle eine Karte.';$('cbClose').classList.remove('hidden');
@@ -729,15 +729,15 @@ async function pickCard(btn){
  if(cbBusy||cbState!=='ready')return;cbBusy=true;
  $('cbCards').querySelectorAll('button').forEach(b=>b.disabled=true);
  try{
-  const tx=await runTransaction(path('players/'+uid+'/comebackGift'),v=>v==='ready'?'opened':undefined);
-  if(!tx.committed)throw new Error('Das Gift wurde schon geöffnet.');
-  const prize=await rollAndAward(uid,1,'Comeback');
+  const response=await httpsCallable(functions,'openComebackGift')({});
+  const id=response.data.reward,prize=PRIZES.find(p=>p.id===id)||(id==='diamondGift'?{name:'Diamond-Geschenk',emoji:'💎'}:null);
   btn.classList.add('show');btn.textContent=prize?prize.emoji+' '+prize.name:'Niete';
   $('cbText').textContent=prize?'🎉 Du hast gewonnen!':'Diesmal eine Niete – aber du bleibst OG COMEBACK PLAYER!';
- }catch(e){$('cbText').textContent=e?.message||'Fehler beim Öffnen.';}
+  renderInventory();renderRanking();
+ }catch(e){$('cbText').textContent=e?.message||'Das Gift konnte nicht geöffnet werden.';$('cbCards').querySelectorAll('button').forEach(b=>b.disabled=false);}
  cbBusy=false;
 }
-$('cbGrant').onclick=grantComeback;$('cbOpen').onclick=openComeback;
+$('cbGrant').onclick=grantComeback;$('cbStart').onclick=startComeback;$('cbGrant').onclick=grantComeback;$('cbOpen').onclick=openComeback;
 $('cbClose').onclick=()=>$('cbModal').classList.remove('on');
 $('cbCards').querySelectorAll('button').forEach(b=>b.onclick=()=>pickCard(b));
 // ===== ENDE COMEBACK GIFT =====
