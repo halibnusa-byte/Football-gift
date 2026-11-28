@@ -283,3 +283,18 @@ test("Power Hours do not use invented weekday or clock schedules", () => {
   assert.doesNotMatch(source, /minute >= 900 && minute < 1020/);
   assert.match(client, /const isPower=\(\)=>false/);
 });
+
+test("event mini-games are implemented for every planned event from 15 through 50", () => {
+  for (const id of ["football","dinosaur","candy","castle","space","ghost","winter","egypt","superhero","racing","dragon","music","mystery","madness","secretgarden","elephantparade","pirate","carnival","ninja","toy","crystal","wildwest","bakery","comic","safari","cyber","wizard","moon","arcade","samurai","stoneage","masquerade","science","luxury","rainbow","timemachine"]) {
+    assert.ok(client.includes(id + ":{title:"), "missing playable mini-game spec: " + id);
+  }
+  assert.ok(client.includes("renderPlannedMiniGame(type,body,result,status,claim,win)"));
+  assert.doesNotMatch(client, /Eine interaktive Challenge wird erst aktiviert/);
+});
+
+test("shop items are consumed by a trusted server transaction", () => {
+  assert.match(source, /exports\.consumeShopItem\s*=\s*onCall/);
+  assert.match(source, /const allowed = new Set\(\["hackerScanner","robotScanner","magicRemix","goldenReportCard","lavaShield","alienRadar","pearlRadar"\]\)/);
+  assert.match(source, /shopInventory\[productId\] = remaining/);
+  assert.match(client, /httpsCallable\(functions,'consumeShopItem'\)/);
+});
