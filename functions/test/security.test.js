@@ -411,3 +411,18 @@ test("Wild West event includes a gold hunt followed by a puzzle duel", () => {
   assert.match(client, /Wähle eine Goldpfanne/);
   assert.match(client, /Gold gefunden! Löse das Rätsel/);
 });
+
+test("Turbo Challenge records server times and pays the top three when the event ends", () => {
+  const start = source.slice(source.indexOf("exports.startRacing"), source.indexOf("exports.finishRacing"));
+  const finish = source.slice(source.indexOf("exports.finishRacing"), source.indexOf("exports.joinLaserTag"));
+  const finalizer = source.slice(source.indexOf("async function finalizeRacingEvent"), source.indexOf("exports.startRacing"));
+  const setEvent = source.slice(source.indexOf("exports.setActiveEvent"), source.indexOf("exports.redeemRoleCode"));
+  assert.match(start, /racingStarts/);
+  assert.match(finish, /Date\.now\(\) - startedAt/);
+  assert.match(finish, /tapCount\) !== 12/);
+  assert.match(finalizer, /slice\(0,3\)/);
+  assert.match(finalizer, /racingRewardRunId/);
+  assert.match(setEvent, /finalizeRacingEvent/);
+  assert.match(client, /startRacing/);
+  assert.match(client, /finishRacing/);
+});
