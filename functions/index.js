@@ -189,7 +189,7 @@ exports.openPlayerGift = onCall({ region: "europe-west1" }, async (request) => {
       }
       const updatedRound = { ...latest.roundState, boxes, openedCount: latest.roundState.openedCount + 1 };
       return { ...latest, inventory, firstWon, totalWins: (Number(latest.totalWins) || 0) + (reward ? 1 : 0),
-        roundState: updatedRound, lastBoxes: boxes, opensThisRound: updatedRound.openedCount, roundUpdated: Date.now() };
+        roundState: updatedRound, lastBoxes: boxes, opensThisRound: updatedRound.openedCount, shopPoints: Math.max(0, Number(latest.shopPoints) || 0) + 1, roundUpdated: Date.now() };
     });
     if (!tx.committed) throw new HttpsError("aborted", "Die Geschenkbox konnte nicht sicher geöffnet werden. Bitte aktualisieren.");
     return { reward: reward?.id || null, openedCount: tx.snapshot.val().roundState.openedCount,
@@ -880,4 +880,51 @@ exports.joinGame = onCall({ region: "europe-west1" }, async (request) => {
   if (!tx.committed) throw new HttpsError("aborted", "Dein Spielerprofil konnte nicht gespeichert werden.");
   await db.ref("online/" + auth.uid).set({ name, at: Date.now() });
   return { player: tx.snapshot.val() };
+});
+
+
+// Persistent admin-configured shop. Prices are intentionally unset until the main admin configures them.
+const SHOP_PRODUCTS = ["hackerScanner", "robotScanner", "magicRemix", "goldenReportCard", "lavaShield", "alienRadar", "pearlRadar"];
+exports.saveShopConfig = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireRole(request, ["mainAdmin"]);
+  await assertMainAdminDuringLock(auth);
+  const products = request.data?.products;
+  if (!products || typeof products !== "object" || Array.isArray(products)) {
+    throw new HttpsError("invalid-argument", "Ungültige Shop-Konfiguration.");
+  }
+  const clean = {};
+  for (const id of SHOP_PRODUCTS) {
+    const item = products[id];
+    if (!item) continue;
+    const price = Number(item.price);
+    if (!Number.isSafeInteger(price) || price < 1 || price > 1000000) {
+      throw new HttpsError("invalid-argument", "Jeder Shop-Preis muss eine ganze Zahl zwischen 1 und 1.000.000 sein.");
+    }
+    clean[id] = { price, enabled: item.enabled !== false };
+  }
+  await db.ref("shop/products").set(clean);
+  await db.ref("shop/audit").push({ action: "config", by: auth.uid, at: Date.now(), productIds: Object.keys(clean) });
+  return { saved: Object.keys(clean).length };
+});
+exports.redeemShopItem = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const id = String(request.data?.productId || "");
+  if (!SHOP_PRODUCTS.includes(id)) throw new HttpsError("invalid-argument", "Unbekanntes Shop-Produkt.");
+  const product = (await db.ref("shop/products/" + id).get()).val();
+  if (!product || product.enabled !== true || !Number.isSafeInteger(Number(product.price)) || Number(product.price) < 1) {
+    throw new HttpsError("failed-precondition", "Dieses Produkt ist aktuell nicht im Shop verfügbar.");
+  }
+  const playerRef = db.ref("players/" + auth.uid);
+  const tx = await playerRef.transaction((player) => {
+    if (!player) return;
+    const points = Math.max(0, Number(player.shopPoints) || 0);
+    if (points < product.price) return;
+    const inventory = { ...(player.shopInventory || {}) };
+    inventory[id] = (Number(inventory[id]) || 0) + 1;
+    return { ...player, shopPoints: points - product.price, shopInventory: inventory };
+  });
+  if (!tx.committed) throw new HttpsError("failed-precondition", "Nicht genug Punkte oder Spielerprofil fehlt.");
+  await db.ref("shop/purchases").push({ uid: auth.uid, productId: id, price: product.price, at: Date.now() });
+  return { productId: id, price: product.price, balance: tx.snapshot.val().shopPoints, quantity: tx.snapshot.val().shopInventory[id] };
 });
