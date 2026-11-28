@@ -191,3 +191,18 @@ test("update lockdown rejects non-main-admin event, gift, announcement and chat 
     assert.ok(section.includes("assertMainAdminDuringLock(auth)"), fn + " should enforce update lockdown");
   }
 });
+
+test("joining the game checks server lockdown and preserves the existing player profile", () => {
+  assert.ok(source.includes("exports.joinGame = onCall"));
+  const join = source.slice(source.indexOf("exports.joinGame"), source.indexOf("exports.setActiveEvent"));
+  assert.ok(join.includes("assertMainAdminDuringLock(auth)"));
+  assert.ok(join.includes("...(current || {})"));
+  assert.ok(join.includes("current?.inventory || {}"));
+});
+
+test("browser join uses the server callable instead of direct profile and presence writes", () => {
+  const enter = client.slice(client.indexOf("async function enter"), client.indexOf("function subscribe"));
+  assert.ok(enter.includes("httpsCallable(functions,'joinGame')"));
+  assert.ok(!enter.includes("update(path('players/'"));
+  assert.ok(!enter.includes("set(path('online/'"));
+});
