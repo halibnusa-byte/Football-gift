@@ -776,7 +776,7 @@ async function renderEventChallenge(){
  }else if(type==='unicorn'){
   const visual=document.createElement('div');visual.className='event-visual pinata';
   visual.innerHTML='<div class="pinata-model"><div class="pinata-body"></div><div class="pinata-face">✦ ◉‿◉ ✦</div></div><div class="pinata-caption">🌈 RAINBOW PIÑATA 🌈</div><div class="muted">Ein Schlag pro Spieler · Die Piñata behält ihr eigenes Design</div>';body.append(visual);
-  const b=document.createElement('button');b.textContent='🪅 PINATA EINMAL SCHLAGEN';b.onclick=async()=>{b.disabled=true;if(!await claim()){status.textContent='Schon benutzt.';return;}await win('Die Piñata spuckt aus');status.textContent='Dein Schlag ist verbraucht.';};body.append(b);
+  const b=document.createElement('button');b.textContent='🪅 PINATA EINMAL SCHLAGEN';b.onclick=async()=>{b.disabled=true;if(!await claim()){status.textContent='Schon benutzt.';return;}try{await httpsCallable(functions,'hitUnicornPinata')({});await win('Die Piñata spuckt aus');status.textContent='Dein Schlag ist verbraucht.';}catch(e){result.textContent=e?.message||'Piñata-Schlag fehlgeschlagen.';}};body.append(b);
  }else if(type==='cube'){
   const cubeChances=['A','B','C'].map(k=>Number(settings['magicCube'+k+'Chance']));
   const configured=cubeChances.every(Number.isFinite)&&new Set(cubeChances).size===3;
