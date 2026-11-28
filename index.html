@@ -797,10 +797,24 @@ async function renderEventChallenge(){
   const ufoArea=document.createElement('div');ufoArea.className='cards';body.append(ufoArea);
   ['🛸 UFO Alpha','🛸 UFO Beta','🛸 UFO Gamma'].forEach((label,i)=>{const b=document.createElement('button');b.className='secondary';b.textContent=label;b.onclick=async()=>{if(selected)return;selected=true;if(!await claim())return;ufoArea.querySelectorAll('button').forEach(x=>x.disabled=true);q.textContent='UFO geöffnet. Gib den vierstelligen Rückhol-Code ein.';const inp=document.createElement('input');inp.placeholder='Vierstelliger Code';inp.inputMode='numeric';const go=document.createElement('button');go.textContent='GESCHENK ZURÜCKHOLEN';go.onclick=async()=>{if(claimed)return;claimed=true;go.disabled=true;if(i===safeIndex&&inp.value.trim()===answer)await win('Geschenk aus dem UFO zurückgeholt');else result.textContent='Falscher UFO-Ort oder Code – das Geschenk bleibt entführt.';};body.append(inp,go);};ufoArea.append(b);});
  }else if(type==='zombie'){
-  const q=document.createElement('p');q.textContent='THE LAST SURVIVOR: Drei von fünf Fläschchen enthalten Impfstoff. Zwei sind leer. Wähle genau eins.';body.append(q);
-  const safeSet=new Set();while(safeSet.size<3)safeSet.add(Math.floor(Math.random()*5));let chosen=false;
-  const labels=['🧪 Fläschchen 1','🧪 Fläschchen 2','🧪 Fläschchen 3','🧪 Fläschchen 4','🧪 Fläschchen 5'];
-  labels.forEach((label,i)=>{const b=document.createElement('button');b.className='secondary';b.textContent=label;b.onclick=async()=>{if(chosen)return;chosen=true;body.querySelectorAll('button').forEach(x=>x.disabled=true);if(!await claim())return;if(!safeSet.has(i)){result.textContent='Das Fläschchen war leer – keine Belohnung.';return;}q.textContent='Impfstoff gefunden! Eine Zombie-Hand greift nach dem Geschenk. Löse die gemeinsame Rettungsaufgabe: Wie viele Buchstaben hat ZOMBIE?';const task=document.createElement('p');task.textContent='Gemeinsame Aufgabe: Alle Spieler helfen mit und geben die Antwort 6 ein.';const inp=document.createElement('input');inp.placeholder='Antwort';inp.inputMode='numeric';const go=document.createElement('button');go.textContent='GESCHENK RETTEN';go.onclick=async()=>{go.disabled=true;if(inp.value.trim()==='6')await win('Zombie-Hand abgewehrt – Geschenk gerettet');else result.textContent='Die Zombie-Hand hat das Geschenk erwischt.';};body.append(task,inp,go);};body.append(b);});
+  const q=document.createElement('p');q.textContent='THE LAST SURVIVOR: Fünf geheimnisvolle Fläschchen. Drei enthalten Impfstoff, zwei sind leer. Wähle genau eins. Danach kann das Team gemeinsam das Geschenk retten.';body.append(q);
+  const choices=document.createElement('div');choices.className='cards';body.append(choices);
+  const task=document.createElement('div');task.className='status';body.append(task);
+  let chosen=false,rescueOwner=false,rewardRequested=false,rescueUnsub=null;
+  const rescueRef=path('events/zombieRescue/'+run);
+  const showTask=()=>{
+   task.textContent='🧟 ZOMBIE-HAND! Teamaufgabe: Wie viele Buchstaben hat das Wort ZOMBIE? Zwei Spieler müssen die richtige Antwort gemeinsam bestätigen.';
+   const input=document.createElement('input');input.placeholder='Antwort: 6';input.inputMode='numeric';
+   const send=document.createElement('button');send.textContent='🤝 TEAMANTWORT SENDEN';
+   send.onclick=async()=>{send.disabled=true;try{const r=await httpsCallable(functions,'submitZombieRescue')({answer:input.value});task.textContent='Teamantwort gespeichert: '+r.data.votes+' / 2. '+(r.data.completed?'Das Geschenk wurde gerettet!':'Ein weiterer Spieler muss helfen.');}catch(e){send.disabled=false;result.textContent=e?.message||'Teamantwort fehlgeschlagen.';}};
+   task.append(input,send);
+  };
+  for(let i=0;i<5;i++){
+   const b=document.createElement('button');b.className='secondary';b.textContent='🧪 Geheimnis-Fläschchen '+(i+1);
+   b.onclick=async()=>{if(chosen)return;chosen=true;choices.querySelectorAll('button').forEach(x=>x.disabled=true);if(!await claim()){task.textContent='Du hast dieses Event bereits gespielt.';return;}try{const r=await httpsCallable(functions,'chooseZombieVial')({index:i});rescueOwner=r.data.owner===true;if(r.data.safe){task.textContent=rescueOwner?'Impfstoff gefunden! Du besitzt das Geschenk. Bitte hilf dem Team bei der Rettung.':'Impfstoff gefunden! Ein anderer Spieler besitzt das Geschenk. Hilf bei der gemeinsamen Rettung.';}else{task.textContent='Dein Fläschchen war leer. Du kannst dem Team trotzdem bei der Rettung helfen.';}showTask();if(rescueUnsub)rescueUnsub();rescueUnsub=onValue(rescueRef,snap=>{const state=snap.val();if(!state)return;if(state.completed){task.textContent='🎉 Die gemeinsame Rettung ist geschafft!';if(state.ownerUid===uid&&!rewardRequested){rewardRequested=true;win('Zombie-Hand abgewehrt – Geschenk gerettet');}else if(state.ownerUid!==uid)task.textContent='🎉 Die gemeinsame Rettung ist geschafft! Der Geschenkbesitzer erhält die Belohnung.';}else{task.dataset.votes=String(Object.keys(state.votes||{}).length);}});}catch(e){chosen=false;task.textContent=e?.message||'Fläschchen konnte nicht gewählt werden.';choices.querySelectorAll('button').forEach(x=>x.disabled=false);}};
+   choices.append(b);
+  }
+  status.textContent='Die Fläschchen-Auswahl wird serverseitig geprüft. Die Rettung braucht zwei richtige Teamantworten.';
  }else if(type==='multiverse'){
   const q=document.createElement('p');q.textContent='DIMENSION BREAK: Alle 30 Sekunden wechselt die Welt. Springe durch einen Dimensionsriss und meistere jede Dimension.';body.append(q);
   const timer=document.createElement('div');timer.className='status';body.append(timer);
