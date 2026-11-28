@@ -219,5 +219,6 @@ test("gift rounds are created and opened only through server-authoritative calla
   assert.match(client, /httpsCallable\(functions,'startPlayerRound'\)/);
   assert.match(client, /httpsCallable\(functions,'openPlayerGift'\)/);
   assert.doesNotMatch(client, /async function saveRound\(\)\{if\(!uid\)return;await update\(path\('players\/'\+uid\)/);
-  assert.doesNotMatch(client, /async function openBox\(i\)[\s\S]*?await rollAndAward\(uid/);
+  const openBox = client.slice(client.indexOf("async function openBox(i)"), client.indexOf("async function enter"));
+  assert.doesNotMatch(openBox, /rollAndAward/);
 });
