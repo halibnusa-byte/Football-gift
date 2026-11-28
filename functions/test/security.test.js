@@ -120,3 +120,22 @@ test("browser announcement UI uses the trusted callable instead of direct databa
   assert.ok(section.includes("httpsCallable(functions,'sendAnnouncement')"));
   assert.ok(!section.includes("set(path('announcements"));
 });
+
+test("live chat mutations are server-authoritative and role-checked", () => {
+  assert.ok(source.includes("exports.sendChatMessage = onCall"));
+  assert.ok(source.includes("exports.deleteChatMessage = onCall"));
+  assert.ok(source.includes("exports.reportChatMessage = onCall"));
+  assert.ok(source.includes("exports.moderateChatMessage = onCall"));
+  assert.ok(source.includes('requireRole(request, ["mainAdmin"])'));
+  assert.ok(source.includes("messageReports/"));
+  assert.ok(source.includes("chatRateLimit/"));
+});
+
+test("browser live chat uses callable mutations and renders text safely", () => {
+  assert.ok(client.includes("httpsCallable(functions,'sendChatMessage')"));
+  assert.ok(client.includes("httpsCallable(functions,'deleteChatMessage')"));
+  assert.ok(client.includes("httpsCallable(functions,'reportChatMessage')"));
+  assert.ok(client.includes("httpsCallable(functions,'moderateChatMessage')"));
+  assert.ok(client.includes("body.textContent=String(m.text)"));
+  assert.ok(client.includes('id="liveChatPanel"'));
+});
