@@ -856,7 +856,7 @@ $('saveEventOdds').onclick=async()=>{const v={blitzChance:Number($('blitzChance'
 $('saveDiamondChance').onclick=async()=>{const v=Number($('diamondChance').value);try{await httpsCallable(functions,'saveGameSettings')({diamondChance:v});msg('adminMsg','Diamond-Chance gespeichert.');}catch(e){msg('adminMsg',e?.message||'Diamond-Chance konnte nicht gespeichert werden.');}};
 $('sendAnnouncement').onclick=()=>adminAnnouncement().catch(e=>msg('adminMsg',e.message));
 $('spawnGalaxy').onclick=()=>spawnGalaxy().catch(e=>msg('adminMsg',e.message));
-$('spawnBlitz').onclick=async()=>{if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Blitze manuell auslösen.');const scope=$('blitzScope').value;let targets;if(scope==='self')targets=[[uid,player]];else targets=await resolveTargets(scope,$('blitzTarget').value);for(const [id,p] of targets)await update(path('players/'+id),{pendingBlitz:Number(p.pendingBlitz||0)+1});msg('adminMsg','Blitz vorgemerkt. Der Einschlag erscheint in der nächsten Runde.');};
+$('spawnBlitz').onclick=async()=>{if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Blitze manuell auslösen.');try{const r=await httpsCallable(functions,'queueBlitz')({scope:$('blitzScope').value,targetName:$('blitzTarget').value.trim()});msg('adminMsg','Blitz für '+r.data.queued+' Spieler vorgemerkt.');}catch(e){msg('adminMsg',e?.message||'Blitz konnte nicht vorgemerkt werden.');}};
 $('awardBtn').onclick=()=>grantTokens(false);$('awardRandom').onclick=()=>grantTokens(true);$('giftBtn').onclick=sendGift;$('resetPlayer').onclick=()=>resetData().catch(e=>msg('adminMsg',e.message));
 $('watchBtn').onclick=watch;
 
