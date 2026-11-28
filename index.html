@@ -270,19 +270,30 @@ function renderBoxes(){
  $('opens').textContent=opened.length+' / 3';$('roundText').textContent=opened.length>=3?'Runde abgeschlossen – neu mischen!':'Du kannst noch '+(3-opened.length)+' Box(en) öffnen.';
  $('nextRound').disabled=opened.length!==3;$('rareLabel').textContent=rareType?rareType.name+'-Box ist dabei!':'Normale Runde';
 }
-function buildRound(){
- opened=[];rareType=null;boxes=Array.from({length:15},(_,i)=>({id:i,rare:false,galaxy:false,opened:false}));
- if(Math.random()<.01){rareType=rarePick();const i=Math.floor(Math.random()*15);boxes[i].rare=true;boxes[i].rareType=rareType.id;}
- const pendingBlitz=Number(player.pendingBlitz||0);if(pendingBlitz>0){const i=Math.floor(Math.random()*15);boxes[i].blitz=true;player.pendingBlitz=pendingBlitz-1;update(path('players/'+uid),{pendingBlitz:player.pendingBlitz}).catch(()=>{});}
- const pending=Number(player.pendingGalaxy||0);if(pending>0){const i=boxes.findIndex(b=>!b.rare);if(i>=0){boxes[i].galaxy=true;player.pendingGalaxy=pending-1;update(path('players/'+uid),{pendingGalaxy:player.pendingGalaxy}).catch(()=>{});}}
- renderBoxes();saveRound();
+async function buildRound(){
+ if(!uid)return;
+ $('result').textContent='Neue Runde wird vorbereitet…';
+ const response=await httpsCallable(functions,'startPlayerRound')({});
+ const round=response.data.round;
+ boxes=round.boxes.map((b,i)=>({...b,id:i}));opened=boxes.filter(b=>b.opened).map(b=>b.id);
+ rareType=round.rareType?RARE.find(r=>r.id===round.rareType)||null:null;
+ renderBoxes();
 }
-async function saveRound(){if(!uid)return;await update(path('players/'+uid),{lastBoxes:boxes.map((b,i)=>({opened:opened.includes(i),rare:b.rare,galaxy:b.galaxy,blitz:b.blitz})),lastRareType:rareType?.id||null,opensThisRound:opened.length,roundUpdated:Date.now()}).catch(()=>{})}
+async function saveRound(){ /* Rundenstatus wird ausschließlich serverseitig gespeichert. */ }
 async function openBox(i){
  if(opened.length>=3||opened.includes(i)||Date.now()>EXPIRY.getTime())return;
- opened.push(i);boxes[i].opened=true;renderBoxes();$('result').textContent='Die Box wird geöffnet…';
- await rollAndAward(uid,(boxes[i].rare?rareType.mult:1)*(boxes[i].blitz?10:1),'Box',!!boxes[i].galaxy);if(boxes[i].blitz)$('result').textContent='⚡ BLITZ! 10× Glück! '+$('result').textContent;
- await saveRound();renderInventory();renderRanking();
+ $('result').textContent='Die Box wird sicher geöffnet…';
+ try{
+  const response=await httpsCallable(functions,'openPlayerGift')({index:i,roundId:player.roundState?.roundId});
+  const data=response.data;
+  boxes=data.round.boxes.map((b,j)=>({...b,id:j}));opened=boxes.filter(b=>b.opened).map(b=>b.id);
+  if(data.reward){const prize=prizeById(data.reward);$('result').textContent='🎉 '+prize.emoji+' '+prize.name+'!';$('result').classList.add('win');}
+  else $('result').textContent='Niete! Vielleicht beim nächsten Mal.';
+  if(data.blitz)$('result').textContent='⚡ BLITZ! 10× Glück! '+$('result').textContent;
+  if(data.galaxy)$('result').textContent='🌌 Galaxy-Geschenk geöffnet! '+$('result').textContent;
+  player.roundState=data.round;player.lastBoxes=data.round.boxes;player.opensThisRound=data.openedCount;
+  renderBoxes();renderInventory();renderRanking();
+ }catch(e){$('result').textContent=e?.message||'Öffnen fehlgeschlagen.';const fresh=await get(path('players/'+uid));if(fresh.exists()){player=fresh.val();if(player.roundState){boxes=player.roundState.boxes;opened=boxes.filter(b=>b.opened).map(b=>b.id);rareType=player.roundState.rareType?RARE.find(r=>r.id===player.roundState.rareType):null;renderBoxes();}}}
 }
 async function enter(){
  name=clean($('playerName').value);if(name.length<2)return msg('loginMsg','Bitte mindestens 2 Zeichen eingeben.');
@@ -291,10 +302,8 @@ async function enter(){
   const joined=await httpsCallable(functions,'joinGame')({name});
   player=joined.data.player;name=player.name;
   show('loginPanel',false);show('app',true);$('hello').textContent='Willkommen, '+name+'!';
-  if(Array.isArray(player.lastBoxes)&&player.lastBoxes.length===15){
-    boxes=player.lastBoxes.map((b,i)=>({...b,id:i,opened:!!b.opened}));opened=boxes.filter(b=>b.opened).map(b=>b.id);
-    rareType=boxes.some(b=>b.rare)?RARE.find(r=>r.id===player.lastRareType)||RARE[0]:null;
-  }else buildRound();
+  if(player.roundState?.boxes?.length===15){boxes=player.roundState.boxes.map((b,i)=>({...b,id:i}));opened=boxes.filter(b=>b.opened).map(b=>b.id);rareType=player.roundState.rareType?RARE.find(r=>r.id===player.roundState.rareType)||null:null;}
+  else await buildRound();
   renderBoxes();subscribe();watchComeback();renderInventory();renderRanking();await addActivity('ist dem Spiel beigetreten');await roleRefresh();await ownerAutoRole();applyServerState();
  }catch(e){msg('loginMsg','Verbindung fehlgeschlagen: '+e.message)}
 }
@@ -800,7 +809,7 @@ onAuthStateChanged(auth,u=>{if(u)startServerWatch();else signInAnonymously(auth)
 // ===== ENDE SERVER LOCKDOWN 1.0 =====
 
 $('joinBtn').onclick=enter;$('playerName').addEventListener('keydown',e=>{if(e.key==='Enter')enter()});
-$('nextRound').onclick=()=>{if(opened.length===3){buildRound();$('result').textContent='Neue Runde! Viel Glück.';saveRound();}};
+$('nextRound').onclick=async()=>{if(opened.length===3){try{await buildRound();$('result').textContent='Neue Runde! Viel Glück.';}catch(e){$('result').textContent=e?.message||'Neue Runde fehlgeschlagen.';}}};
 
 // Admin-Panel 2.0: schnelle Navigation zwischen den Bereichen
  document.querySelectorAll('.admin-nav-btn').forEach(btn=>btn.addEventListener('click',()=>{
