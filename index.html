@@ -690,30 +690,27 @@ async function renderEventChallenge(){
   fire.onclick=async()=>{try{const r=await httpsCallable(functions,'scoreLaserTag')({});result.textContent='Treffer! '+r.data.score+' Punkte';}catch(e){result.textContent=e?.message||'Treffer nicht gewertet.';}};
   status.textContent='Gemeinsame Browser-Arena: 30 Sekunden Skin-Auswahl, danach 5 Minuten. Bei Gleichstand gilt Golden Point; Die Top 3 werden nach Event-Ende angezeigt. Das ist eine gemeinsame Punkte-Arena, keine echte 3D-Teleport-Lobby.';
   const finish=setInterval(async()=>{if(Date.now()-Number(eventState.startedAt||Date.now())>=330000){clearInterval(finish);const arr=Object.entries((await get(arenaRef)).val()||{}).sort((a,b)=>(b[1].score||0)-(a[1].score||0));status.textContent='LaserTag beendet – Top 3: '+arr.slice(0,3).map(([id,v],i)=>(i+1)+'. '+(v.name||'Spieler')+' ('+(v.score||0)+' Punkte)').join(' · ');}},2000);
- }else if(['ocean','zombie','multiverse'].includes(type)){
-  const games={
-   ocean:{q:'Welche dieser Kreaturen lebt im Meer?',a:['Delfin','Kamel','Adler'],correct:0},
-   zombie:{q:'Was hilft in einem Fantasy-Spiel am besten gegen eine Zombie-Welle?',a:['Teamarbeit','Schlaflied','Schneemann'],correct:0},
-   multiverse:{q:'Wähle dein Universum:',a:['Kristallwelt','Roboterwelt','Drachenwelt'],correct:null},
-   football:{q:'Wie viele Spieler stehen pro Team normalerweise zu Beginn eines Fußballspiels auf dem Feld?',a:['9','10','11'],correct:2},
-   dinosaur:{q:'Welcher Dinosaurier war ein Pflanzenfresser?',a:['Triceratops','Tyrannosaurus Rex','Velociraptor'],correct:0},
-   candy:{q:'Wähle deine Candy-Überraschung:',a:['Gummibärchen','Schokoladenstern','Lolli'],correct:null},
-   castle:{q:'Was gehört typischerweise zu einer Burg?',a:['Zugbrücke','U-Boot','Raumschiff'],correct:0},
-   space:{q:'Welcher Planet ist der größte in unserem Sonnensystem?',a:['Mars','Jupiter','Venus'],correct:1},
-   ghost:{q:'Welches Wort passt am besten zu einem freundlichen Geist?',a:['Spuk','Hilfe','Freund'],correct:2},
-   winter:{q:'Bei welcher Temperatur gefriert Wasser ungefähr?',a:['0 °C','20 °C','50 °C'],correct:0},
-   egypt:{q:'Wie heißen die berühmten dreieckigen Königsgräber in Ägypten?',a:['Pyramiden','Pagoden','Leuchttürme'],correct:0},
-   superhero:{q:'Wähle deine Helden-Mission:',a:['Stadt retten','Kuchen backen','Sterne zählen'],correct:null},
-   racing:{q:'Tippe so schnell wie möglich fünfmal auf START!',a:['START'],correct:null},
-   dragon:{q:'Wähle deinen Drachen:',a:['Feuerdrache','Eisdrache','Sturmdrache'],correct:null},
-   music:{q:'Welches Muster hat einen gleichmäßigen Beat?',a:['Klatsch – Pause – Klatsch – Pause','Nur lange Pause','Unregelmäßiges Durcheinander'],correct:0},
-   mystery:{q:'Hinter welcher Tür steckt dein Glück?',a:['Tür 1','Tür 2','Tür 3'],correct:null}
-  };
-  const g=games[type],q=document.createElement('p');q.textContent=g.q;body.append(q);let used=false;
-  if(type==='racing'){const b=document.createElement('button');b.textContent='START';let count=0;b.onclick=async()=>{if(used)return;count++;b.textContent='Noch '+(5-count)+'…';if(count>=5){used=true;b.disabled=true;if(await claim()){if(Math.random()<.65)await win('Rennen geschafft');else result.textContent='🏎️ Knapp verloren – Niete.';}}};body.append(b);status.textContent='Ein Klick zählt pro Tastendruck. Fünf Klicks beenden die Challenge.';}
-  else{g.a.forEach((v,i)=>{const b=document.createElement('button');b.className='secondary';b.textContent=v;b.onclick=async()=>{if(used)return;used=true;body.querySelectorAll('button').forEach(x=>x.disabled=true);if(!await claim())return;const correct=g.correct===null?Math.random()<.5:i===g.correct;if(correct)await win('Challenge geschafft');else result.textContent='Diesmal keine Belohnung.';};body.append(b);});}
-  if(type==='multiverse'||type==='candy'||type==='superhero'||type==='dragon'||type==='mystery')status.textContent='Bei dieser Auswahl entscheidet das Event-Glück über die Belohnung.';
- }else if(['football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery','madness','secretgarden','elephantparade','pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type)){
+ }else if(type==='ocean'){
+  const q=document.createElement('p');q.textContent='THE LOST TREASURE: Drei versunkene Schatztruhen warten auf dich. Wähle genau eine.';body.append(q);
+  let used=false;
+  for(let i=1;i<=3;i++){
+   const chest=document.createElement('button');chest.className='secondary';chest.textContent='🧰 Schatztruhe '+i;
+   chest.onclick=async()=>{if(used)return;used=true;body.querySelectorAll('button').forEach(x=>x.disabled=true);if(await claim())await win('Schatztruhe geöffnet');};
+   body.append(chest);
+  }
+  status.textContent='Die Truhe kann ein bestehendes Token oder eine Niete enthalten.';
+ }else if(type==='zombie'){
+  const q=document.createElement('p');q.textContent='THE LAST SURVIVOR: Drei Impfstoff-Fläschchen und fünf geheimnisvolle Fläschchen gehören zur Challenge.';body.append(q);
+  for(let i=1;i<=5;i++){const vial=document.createElement('span');vial.textContent='🧪 ';vial.style.fontSize='30px';body.append(vial);}
+  status.textContent='Die genaue sichere/leer-Verteilung und die gemeinsame Zombie-Hand-Aufgabe sind noch nicht serverseitig umgesetzt. Deshalb wird hier noch keine falsche Gewinnchance angezeigt.';
+ }else if(type==='multiverse'){
+  const q=document.createElement('p');q.textContent='DIMENSION BREAK: Die Welt wechselt alle 30 Sekunden die Dimension. Dimensionsrisse führen in andere Welten.';body.append(q);
+  const timer=document.createElement('div');timer.className='status';body.append(timer);
+  const started=Date.now();let interval=null;
+  const draw=()=>{const elapsed=Math.floor((Date.now()-started)/1000);timer.textContent='Nächster Dimensionswechsel in '+(30-(elapsed%30))+' Sekunden';};
+  draw();interval=setInterval(()=>{if(!body.isConnected){clearInterval(interval);return;}draw();},1000);
+  status.textContent='Die einzelnen Dimensions-Überraschungsmechaniken und das geheime Dimensionsgeschenk benötigen noch ihre festgelegten Regeln.';
+  }else if(['football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery','madness','secretgarden','elephantparade','pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type)){
   const concepts={
    football:'Stadion-Event mit GOLDEN CUP und Elfmeter-Challenge.',
    dinosaur:'JURASSIC TREASURE: Dinosaurier-Eier ausbrüten sowie Fossilien sammeln und kombinieren.',
