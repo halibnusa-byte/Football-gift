@@ -636,12 +636,12 @@ function renderPlannedMiniGame(type,body,result,status,claim,win){
   space:{title:'GALACTIC MISSION · PLANETENROUTE',mode:'order',prompt:'Ordne die drei Planeten von der Sonne aus: Erde, Merkur, Venus.',items:['Erde','Merkur','Venus'],answer:['Merkur','Venus','Erde'],success:'Raumschiff sicher am Ziel gelandet!'},
   ghost:{title:'HAUNTED GIFTS · GEISTER-ILLUSION',mode:'cups',prompt:'Die Geister tauschen die Geschenk-Boxen. Finde die Box mit dem leuchtenden Geist.',success:'Du hast die echte Geister-Box gefunden!'},
   winter:{title:'FROZEN KINGDOM · EIS-RÄTSEL',mode:'quiz',prompt:'Was lässt Eis normalerweise schmelzen?',options:['Wärme','Schatten','Schnee'],answer:0,success:'Der Eisblock ist geschmolzen!'},
-  egypt:{title:"THE PHARAOH'S SECRET · HIEROGLYPHEN",mode:'quiz',prompt:'Das Sonnensymbol steht für welchen Himmelskörper?',options:['Mond','Sonne','Mars'],answer:1,success:'Die Hieroglyphe ist entschlüsselt!'},
+  egypt:{title:"THE PHARAOH'S SECRET · HIEROGLYPHEN",mode:'hieroglyph',prompt:'Entschlüssle die Zeichen mithilfe der Hieroglyphen-Tafel.',success:'Die Hieroglyphen sind entschlüsselt!'},
   superhero:{title:'HERO ACADEMY · HELDEN-TEST',mode:'steps',prompt:'Schließe deine Helden-Ausbildung ab.',steps:['🛡️ Schutzschild aktivieren','⚡ Energie sammeln','🦸 Zivilisten retten'],success:'Heldenprüfung bestanden!'},
   racing:{title:'TURBO CHALLENGE · ZEITRENNEN',mode:'race',prompt:'Drücke den Turbo-Knopf 12-mal in höchstens 15 Sekunden. Die drei schnellsten Fahrer erhalten ein Geschenk.',target:12,seconds:15,success:'ZIELLINIE! Deine Rennzeit ist gespeichert.'},
   dragon:{title:'DRAGON EGGS · DRACHENBRUT',mode:'steps',prompt:'Brüte das Drachenei aus und kombiniere seine Eigenschaften.',steps:['🥚 Drachenei wärmen','🔥 Feuer-Attribut entdecken','🐉 Drachenflügel kombinieren'],success:'Dein Drache ist geschlüpft!'},
   music:{title:'BEAT MASTER · RHYTHMUS',mode:'sequence',prompt:'Merke dir den Rhythmus und wiederhole ihn.',sequence:['🥁','🎵','👏','🎵'],success:'Beat perfekt getroffen!'},
-  mystery:{title:'THE UNKNOWN · FALLAKTE',mode:'quiz',prompt:'Ein Schlüssel ist nass, obwohl es nicht geregnet hat. Wo könnte er gewesen sein?',options:['Im Wasser','Im Bücherregal','Im Ofen'],answer:0,success:'Fall gelöst!'},
+  mystery:{title:'THE UNKNOWN · FALLAKTE',mode:'casefile',prompt:'Untersuche die Hinweise und finde heraus, wer den geheimen Gartenschlüssel genommen hat.',success:'Fall gelöst!'},
   madness:{title:'60 SECOND MADNESS',mode:'quizset',prompt:'Beantworte drei schnelle Fragen innerhalb von 60 Sekunden.',questions:[['Wie viele Minuten hat eine Stunde?',['30','60','100'],1],['Welche Zahl ist gerade?',['7','9','12'],2],['Was ist 8 × 3?',['24','18','32'],0]],success:'Alle Aufgaben in 60 Sekunden geschafft!'},
   secretgarden:{title:'SECRET GARDEN · MAGISCHE PFLANZE',mode:'steps',prompt:'Pflanze und pflege deinen magischen Samen.',steps:['🌱 Samen pflanzen','💧 Pflanze gießen','🌸 Blüte ernten'],success:'Deine magische Pflanze ist gewachsen!'},
   elephantparade:{title:'ELEPHANT PARADE · SORTIEREN',mode:'order',prompt:'Sortiere die Elefanten nach ihren Farben: Blau, Grün, Rot.',items:['Rot','Blau','Grün'],answer:['Blau','Grün','Rot'],success:'Alle Elefanten stehen in der richtigen Parade!'},
@@ -675,7 +675,13 @@ function renderPlannedMiniGame(type,body,result,status,claim,win){
  const finish=async()=>{if(done)return;done=true;controls.querySelectorAll('button').forEach(b=>b.disabled=true);await win(spec.success);};
  const fail=msg=>{if(done)return;done=true;controls.querySelectorAll('button').forEach(b=>b.disabled=true);result.textContent=msg||'Challenge nicht geschafft – diesmal keine Belohnung.';};
  const button=(label,fn)=>{const b=document.createElement('button');b.className='secondary';b.textContent=label;b.onclick=fn;controls.append(b);return b;};
- if(spec.mode==='story'){
+ if(spec.mode==='casefile'){
+  panel.textContent='FALLAKTE 07 · HINWEISE: Erde liegt vor dem Gewächshaus. Am Schlüssel steckt feuchte Erde. In der Bäckerei liegt nur Mehl, beim Astronauten Sternenstaub.';
+  [['🌱 Gärtner','Die Erde an Schuhen und Schlüssel passt zum Gewächshaus.'],['🥖 Bäcker','Es gibt keine Mehlspuren am Schlüssel.'],['🚀 Astronaut','Sternenstaub passt nicht zu den Gartenspuren.']].forEach(([suspect,clue],i)=>button(suspect,async()=>{if(!await begin())return;if(i===0){panel.textContent='🔎 '+clue;await finish();}else fail('Die Hinweise passen nicht zu dieser Person.');}));
+ }else if(spec.mode==='hieroglyph'){
+  panel.textContent='📜 HIEROGLYPHEN-TAFEL: ☀️ = Sonne · 🐦 = Vogel · 🌊 = Wasser. Entschlüssle: ☀️ 🐦 🌊';
+  ['Mond – Vogel – Wasser','Sonne – Vogel – Wasser','Sonne – Schlange – Feuer'].forEach((answer,i)=>button(answer,async()=>{if(!await begin())return;if(i===1)await finish();else fail('Die Zeichen wurden falsch gelesen.');}));
+ }else if(spec.mode==='story'){
   panel.textContent='SEITE 1 · Dein Held entdeckt einen Freund, der in einem eingestürzten Comic-Labor feststeckt. Was tust du?';
   const first=[['📞 Rettungsteam rufen',0],['🏃 Allein hineinrennen',1],['🚪 Weggehen',2]];
   first.forEach(([label,choice])=>button(label,async()=>{if(!await begin())return;if(choice!==0){fail('Diese Entscheidung führt zu einem anderen, schlechten Story-Ende.');return;}panel.textContent='SEITE 2 · Das Rettungsteam ist da! Wie findet ihr den sicheren Weg?';controls.innerHTML='';[['💡 Leuchtsignal setzen','Das Team folgt deinem Lichtsignal und findet den sicheren Eingang.'],['🗺️ Fluchtweg auf der Karte markieren','Du markierst den Weg. Gemeinsam erreicht ihr deinen Freund.']].forEach(([label,ending])=>button(label,async()=>{panel.textContent='SEITE 3 · '+ending;await finish();}));}));
