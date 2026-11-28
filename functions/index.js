@@ -1264,7 +1264,7 @@ exports.chooseAlienUfo = onCall({ region: "europe-west1" }, async (request) => {
   const player = (await db.ref("players/" + auth.uid).get()).val();
   if (!player?.eventClaims?.["alien:" + runId]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
   const ref = db.ref("events/alienChallenges/" + runId + "/" + auth.uid);
-  const tx = await ref.transaction((c) => c && !c.chosenIndex && c.recovered !== true ? { ...c, chosenIndex: index } : undefined);
+  const tx = await ref.transaction((c) => c && !Number.isInteger(c.chosenIndex) && c.recovered === undefined ? { ...c, chosenIndex: index } : undefined);
   if (!tx.committed) throw new HttpsError("already-exists", "Du hast bereits ein UFO gewählt.");
   return { chosen: true };
 });
