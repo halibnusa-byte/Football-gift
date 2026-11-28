@@ -508,3 +508,15 @@ test("Alien recovery code accepts exactly four numeric digits", () => {
   const recover = source.slice(source.indexOf("exports.recoverAlienGift"), source.indexOf("exports.openOceanChest"));
   assert.match(recover, /if \(!\/\^\\d\{4\}\$\//);
 });
+
+test("Golden Cup goalkeeper choice and penalty outcome are server-authoritative", () => {
+  const start = source.slice(source.indexOf("exports.startPenaltyChallenge"), source.indexOf("async function finalizeRacingEvent"));
+  const shoot = source.slice(source.indexOf("exports.shootPenalty"), source.indexOf("async function finalizeRacingEvent"));
+  const awardStart = source.indexOf("exports.awardEventReward");
+  const award = source.slice(awardStart, source.indexOf("exports.", awardStart + 10));
+  assert.match(start, /keeperPath: crypto\.randomInt\(3\)/);
+  assert.match(shoot, /path !== challenge\.keeperPath/);
+  assert.match(shoot, /challenge\.completed/);
+  assert.match(award, /eventId === "football"/);
+  assert.match(client, /shootPenalty/);
+});
