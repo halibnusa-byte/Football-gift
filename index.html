@@ -594,7 +594,7 @@ async function resetData(){
  }catch(e){msg('adminMsg',e?.message||'Zurücksetzen fehlgeschlagen.');}
 }
 async function renderEventChallenge(){
- const type=eventState.active,available=['unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type);
+ const type=eventState.active,available=['unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery','blitz','plants','elephant','pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type);
  show('eventChallengePanel',available);if(!available||!uid)return;
  const body=$('eventChallengeBody');body.innerHTML='';$('eventChallengeTitle').textContent=EVENT_INFO[type]?.[0]||'Event';
  const descriptions={unicorn:'Wähle deinen Einhorn-Drop. Jeder Spieler kann pro Event einmal eine Belohnung erhalten.',cube:'Löse das Rätsel. Ein Versuch pro Event.',skibidi:'Klicke dich durch fünf Boss-Stufen. Jeder Boss hat einen eigenen Timer von zwei Minuten.',godzilla:'Sieh den Videoclip. Er stoppt mitten im Kampf. Danach tippst du einmal auf Godzilla oder Kong.',time:'Wähle einmal Vergangenheit, Gegenwart oder Zukunft.',school:'Beantworte die Schulfrage. Richtig: normales Geschenk. Falsch: nichts.',lava:'Wähle eine von drei Lava-Kisten. Ein Versuch.',alien:'Löse das Alien-Rätsel. Ein Versuch.',ocean:'Wähle eine Schatztruhe aus dem Ozean.',zombie:'Beantworte die Zombie-Frage.',multiverse:'Wähle dein Universum.',football:'Beantworte die Fußballfrage.',dinosaur:'Erkenne den Dinosaurier.',candy:'Wähle eine Süßigkeiten-Überraschung.',castle:'Löse das Burg-Rätsel.',space:'Wähle einen Planeten.',ghost:'Löse das Geister-Rätsel.',winter:'Beantworte die Winterfrage.',egypt:'Löse das Pyramiden-Rätsel.',superhero:'Wähle deine Helden-Mission.',racing:'Starte dein kurzes Reaktionsrennen.',dragon:'Wähle einen Drachentyp.',music:'Erkenne die Musikrichtung anhand eines Rhythmus-Musters.',mystery:'Wähle eine geheimnisvolle Tür.'};
@@ -651,7 +651,7 @@ async function renderEventChallenge(){
   fire.onclick=async()=>{try{const r=await httpsCallable(functions,'scoreLaserTag')({});result.textContent='Treffer! '+r.data.score+' Punkte';}catch(e){result.textContent=e?.message||'Treffer nicht gewertet.';}};
   status.textContent='Gemeinsame Browser-Arena: 30 Sekunden Skin-Auswahl, danach 5 Minuten. Bei Gleichstand gilt Golden Point; Die Top 3 werden nach Event-Ende angezeigt. Das ist eine gemeinsame Punkte-Arena, keine echte 3D-Teleport-Lobby.';
   const finish=setInterval(async()=>{if(Date.now()-Number(eventState.startedAt||Date.now())>=330000){clearInterval(finish);const arr=Object.entries((await get(arenaRef)).val()||{}).sort((a,b)=>(b[1].score||0)-(a[1].score||0));status.textContent='LaserTag beendet – Top 3: '+arr.slice(0,3).map(([id,v],i)=>(i+1)+'. '+(v.name||'Spieler')+' ('+(v.score||0)+' Punkte)').join(' · ');}},2000);
- }else if(['ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type)){
+ }else if(['ocean','zombie','multiverse'].includes(type)){
   const games={
    ocean:{q:'Welche dieser Kreaturen lebt im Meer?',a:['Delfin','Kamel','Adler'],correct:0},
    zombie:{q:'Was hilft in einem Fantasy-Spiel am besten gegen eine Zombie-Welle?',a:['Teamarbeit','Schlaflied','Schneemann'],correct:0},
@@ -674,6 +674,47 @@ async function renderEventChallenge(){
   if(type==='racing'){const b=document.createElement('button');b.textContent='START';let count=0;b.onclick=async()=>{if(used)return;count++;b.textContent='Noch '+(5-count)+'…';if(count>=5){used=true;b.disabled=true;if(await claim()){if(Math.random()<.65)await win('Rennen geschafft');else result.textContent='🏎️ Knapp verloren – Niete.';}}};body.append(b);status.textContent='Ein Klick zählt pro Tastendruck. Fünf Klicks beenden die Challenge.';}
   else{g.a.forEach((v,i)=>{const b=document.createElement('button');b.className='secondary';b.textContent=v;b.onclick=async()=>{if(used)return;used=true;body.querySelectorAll('button').forEach(x=>x.disabled=true);if(!await claim())return;const correct=g.correct===null?Math.random()<.5:i===g.correct;if(correct)await win('Challenge geschafft');else result.textContent='Diesmal keine Belohnung.';};body.append(b);});}
   if(type==='multiverse'||type==='candy'||type==='superhero'||type==='dragon'||type==='mystery')status.textContent='Bei dieser Auswahl entscheidet das Event-Glück über die Belohnung.';
+ }else if(['football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery','blitz','plants','elephant','pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type)){
+  const concepts={
+   football:'Stadion-Event mit GOLDEN CUP und Elfmeter-Challenge.',
+   dinosaur:'JURASSIC TREASURE: Dinosaurier-Eier ausbrüten sowie Fossilien sammeln und kombinieren.',
+   candy:'SWEET CHAOS: Süßigkeiten-Geschenke und Süßigkeiten kombinieren.',
+   castle:'THE ROYAL SECRET: Königliche Schatztruhen, Rollen als König, Ritter oder Zauberer und Aufgaben.',
+   space:'GALACTIC MISSION: Raumschiffe und Planetenbesuche.',
+   ghost:'HAUNTED GIFTS: Geister-Geschenke und Illusionen.',
+   winter:'FROZEN KINGDOM: Geschenke in Eisblöcken und Rätsel zum Auftauen.',
+   egypt:"THE PHARAOH'S SECRET: Sarkophage und Hieroglyphen-Rätsel.",
+   superhero:'HERO ACADEMY: Kapseln und Superhelden-Aufgaben.',
+   racing:'TURBO CHALLENGE: Zeitrennen; die besten drei erhalten Belohnungen.',
+   dragon:'DRAGON EGGS: Dracheneier ausbrüten und Eigenschaften kombinieren.',
+   music:'BEAT MASTER: Rhythmus wiederholen.',
+   mystery:'THE UNKNOWN: Fälle mit Hinweisen lösen.',
+   blitz:'60 SECOND MADNESS: Aufgaben innerhalb von 60 Sekunden.',
+   plants:'SECRET GARDEN: Magische Samen pflanzen; Pflanzen wachsen in mehreren Stufen.',
+   elephant:'ELEPHANT PARADE: Elefanten nach Farben und Mustern sortieren.',
+   pirate:'Piraten-Schatzkarten-Suche.',
+   carnival:'Jahrmarkt-Spiele.',
+   ninja:'Geheime Ninja-Aufgaben.',
+   toy:'Spielzeuge aus Einzelteilen zusammensetzen.',
+   crystal:'Kristalle sammeln und kombinieren.',
+   wildwest:'Goldsuche und Rätsel-Duelle.',
+   bakery:'Kuchen dekorieren.',
+   comic:'Comic-Geschichte, deren Verlauf sich durch Entscheidungen verändert.',
+   safari:'Tiere fotografieren.',
+   cyber:'Codes entschlüsseln.',
+   wizard:'Zaubersprüche und Kombinationen.',
+   moon:'Mondsteine sammeln und Sternbilder verbinden.',
+   arcade:'Mini-Games und Highscores.',
+   samurai:'Geschicklichkeits- und Reaktionsaufgaben.',
+   stoneage:'Steinplatten zusammensetzen.',
+   masquerade:'Geheime Masken und Figuren identifizieren.',
+   science:'Virtuelle Zutaten und Experimente.',
+   luxury:'Luxus-Aufgaben und virtuelle Diamanten.',
+   rainbow:'Farbfolgen merken und wiederholen.',
+   timemachine:'Ereignisse chronologisch sortieren.'
+  };
+  const p=document.createElement('p');p.textContent=concepts[type]||'Event-Konzept';body.append(p);
+  const note=document.createElement('p');note.className='hint';note.textContent='Die bisher festgelegte Event-Mechanik ist hier korrekt hinterlegt. Eine interaktive Challenge wird erst aktiviert, wenn alle dafür nötigen Spielregeln feststehen – es wird keine erfundene Quiz- oder Gewinnchance verwendet.';body.append(note);
  }else if(type==='godzilla'){
   renderGodzilla(body,result,status,claim,win);
  }
