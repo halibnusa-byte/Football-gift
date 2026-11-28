@@ -117,6 +117,11 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
  <button id="chatSendBtn">NACHRICHT SENDEN</button>
  <div id="chatStatus" class="hint"></div>
  <div id="chatFeed" class="list" aria-live="polite">Noch keine Nachrichten.</div>
+
+ <div id="chatReportsPanel" class="panel hidden">
+  <h3>🚩 Gemeldete Nachrichten</h3>
+  <div id="chatReports" class="list">Keine Meldungen.</div>
+ </div>
 </section>
 
 <section class="panel" id="rankingPanel"><h2>🏆 Rangliste der Geschenke</h2><div class="list" id="ranking"></div></section>
@@ -306,6 +311,7 @@ function subscribe(){
  unsubs.push(onValue(path('announcements/global'),s=>{if(s.exists())showAnnouncement(s.val())}));
  unsubs.push(onValue(path('announcements/users/'+uid),s=>{if(s.exists())showAnnouncement(s.val())}));
  unsubs.push(onValue(path('messages'),s=>{const all=s.val()||{};renderLiveChat(all);const arr=Object.values(all).filter(x=>x&&typeof x.at==='number').sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,5);if(role==='admin'&&arr[0])msg('adminMsg','Letzte Nachricht: '+(arr[0].name||'')+' – '+(arr[0].text||''));}));
+ unsubs.push(onValue(path('messageReports'),s=>renderChatReports(s.val()||{})));
 }
 
 function renderLiveChat(messages){
@@ -337,6 +343,28 @@ function renderLiveChat(messages){
    item.append(hide);
   }
   feed.append(item);
+ }
+}
+
+function renderChatReports(reports){
+ const panel=$('chatReportsPanel'),feed=$('chatReports');if(!panel||!feed)return;
+ panel.classList.toggle('hidden',role!=='admin');
+ feed.innerHTML='';
+ if(role!=='admin')return;
+ const rows=Object.entries(reports||{}).flatMap(([messageId,byUid])=>Object.entries(byUid||{}).map(([reporter,r])=>({messageId,reporter,...(r||{})}))).slice(-100);
+ if(!rows.length){feed.textContent='Keine Meldungen.';return;}
+ for(const r of rows){
+  const item=document.createElement('div');item.className='item';
+  const label=document.createElement('div');
+  label.textContent='Nachricht '+r.messageId+' · gemeldet von '+String(r.uid||r.reporter).slice(0,12)+' · '+String(r.reason||'Keine Begründung');
+  item.append(label);
+  const actions=document.createElement('div');actions.className='row';
+  for(const [caption,action] of [['Ausblenden','hide'],['Wiederherstellen','restore'],['Löschen','delete']]){
+   const btn=document.createElement('button');btn.className='secondary';btn.textContent=caption;
+   btn.onclick=async()=>{try{await httpsCallable(functions,'moderateChatMessage')({messageId:r.messageId,action});msg('chatStatus','Moderation gespeichert.');}catch(e){msg('chatStatus',e?.message||'Moderation fehlgeschlagen.');}};
+   actions.append(btn);
+  }
+  item.append(actions);feed.append(item);
  }
 }
 function showAnnouncement(a){if(!a?.text||a.targetUid&&a.targetUid!==uid)return;$('ownerBannerLabel').textContent=(a.sender||'OWNER')+':';$('ownerBannerText').textContent=a.text;show('ownerBanner',true);clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>show('ownerBanner',false),3000);}
