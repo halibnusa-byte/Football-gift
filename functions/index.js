@@ -1449,6 +1449,10 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
       throw new HttpsError("failed-precondition", "Die gemeinsame Zombie-Rettung ist noch nicht abgeschlossen oder du bist nicht der Geschenkbesitzer.");
     }
   }
+  if (eventId === "unicorn") {
+    const hit = (await db.ref("events/unicornHits/" + runId + "/" + auth.uid).get()).val();
+    if (!hit || hit.hit !== true) throw new HttpsError("failed-precondition", "Schlage zuerst die Piñata.");
+  }
   if (eventId === "godzilla") {
     const vote = (await db.ref("events/godzillaVotes/" + auth.uid).get()).val();
     const video = events.video || settings.eventVideos?.godzilla || settings.godzillaVideo || {};
@@ -1598,6 +1602,20 @@ async function finalizeLaserTagIfComplete() {
   await db.ref("events/laserFinished").set(true);
   return { finished: true, winners: winnerIds };
 }
+
+exports.hitUnicornPinata = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "unicorn") throw new HttpsError("failed-precondition", "Unicorn-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const player = (await db.ref("players/" + auth.uid).get()).val();
+  if (!player?.eventClaims?.["unicorn:" + runId]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
+  const ref = db.ref("events/unicornHits/" + runId + "/" + auth.uid);
+  const tx = await ref.transaction((existing) => existing || { hitAt: Date.now(), hit: true });
+  if (!tx.committed) throw new HttpsError("already-exists", "Du hast die Piñata bereits geschlagen.");
+  return { hit: true };
+});
 
 exports.startPenaltyChallenge = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
