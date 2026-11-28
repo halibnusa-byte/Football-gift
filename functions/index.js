@@ -1658,10 +1658,25 @@ exports.startRacing = onCall({ region: "europe-west1" }, async (request) => {
   return { startedAt: tx.snapshot.val().startedAt };
 });
 
+exports.tapRacing = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "racing") throw new HttpsError("failed-precondition", "Racing-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const ref = db.ref("events/racingStarts/" + runId + "/" + auth.uid);
+  const tx = await ref.transaction((state) => {
+    const now = Date.now();
+    if (!state || now - Number(state.startedAt || 0) > 15000 || Number(state.taps || 0) >= 12 || now - Number(state.lastTapAt || 0) < 40) return;
+    return { ...state, taps: Number(state.taps || 0) + 1, lastTapAt: now };
+  });
+  if (!tx.committed) throw new HttpsError("deadline-exceeded", "Turbo-Treffer nicht angenommen. Prüfe die Zeit oder starte neu.");
+  return { taps: Number(tx.snapshot.val().taps || 0) };
+});
+
 exports.finishRacing = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
   await assertMainAdminDuringLock(auth);
-  if (Number(request.data?.tapCount) !== 12) throw new HttpsError("invalid-argument", "Du musst alle zwölf Turbo-Treffer schaffen.");
   const events = (await db.ref("events").get()).val() || {};
   if (events.active !== "racing") throw new HttpsError("failed-precondition", "Racing-Event ist nicht aktiv.");
   const runId = String(events.runId || events.startedAt || "");
@@ -1672,6 +1687,7 @@ exports.finishRacing = onCall({ region: "europe-west1" }, async (request) => {
   if (!playerSnap.val()?.eventClaims?.["racing:" + runId]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
   const startedAt = Number(startSnap.val()?.startedAt || 0);
   if (!startedAt) throw new HttpsError("failed-precondition", "Starte zuerst das Rennen.");
+  if (Number(startSnap.val()?.taps || 0) < 12) throw new HttpsError("failed-precondition", "Es fehlen noch Turbo-Treffer.");
   const timeMs = Date.now() - startedAt;
   if (timeMs < 1 || timeMs > 15000) throw new HttpsError("deadline-exceeded", "Die Rennzeit ist abgelaufen.");
   const ref = db.ref("events/racingResults/" + runId + "/" + auth.uid);
