@@ -372,3 +372,9 @@ test("Magic Cube uses three separately configured chances and server-stored outc
   assert.match(client, /openMagicCube/);
   assert.match(client, /magicCubeAChance/);
 });
+
+test("Golden Cup is a randomized penalty challenge rather than a fixed-answer quiz", () => {
+  assert.match(client, /football:\{title:'GOLDEN CUP · ELFMETER',mode:'penalty'/);
+  assert.match(client, /const keeper=Math\.floor\(Math\.random\(\)\*3\)/);
+  assert.match(client, /if\(i===keeper\)fail/);
+});
