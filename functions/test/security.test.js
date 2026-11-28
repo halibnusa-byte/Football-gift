@@ -170,3 +170,12 @@ test("admin live chat exposes report moderation controls", () => {
   assert.ok(client.includes("function renderChatReports"));
   assert.ok(client.includes("['Wiederherstellen','restore']"));
 });
+
+test("main admin random recipient grant selects a player server-side without randomizing reward", () => {
+  const section = source.slice(source.indexOf("exports.grantAdminTokens"), source.indexOf("// Gift transfers"));
+  assert.ok(section.includes('scope !== "random"'));
+  assert.ok(section.includes("crypto.randomInt(candidates.length)"));
+  assert.ok(section.includes("const prizeId ="));
+  assert.ok(client.includes('option value="random">ZUFÄLLIG'));
+  assert.ok(client.includes("prizeId:$('awardPrize').value"));
+});
