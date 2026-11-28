@@ -444,3 +444,10 @@ test("Frozen Kingdom melts three ice blocks through sequential puzzles", () => {
   assert.match(client, /Eisblock 2/);
   assert.match(client, /Eisblock 3/);
 });
+
+test("New event start buttons remain main-admin-only in the client", () => {
+  const mainOnly = client.slice(client.indexOf("const mainOnly="), client.indexOf("mainOnly.forEach"));
+  for (const id of ["madnessOn","secretgardenOn","elephantparadeOn","pirateOn","carnivalOn","ninjaOn","toyOn","crystalOn","wildwestOn","bakeryOn","comicOn","safariOn","cyberOn","wizardOn","moonOn","arcadeOn","samuraiOn","stoneageOn","masqueradeOn","scienceOn","luxuryOn","rainbowOn","timemachineOn"]) {
+    assert.ok(mainOnly.includes(id), id + " must be main-admin-only");
+  }
+});
