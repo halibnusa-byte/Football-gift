@@ -614,7 +614,7 @@ async function renderEventChallenge(){
 }
 
  if(type==='unicorn'){
-  const b=document.createElement('button');b.textContent='🪅 PINATA EINMAL SCHLAGEN';b.onclick=async()=>{b.disabled=true;if(!await claim()){status.textContent='Schon benutzt.';return;}if(Math.random()<.5)await win('Die Pinata spuckt aus');else result.textContent='🪅 Niete!';status.textContent='Dein Schlag ist verbraucht.';};body.append(b);
+  const b=document.createElement('button');b.textContent='🪅 PINATA EINMAL SCHLAGEN';b.onclick=async()=>{b.disabled=true;if(!await claim()){status.textContent='Schon benutzt.';return;}await win('Die Piñata spuckt aus');status.textContent='Dein Schlag ist verbraucht.';};body.append(b);
  }else if(type==='cube'){
   const q=document.createElement('p');q.textContent='Rätsel: Ich habe sechs Seiten und farbige Felder. Was bin ich?';const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT';b.onclick=async()=>{b.disabled=true;if(!await claim())return;if(['zauberwürfel','zauberwurfel','rubik cube','rubiks cube'].includes(inp.value.trim().toLowerCase()))await win('Richtig gelöst');else result.textContent='Falsch – keine Belohnung.';inp.disabled=true;};body.append(q,inp,b);
  }else if(type==='time'){
