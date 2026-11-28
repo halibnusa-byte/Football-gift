@@ -1164,6 +1164,30 @@ exports.queueBlitz = onCall({ region: "europe-west1" }, async (request) => {
   }
   return { queued };
 });
+async function finalizeLaserTagIfComplete() {
+  const players = (await db.ref("events/laserPlayers").get()).val() || {};
+  const entries = Object.entries(players);
+  const alive = entries.filter(([, p]) => !p?.spectator && Number(p?.lives ?? 3) > 0);
+  if (entries.length < 2 || alive.length > 1) return { finished: false, winners: [] };
+  const lock = await db.ref("events/laserFinished").transaction((v) => v === true ? undefined : true);
+  if (!lock.committed) return { finished: true, alreadyFinished: true, winners: [] };
+  const ranked = entries.sort((a,b) =>
+    (Number(b[1]?.lives)||0) - (Number(a[1]?.lives)||0) ||
+    (Number(b[1]?.hits)||0) - (Number(a[1]?.hits)||0) ||
+    (Number(a[1]?.joinedAt)||0) - (Number(b[1]?.joinedAt)||0)
+  ).slice(0,3);
+  for (const [uid] of ranked) {
+    await db.ref("players/" + uid).transaction((p) => {
+      if (!p) return;
+      const inventory = { ...(p.inventory || {}) };
+      inventory.diamondGift = (Number(inventory.diamondGift) || 0) + 1;
+      return { ...p, inventory };
+    });
+  }
+  await db.ref("events/laserWinners").set(ranked.map(([uid]) => uid));
+  return { finished: true, winners: ranked.map(([uid]) => uid) };
+}
+
 exports.joinLaserTag = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
   await assertMainAdminDuringLock(auth);
@@ -1185,7 +1209,7 @@ exports.moveLaserTag = onCall({ region: "europe-west1" }, async (request) => {
   const events = (await db.ref("events").get()).val() || {};
   if (events.active !== "lasertag") throw new HttpsError("failed-precondition", "LaserTag ist nicht aktiv.");
   const elapsed = Date.now() - Number(events.startedAt || Date.now());
-  if (elapsed < 10000 || elapsed >= 310000) throw new HttpsError("deadline-exceeded", "Die Arena ist gerade nicht aktiv.");
+  if (elapsed < 10000 || (await db.ref("events/laserFinished").get()).val() === true) throw new HttpsError("deadline-exceeded", "Die Arena ist gerade nicht aktiv.");
   const ref = db.ref("events/laserPlayers/" + auth.uid);
   const tx = await ref.transaction((p) => {
     const now = Date.now();
@@ -1251,7 +1275,8 @@ exports.laserHit = onCall({ region: "europe-west1" }, async (request) => {
   });
   if (!targetTx.committed) throw new HttpsError("failed-precondition", "Dieses Ziel ist bereits ausgeschieden.");
   await attackerRef.child("hits").transaction((v) => (Number(v) || 0) + 1);
-  return { targetLives: targetTx.snapshot.val().lives, eliminated: targetTx.snapshot.val().spectator };
+  const match = await finalizeLaserTagIfComplete();
+  return { targetLives: targetTx.snapshot.val().lives, eliminated: targetTx.snapshot.val().spectator, matchFinished: match.finished, winners: match.winners || [] };
 });
 
 exports.finishLaserTag = onCall({ region: "europe-west1" }, async (request) => {
@@ -1259,25 +1284,9 @@ exports.finishLaserTag = onCall({ region: "europe-west1" }, async (request) => {
   await assertMainAdminDuringLock(auth);
   const events = (await db.ref("events").get()).val() || {};
   if (events.active !== "lasertag") throw new HttpsError("failed-precondition", "LaserTag ist nicht aktiv.");
-  const elapsed = Date.now() - Number(events.startedAt || Date.now());
-  if (elapsed < 310000) throw new HttpsError("failed-precondition", "Die Runde ist noch nicht beendet.");
-  const lock = await db.ref("events/laserFinished").transaction((v) => v === true ? undefined : true);
-  if (!lock.committed) return { finished: true, alreadyFinished: true };
-  const players = (await db.ref("events/laserPlayers").get()).val() || {};
-  const ranked = Object.entries(players).sort((a,b) =>
-    (Number(b[1]?.lives)||0) - (Number(a[1]?.lives)||0) ||
-    (Number(b[1]?.hits)||0) - (Number(a[1]?.hits)||0) ||
-    (Number(a[1]?.joinedAt)||0) - (Number(b[1]?.joinedAt)||0)
-  ).slice(0,3);
-  for (const [uid] of ranked) {
-    await db.ref("players/" + uid).transaction((p) => {
-      if (!p) return;
-      const inventory = { ...(p.inventory || {}) };
-      inventory.diamondGift = (Number(inventory.diamondGift) || 0) + 1;
-      return { ...p, inventory };
-    });
-  }
-  return { finished: true, winners: ranked.map(([uid]) => uid) };
+  const result = await finalizeLaserTagIfComplete();
+  if (!result.finished) throw new HttpsError("failed-precondition", "LaserTag läuft weiter, solange mehr als ein Spieler lebt.");
+  return result;
 });
 
 exports.setComebackAdminAbuse = onCall({ region: "europe-west1" }, async (request) => {
