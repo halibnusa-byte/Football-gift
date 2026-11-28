@@ -310,6 +310,8 @@ test("LaserTag uses ten-second skin selection, three lives, eliminations and top
   const finalizer = source.slice(source.indexOf("async function finalizeLaserTagIfComplete"), source.indexOf("exports.joinLaserTag"));
   assert.match(finalizer, /slice\(0,3\)/);
   assert.match(finalizer, /inventory\.diamondGift/);
+  assert.match(finalizer, /laserTagGiftRunId === runId/);
+  assert.match(finalizer, /laserTagGiftRunId: runId/);
   assert.match(client, /httpsCallable\(functions,'laserHit'\)/);
   assert.match(client, /Letzter Spieler mit Leben gewinnt/);
 });
