@@ -423,13 +423,16 @@ test("Wild West event includes a gold hunt followed by a puzzle duel", () => {
 });
 
 test("Turbo Challenge records server times and pays the top three when the event ends", () => {
-  const start = source.slice(source.indexOf("exports.startRacing"), source.indexOf("exports.finishRacing"));
+  const start = source.slice(source.indexOf("exports.startRacing"), source.indexOf("exports.tapRacing"));
+  const tap = source.slice(source.indexOf("exports.tapRacing"), source.indexOf("exports.finishRacing"));
   const finish = source.slice(source.indexOf("exports.finishRacing"), source.indexOf("exports.joinLaserTag"));
   const finalizer = source.slice(source.indexOf("async function finalizeRacingEvent"), source.indexOf("exports.startRacing"));
   const setEvent = source.slice(source.indexOf("exports.setActiveEvent"), source.indexOf("exports.redeemRoleCode"));
   assert.match(start, /racingStarts/);
   assert.match(finish, /Date\.now\(\) - startedAt/);
-  assert.match(finish, /tapCount\) !== 12/);
+  assert.match(tap, /taps: Number\(state\.taps \|\| 0\) \+ 1/);
+  assert.match(finish, /startSnap\.val\(\)\?\.taps \|\| 0\) < 12/);
+  assert.match(client, /tapRacing/);
   assert.match(finalizer, /slice\(0,3\)/);
   assert.match(finalizer, /racingRewardRunId/);
   assert.match(setEvent, /finalizeRacingEvent/);
