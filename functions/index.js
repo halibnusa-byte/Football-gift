@@ -1236,9 +1236,10 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
       throw new HttpsError("failed-precondition", "Die gemeinsame Zombie-Rettung ist noch nicht abgeschlossen oder du bist nicht der Geschenkbesitzer.");
     }
   }
+  let oceanChestOutcome = null;
   if (eventId === "ocean") {
-    const chest = (await db.ref("events/oceanChests/" + runId + "/" + auth.uid).get()).val();
-    if (!chest || !Number.isInteger(Number(chest.chestIndex))) {
+    oceanChestOutcome = (await db.ref("events/oceanChests/" + runId + "/" + auth.uid).get()).val();
+    if (!oceanChestOutcome || !Number.isInteger(Number(oceanChestOutcome.chestIndex))) {
       throw new HttpsError("failed-precondition", "Öffne zuerst eine Schatztruhe im Ocean-Event.");
     }
   }
@@ -1253,7 +1254,9 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
   if (before.eventClaims[claimKey].rewarded) throw new HttpsError("already-exists", "Belohnung bereits abgeholt.");
   const reward = eventId === "cube"
     ? (magicCubeOutcome.rewardId ? ROUND_PRIZES.find((p) => p.id === magicCubeOutcome.rewardId) || null : null)
-    : pickRoundPrize(currentLuck(auth, before, settings), eventId, settings, before);
+    : eventId === "ocean" && oceanChestOutcome.goldenShark === true
+      ? { id: "diamondGift", special: "goldenShark" }
+      : pickRoundPrize(currentLuck(auth, before, settings), eventId, settings, before);
   let reserved = false;
   if (reward?.id === "football") {
     const txOwner = await db.ref("settings/footballTokenOwner").transaction((v) => v == null ? auth.uid : undefined);
