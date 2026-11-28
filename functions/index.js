@@ -1053,3 +1053,46 @@ exports.saveGodzillaVote = onCall({ region: "europe-west1" }, async (request) =>
   await db.ref("events/godzillaVotes/" + auth.uid).set({ side, at: Date.now(), runId });
   return { saved: true };
 });
+
+exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const eventId = String(request.data?.eventId || "");
+  if (!EVENT_TYPES.has(eventId)) throw new HttpsError("invalid-argument", "Unbekanntes Event.");
+  const settings = (await db.ref("settings").get()).val() || {};
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== eventId) throw new HttpsError("failed-precondition", "Event nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const ref = db.ref("players/" + auth.uid);
+  const before = (await ref.get()).val();
+  const claimKey = eventId + ":" + runId;
+  if (!before?.eventClaims?.[claimKey]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
+  if (before.eventClaims[claimKey].rewarded) throw new HttpsError("already-exists", "Belohnung bereits abgeholt.");
+  const reward = pickRoundPrize(currentLuck(auth, before, settings), eventId, settings, before);
+  let reserved = false;
+  if (reward?.id === "football") {
+    const txOwner = await db.ref("settings/footballTokenOwner").transaction((v) => v == null ? auth.uid : undefined);
+    if (!txOwner.committed) throw new HttpsError("already-exists", "Football Token bereits vergeben.");
+    reserved = true;
+  }
+  try {
+    const tx = await ref.transaction((p) => {
+      if (!p || p.eventClaims?.[claimKey]?.rewarded) return;
+      const inventory = { ...(p.inventory || {}) };
+      const firstWon = { ...(p.firstWon || {}) };
+      if (reward) {
+        if (reward.id === "football" && Number(inventory.football || 0) > 0) return;
+        inventory[reward.id] = (Number(inventory[reward.id]) || 0) + 1;
+        if (!firstWon[reward.id]) firstWon[reward.id] = Date.now();
+      }
+      const claims = { ...(p.eventClaims || {}) };
+      claims[claimKey] = { ...claims[claimKey], rewarded: true, rewardId: reward?.id || null, rewardedAt: Date.now() };
+      return { ...p, inventory, firstWon, eventClaims: claims, totalWins: (Number(p.totalWins) || 0) + (reward ? 1 : 0) };
+    });
+    if (!tx.committed) throw new HttpsError("aborted", "Belohnung konnte nicht sicher vergeben werden.");
+    return { reward: reward?.id || null };
+  } catch (e) {
+    if (reserved) await db.ref("settings/footballTokenOwner").transaction((v) => v === auth.uid ? null : undefined);
+    throw e;
+  }
+});
