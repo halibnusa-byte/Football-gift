@@ -1110,7 +1110,13 @@ exports.chooseZombieVial = onCall({ region: "europe-west1" }, async (request) =>
   if (Number(outcome.index) !== index) throw new HttpsError("already-exists", "Du hast bereits ein anderes Fläschchen gewählt.");
   if (!outcome.safe) return { safe: false };
   const rescueRef = db.ref("events/zombieRescue/" + runId);
-  await rescueRef.transaction((current) => current || ({ ownerUid: auth.uid, votes: {}, completed: false, startedAt: Date.now() }));
+  await rescueRef.transaction((current) => {
+    const state = current || { votes: {}, startedAt: Date.now() };
+    const ownerUid = state.ownerUid || auth.uid;
+    const votes = { ...(state.votes || {}) };
+    const completed = Object.keys(votes).length >= 2;
+    return { ...state, ownerUid, votes, completed, completedAt: completed ? (state.completedAt || Date.now()) : null };
+  });
   const rescue = (await rescueRef.get()).val();
   return { safe: true, owner: rescue.ownerUid === auth.uid };
 });
@@ -1127,10 +1133,11 @@ exports.submitZombieRescue = onCall({ region: "europe-west1" }, async (request) 
   if (!player?.eventClaims?.["zombie:" + runId]) throw new HttpsError("failed-precondition", "Nimm zuerst am Zombie-Event teil.");
   const ref = db.ref("events/zombieRescue/" + runId);
   const tx = await ref.transaction((current) => {
-    if (!current || current.completed) return;
-    const votes = { ...(current.votes || {}), [auth.uid]: true };
-    const completed = Object.keys(votes).length >= 2;
-    return { ...current, votes, completed, completedAt: completed ? Date.now() : null };
+    if (current?.completed) return;
+    const state = current || { ownerUid: null, votes: {}, startedAt: Date.now() };
+    const votes = { ...(state.votes || {}), [auth.uid]: true };
+    const completed = Boolean(state.ownerUid) && Object.keys(votes).length >= 2;
+    return { ...state, votes, completed, completedAt: completed ? (state.completedAt || Date.now()) : null };
   });
   const state = tx.snapshot.val();
   return { votes: Object.keys(state?.votes || {}).length, completed: state?.completed === true };
