@@ -164,7 +164,9 @@ exports.openPlayerGift = onCall({ region: "europe-west1" }, async (request) => {
   const box = round.boxes[index];
   const rarity = ROUND_RARITIES.find((r) => r.id === round.rareType);
   const mult = (box.rare && rarity ? rarity.mult : 1) * (box.blitz ? 10 : 1);
-  const reward = pickRoundPrize(currentLuck(auth, current, settings) * mult, events.active, settings, current);
+  const reward = box.galaxy
+    ? { id: (["comeback", "revenge", ...(!settings.footballTokenOwner ? ["football"] : [])])[crypto.randomInt(settings.footballTokenOwner ? 2 : 3)], special: "galaxy" }
+    : pickRoundPrize(currentLuck(auth, current, settings) * mult, events.active, settings, current);
   let reservedFootball = false;
   if (reward?.id === "football") {
     const owner = await db.ref("settings/footballTokenOwner").transaction((v) => v == null ? auth.uid : undefined);
