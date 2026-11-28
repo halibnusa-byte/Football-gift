@@ -108,6 +108,7 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <section class="panel hidden" id="comebackBox"><div class="row"><div><b>🏆 LEGENDARY COMEBACK GIFT</b><div class="muted">Danke fürs Mitmachen beim Comeback Admin Abuse!</div></div><button id="cbOpen">ÖFFNEN</button></div></section>
 <section class="panel" id="gamePanel"><div class="row"><div><h2>🎁 Deine 15 Geschenkboxen</h2><div class="muted" id="roundText">Öffne 3 Boxen.</div></div><span class="tag" id="rareLabel">Normale Runde</span></div><div class="grid" id="boxGrid"></div><div class="result" id="result">Wähle eine Box!</div><button class="secondary" id="nextRound" disabled>Boxen neu mischen</button></section>
 <section class="panel hidden" id="eventChallengePanel"><h2 id="eventChallengeTitle">🎪 Event</h2><p class="muted" id="eventChallengeDescription"></p><div class="event-challenge" id="eventChallengeBody"></div></section>
+<section class="panel" id="shopPanel"><h2>🛒 Admin-Shop</h2><p class="muted">Du erhältst 1 Shop-Punkt pro geöffnetem Geschenk. Punkte bleiben gespeichert.</p><div class="status" id="shopBalance">Deine Punkte: 0</div><div class="list" id="shopItems"></div><div id="shopAdminControls" class="hidden"><h3>Preise verwalten (nur Hauptadmin)</h3><div id="shopPriceFields"></div><button id="saveShopConfig">SHOP-PREISE SPEICHERN</button></div><div class="hint" id="shopStatus"></div></section>
 <section class="panel" id="inventoryPanel"><h2>🎒 Deine Sammlung</h2><div class="list" id="inventory"></div></section>
 <section class="panel" id="livePanel"><h2>📺 Live-Übertragung</h2><p class="muted">Wähle einen Spieler, der online ist. Angezeigt werden nur seine Boxen – keine Sammlung und keine Glückswerte.</p><div class="row"><select id="watchPlayer"><option value="">Spieler auswählen…</option></select><button class="secondary" id="watchBtn">LIVE ANSEHEN</button></div><div id="liveScreen" class="status">Noch keine Übertragung ausgewählt.</div><div class="list" id="activity"></div></section>
 <section class="panel" id="liveChatPanel">
@@ -293,7 +294,7 @@ async function openBox(i){
   if(data.blitz)$('result').textContent='⚡ BLITZ! 10× Glück! '+$('result').textContent;
   if(data.galaxy)$('result').textContent='🌌 Galaxy-Geschenk geöffnet! '+$('result').textContent;
   player.roundState=data.round;player.lastBoxes=data.round.boxes;player.opensThisRound=data.openedCount;
-  renderBoxes();renderInventory();renderRanking();
+  renderBoxes();renderInventory();renderRanking();renderShop();
  }catch(e){$('result').textContent=e?.message||'Öffnen fehlgeschlagen.';const fresh=await get(path('players/'+uid));if(fresh.exists()){player=fresh.val();if(player.roundState){boxes=player.roundState.boxes;opened=boxes.filter(b=>b.opened).map(b=>b.id);rareType=player.roundState.rareType?RARE.find(r=>r.id===player.roundState.rareType):null;renderBoxes();}}}
 }
 async function enter(){
@@ -391,6 +392,37 @@ function renderInventory(){
  list.forEach(p=>{const n=Number(inv[p.id]||0);if(n){const d=document.createElement('div');d.className='item';d.textContent=p.emoji+' '+p.name;const b=document.createElement('b');b.textContent='×'+n;d.append(b);$('inventory').append(d)}});
  if(!$('inventory').children.length)$('inventory').textContent='Noch keine Geschenke gewonnen.';
  $('giftPrize').innerHTML='';list.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name+' (×'+(inv[p.id]||0)+')';$('giftPrize').append(o)});
+}
+const SHOP_CATALOG=[
+ {id:'hackerScanner',name:'Hacker Scanner',emoji:'💻'},
+ {id:'robotScanner',name:'Robot Scanner',emoji:'🤖'},
+ {id:'magicRemix',name:'MAGIC REMIX',emoji:'🪄'},
+ {id:'goldenReportCard',name:'GOLDEN REPORT CARD',emoji:'📜'},
+ {id:'lavaShield',name:'LAVA SHIELD',emoji:'🌋'},
+ {id:'alienRadar',name:'ALIEN RADAR',emoji:'👽'},
+ {id:'pearlRadar',name:'PEARL RADAR',emoji:'🦪'}
+];
+async function renderShop(){
+ const conf=(await get(path('shop/products'))).val()||{};
+ $('shopBalance').textContent='Deine Punkte: '+Number(player?.shopPoints||0);
+ $('shopItems').innerHTML='';
+ SHOP_CATALOG.forEach(p=>{
+  const c=conf[p.id],d=document.createElement('div');d.className='item';
+  const label=document.createElement('span');label.textContent=p.emoji+' '+p.name+' — '+(c?.enabled?'Preis: '+c.price+' Punkte':'Noch nicht verfügbar');
+  const owned=document.createElement('small');owned.textContent='Besitz: '+Number(player?.shopInventory?.[p.id]||0);
+  d.append(label,owned);
+  if(c?.enabled){const b=document.createElement('button');b.textContent='EINLÖSEN';b.disabled=Number(player?.shopPoints||0)<Number(c.price);b.onclick=async()=>{b.disabled=true;try{const r=await httpsCallable(functions,'redeemShopItem')({productId:p.id});player.shopPoints=r.data.balance;player.shopInventory=player.shopInventory||{};player.shopInventory[p.id]=r.data.quantity;$('shopStatus').textContent=p.name+' eingelöst!';await renderShop();}catch(e){$('shopStatus').textContent=e?.message||'Einlösen fehlgeschlagen.';b.disabled=false;}};d.append(b);}
+  $('shopItems').append(d);
+ });
+ show('shopAdminControls',role==='admin');
+ $('shopPriceFields').innerHTML='';
+ if(role==='admin')SHOP_CATALOG.forEach(p=>{const row=document.createElement('label');row.className='item';const t=document.createElement('span');t.textContent=p.name;const input=document.createElement('input');input.type='number';input.min='1';input.max='1000000';input.id='shopPrice_'+p.id;input.placeholder='Preis in Punkten';input.value=conf[p.id]?.price??'';row.append(t,input);$('shopPriceFields').append(row);});
+}
+async function saveShopConfig(){
+ if(role!=='admin')return msg('shopStatus','Nur der Hauptadmin darf Preise festlegen.');
+ const products={};SHOP_CATALOG.forEach(p=>{const raw=$('shopPrice_'+p.id)?.value;if(raw!=='')products[p.id]={price:Number(raw),enabled:true};});
+ try{await httpsCallable(functions,'saveShopConfig')({products});$('shopStatus').textContent='Shop-Konfiguration gespeichert.';await renderShop();}
+ catch(e){$('shopStatus').textContent=e?.message||'Shop konnte nicht gespeichert werden.';}
 }
 function renderRanking(all){
  all=all||{};$('ranking').innerHTML='';
@@ -810,7 +842,7 @@ onAuthStateChanged(auth,u=>{if(u)startServerWatch();else signInAnonymously(auth)
 // ===== ENDE SERVER LOCKDOWN 1.0 =====
 
 $('joinBtn').onclick=enter;$('playerName').addEventListener('keydown',e=>{if(e.key==='Enter')enter()});
-$('nextRound').onclick=async()=>{if(opened.length===3){try{await buildRound();$('result').textContent='Neue Runde! Viel Glück.';}catch(e){$('result').textContent=e?.message||'Neue Runde fehlgeschlagen.';}}};
+$('saveShopConfig').onclick=saveShopConfig;\n$('nextRound').onclick=async()=>{if(opened.length===3){try{await buildRound();$('result').textContent='Neue Runde! Viel Glück.';}catch(e){$('result').textContent=e?.message||'Neue Runde fehlgeschlagen.';}}};
 
 // Admin-Panel 2.0: schnelle Navigation zwischen den Bereichen
  document.querySelectorAll('.admin-nav-btn').forEach(btn=>btn.addEventListener('click',()=>{
