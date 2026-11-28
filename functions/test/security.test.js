@@ -453,3 +453,10 @@ test("New event start buttons remain main-admin-only in the client", () => {
     assert.ok(mainOnly.includes(id), id + " must be main-admin-only");
   }
 });
+
+test("Dinosaur event hatches an egg and requires matching fossil fragments", () => {
+  assert.match(client, /dinosaur:\{title:'JURASSIC TREASURE · FOSSILIEN',mode:'fossil'/);
+  assert.match(client, /Wähle ein Dinosaurier-Ei zum Ausbrüten/);
+  assert.match(client, /Fossil-Teile gesammelt/);
+  assert.match(client, /Dieses Fossil gehört zu einer anderen Dinosaurier-Art/);
+});
