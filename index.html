@@ -306,7 +306,7 @@ async function enter(){
   show('loginPanel',false);show('app',true);$('hello').textContent='Willkommen, '+name+'!';
   if(player.roundState?.boxes?.length===15){boxes=player.roundState.boxes.map((b,i)=>({...b,id:i}));opened=boxes.filter(b=>b.opened).map(b=>b.id);rareType=player.roundState.rareType?RARE.find(r=>r.id===player.roundState.rareType)||null:null;}
   else await buildRound();
-  renderBoxes();subscribe();watchComeback();renderInventory();renderRanking();await addActivity('ist dem Spiel beigetreten');await roleRefresh();await ownerAutoRole();applyServerState();
+  renderBoxes();subscribe();watchComeback();renderInventory();renderRanking();await renderShop();await addActivity('ist dem Spiel beigetreten');await roleRefresh();await ownerAutoRole();applyServerState();
  }catch(e){msg('loginMsg','Verbindung fehlgeschlagen: '+e.message)}
 }
 function subscribe(){
@@ -316,7 +316,7 @@ function subscribe(){
  unsubs.push(onValue(path('players'),s=>{const all=s.val()||{};renderRanking(all);get(path('online')).then(o=>renderRoster(all,o.val()||{}));}));
  unsubs.push(onValue(path('online'),s=>{get(path('players')).then(p=>renderRoster(p.val()||{},s.val()||{}));renderWatchOptions(s.val()||{});}));
  unsubs.push(onValue(path('activity'),s=>{const a=Object.values(s.val()||{}).sort((x,y)=>(y.at||0)-(x.at||0)).slice(0,10);$('activity').innerHTML='';a.forEach(x=>{const d=document.createElement('div');d.className='item';d.textContent=x.text||'Aktivität';$('activity').append(d)})}));
- unsubs.push(onValue(path('players/'+uid),s=>{if(s.exists()){player=s.val();renderInventory();}}));
+ unsubs.push(onValue(path('players/'+uid),s=>{if(s.exists()){player=s.val();renderInventory();renderShop();}}));
  unsubs.push(onValue(path('announcements/global'),s=>{if(s.exists())showAnnouncement(s.val())}));
  unsubs.push(onValue(path('announcements/users/'+uid),s=>{if(s.exists())showAnnouncement(s.val())}));
  unsubs.push(onValue(path('messages'),s=>{const all=s.val()||{};renderLiveChat(all);const arr=Object.values(all).filter(x=>x&&typeof x.at==='number').sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,5);if(role==='admin'&&arr[0])msg('adminMsg','Letzte Nachricht: '+(arr[0].name||'')+' – '+(arr[0].text||''));}));
