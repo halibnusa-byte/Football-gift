@@ -156,6 +156,7 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <div class="row"><button id="castleOn">🏰 Castle</button><button id="spaceOn">🚀 Space</button><button id="ghostOn">👻 Ghost</button></div>
 <div class="row"><button id="winterOn">❄️ Winter</button><button id="egyptOn">🐪 Egypt</button><button id="superheroOn">🦸 Superhero</button></div>
 <div class="row"><button id="racingOn">🏎️ Racing</button><button id="dragonOn">🐉 Dragon</button><button id="musicOn">🎵 Music</button><button id="mysteryOn">🎭 Mystery</button></div>
+<div class="row"><button id="madnessOn">⚡ 60 Second Madness</button><button id="secretgardenOn">🌱 Secret Garden</button><button id="elephantparadeOn">🐘 Elephant Parade</button></div>
 <div class="row"><button id="pirateOn">🏴‍☠️ Pirate</button><button id="carnivalOn">🎪 Carnival</button><button id="ninjaOn">🥷 Ninja</button><button id="toyOn">🧸 Toy</button></div>
 <div class="row"><button id="crystalOn">💠 Crystal</button><button id="wildwestOn">🤠 Wild West</button><button id="bakeryOn">🧁 Bakery</button><button id="comicOn">💥 Comic</button></div>
 <div class="row"><button id="safariOn">🦒 Safari</button><button id="cyberOn">🖥️ Cyber</button><button id="wizardOn">🧙 Wizard</button><button id="moonOn">🌙 Moon</button></div>
@@ -236,9 +237,9 @@ racing:["🏁 TURBO CHALLENGE","🏁"],
 dragon:["🐉 DRAGON EGGS","🐉"],
 music:["🎵 BEAT MASTER","🎵"],
 mystery:["🕵️ THE UNKNOWN","🕵️"],
-blitz:["⚡ 60 SECOND MADNESS","⚡"],
-plants:["🌱 SECRET GARDEN","🌱"],
-elephant:["🐘 ELEPHANT PARADE","🐘"],
+madness:["⚡ 60 SECOND MADNESS","⚡"],
+secretgarden:["🌱 SECRET GARDEN","🌱"],
+elephantparade:["🐘 ELEPHANT PARADE","🐘"],
 pirate:["🏴‍☠️ PIRATE TREASURE","🏴‍☠️"],
 carnival:["🎪 CARNIVAL","🎪"],
 ninja:["🥷 NINJA","🥷"],
@@ -594,7 +595,7 @@ async function resetData(){
  }catch(e){msg('adminMsg',e?.message||'Zurücksetzen fehlgeschlagen.');}
 }
 async function renderEventChallenge(){
- const type=eventState.active,available=['unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery','blitz','plants','elephant','pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type);
+ const type=eventState.active,available=['unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery','madness','secretgarden','elephantparade','pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type);
  show('eventChallengePanel',available);if(!available||!uid)return;
  const body=$('eventChallengeBody');body.innerHTML='';$('eventChallengeTitle').textContent=EVENT_INFO[type]?.[0]||'Event';
  const descriptions={unicorn:'Wähle deinen Einhorn-Drop. Jeder Spieler kann pro Event einmal eine Belohnung erhalten.',cube:'Löse das Rätsel. Ein Versuch pro Event.',skibidi:'Klicke dich durch fünf Boss-Stufen. Jeder Boss hat einen eigenen Timer von zwei Minuten.',godzilla:'Sieh den Videoclip. Er stoppt mitten im Kampf. Danach tippst du einmal auf Godzilla oder Kong.',time:'Wähle einmal Vergangenheit, Gegenwart oder Zukunft.',school:'Beantworte die Schulfrage. Richtig: normales Geschenk. Falsch: nichts.',lava:'Wähle eine von drei Lava-Kisten. Ein Versuch.',alien:'Löse das Alien-Rätsel. Ein Versuch.',ocean:'Wähle eine Schatztruhe aus dem Ozean.',zombie:'Beantworte die Zombie-Frage.',multiverse:'Wähle dein Universum.',football:'Beantworte die Fußballfrage.',dinosaur:'Erkenne den Dinosaurier.',candy:'Wähle eine Süßigkeiten-Überraschung.',castle:'Löse das Burg-Rätsel.',space:'Wähle einen Planeten.',ghost:'Löse das Geister-Rätsel.',winter:'Beantworte die Winterfrage.',egypt:'Löse das Pyramiden-Rätsel.',superhero:'Wähle deine Helden-Mission.',racing:'Starte dein kurzes Reaktionsrennen.',dragon:'Wähle einen Drachentyp.',music:'Erkenne die Musikrichtung anhand eines Rhythmus-Musters.',mystery:'Wähle eine geheimnisvolle Tür.'};
@@ -674,7 +675,7 @@ async function renderEventChallenge(){
   if(type==='racing'){const b=document.createElement('button');b.textContent='START';let count=0;b.onclick=async()=>{if(used)return;count++;b.textContent='Noch '+(5-count)+'…';if(count>=5){used=true;b.disabled=true;if(await claim()){if(Math.random()<.65)await win('Rennen geschafft');else result.textContent='🏎️ Knapp verloren – Niete.';}}};body.append(b);status.textContent='Ein Klick zählt pro Tastendruck. Fünf Klicks beenden die Challenge.';}
   else{g.a.forEach((v,i)=>{const b=document.createElement('button');b.className='secondary';b.textContent=v;b.onclick=async()=>{if(used)return;used=true;body.querySelectorAll('button').forEach(x=>x.disabled=true);if(!await claim())return;const correct=g.correct===null?Math.random()<.5:i===g.correct;if(correct)await win('Challenge geschafft');else result.textContent='Diesmal keine Belohnung.';};body.append(b);});}
   if(type==='multiverse'||type==='candy'||type==='superhero'||type==='dragon'||type==='mystery')status.textContent='Bei dieser Auswahl entscheidet das Event-Glück über die Belohnung.';
- }else if(['football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery','blitz','plants','elephant','pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type)){
+ }else if(['football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery','madness','secretgarden','elephantparade','pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type)){
   const concepts={
    football:'Stadion-Event mit GOLDEN CUP und Elfmeter-Challenge.',
    dinosaur:'JURASSIC TREASURE: Dinosaurier-Eier ausbrüten sowie Fossilien sammeln und kombinieren.',
@@ -689,9 +690,9 @@ async function renderEventChallenge(){
    dragon:'DRAGON EGGS: Dracheneier ausbrüten und Eigenschaften kombinieren.',
    music:'BEAT MASTER: Rhythmus wiederholen.',
    mystery:'THE UNKNOWN: Fälle mit Hinweisen lösen.',
-   blitz:'60 SECOND MADNESS: Aufgaben innerhalb von 60 Sekunden.',
-   plants:'SECRET GARDEN: Magische Samen pflanzen; Pflanzen wachsen in mehreren Stufen.',
-   elephant:'ELEPHANT PARADE: Elefanten nach Farben und Mustern sortieren.',
+   madness:'60 SECOND MADNESS: Aufgaben innerhalb von 60 Sekunden.',
+   secretgarden:'SECRET GARDEN: Magische Samen pflanzen; Pflanzen wachsen in mehreren Stufen.',
+   elephantparade:'ELEPHANT PARADE: Elefanten nach Farben und Mustern sortieren.',
    pirate:'Piraten-Schatzkarten-Suche.',
    carnival:'Jahrmarkt-Spiele.',
    ninja:'Geheime Ninja-Aufgaben.',
@@ -907,6 +908,7 @@ $('oceanOn').onclick=()=>startEvent('ocean');$('zombieOn').onclick=()=>startEven
 $('galaxyOn').onclick=()=>startEvent('galaxy');$('diamondOn').onclick=()=>startEvent('diamond');$('eventsOff').onclick=stopEvent;
 $('hackerOn').onclick=()=>startEvent('hacker');$('unicornOn').onclick=()=>startEvent('unicorn');$('robotOn').onclick=()=>startEvent('robot');$('cubeOn').onclick=()=>startEvent('cube');$('skibidiOn').onclick=()=>startEvent('skibidi');$('godzillaOn').onclick=()=>startEvent('godzilla');$('blitzOn').onclick=()=>startEvent('blitz');$('laserOn').onclick=()=>startEvent('lasertag');$('spiderOn').onclick=()=>startEvent('spiderman');$('colaOn').onclick=()=>startEvent('cocacola');$('plantsOn').onclick=()=>startEvent('plants');$('elephantOn').onclick=()=>startEvent('elephant');$('timeOn').onclick=()=>startEvent('time');$('schoolOn').onclick=()=>startEvent('school');$('lavaOn').onclick=()=>startEvent('lava');$('alienOn').onclick=()=>startEvent('alien');
 $('pirateOn').onclick=()=>startEvent('pirate');$('carnivalOn').onclick=()=>startEvent('carnival');$('ninjaOn').onclick=()=>startEvent('ninja');$('toyOn').onclick=()=>startEvent('toy');$('crystalOn').onclick=()=>startEvent('crystal');$('wildwestOn').onclick=()=>startEvent('wildwest');$('bakeryOn').onclick=()=>startEvent('bakery');$('comicOn').onclick=()=>startEvent('comic');$('safariOn').onclick=()=>startEvent('safari');$('cyberOn').onclick=()=>startEvent('cyber');$('wizardOn').onclick=()=>startEvent('wizard');$('moonOn').onclick=()=>startEvent('moon');$('arcadeOn').onclick=()=>startEvent('arcade');$('samuraiOn').onclick=()=>startEvent('samurai');$('stoneageOn').onclick=()=>startEvent('stoneage');$('masqueradeOn').onclick=()=>startEvent('masquerade');$('scienceOn').onclick=()=>startEvent('science');$('luxuryOn').onclick=()=>startEvent('luxury');$('rainbowOn').onclick=()=>startEvent('rainbow');$('timemachineOn').onclick=()=>startEvent('timemachine');
+$('madnessOn').onclick=()=>startEvent('madness');$('secretgardenOn').onclick=()=>startEvent('secretgarden');$('elephantparadeOn').onclick=()=>startEvent('elephantparade');
 $('saveGodzillaVideo').onclick=saveGodzilla;
 $('saveEventOdds').onclick=async()=>{const v={blitzChance:Number($('blitzChance').value)/100,spiderChance:Number($('spiderChance').value)/100,spiderLuck:Math.max(1,Number($('spiderLuck').value)||5),colaChance:Number($('colaChance').value)/100,colaLuck:Math.max(1,Number($('colaLuck').value)||5),vineChance:Number($('vineChance').value)/100,plantLuck:Math.max(1,Number($('plantLuck').value)||5),elephantChestChance:Number($('elephantChance').value)/100};try{await httpsCallable(functions,'saveGameSettings')(v);msg('adminMsg','Event-Chancen und Multiplikatoren gespeichert.');}catch(e){msg('adminMsg',e?.message||'Einstellungen konnten nicht gespeichert werden.');}};
 $('saveDiamondChance').onclick=async()=>{const v=Number($('diamondChance').value);try{await httpsCallable(functions,'saveGameSettings')({diamondChance:v});msg('adminMsg','Diamond-Chance gespeichert.');}catch(e){msg('adminMsg',e?.message||'Diamond-Chance konnte nicht gespeichert werden.');}};
