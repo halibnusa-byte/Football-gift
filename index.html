@@ -875,8 +875,9 @@ async function renderEventChallenge(){
    });
   });
   const timer=document.createElement('div');timer.className='status';body.append(timer);
-  const tick=setInterval(async()=>{if(!body.isConnected){clearInterval(tick);if(unsub)unsub();return;}const ms=elapsed();if(ms<10000)timer.textContent='Skin-Auswahl: '+Math.ceil((10000-ms)/1000)+' Sekunden';else if(ms<310000)timer.textContent='MATCH LIVE · '+Math.ceil((310000-ms)/1000)+' Sekunden übrig';else{timer.textContent='MATCH BEENDET';if(!finishBusy){finishBusy=true;try{await httpsCallable(functions,'finishLaserTag')({});const top=Object.entries(latestPlayers).sort((x,y)=>(Number(y[1].lives)||0)-(Number(x[1].lives)||0)||(Number(y[1].hits)||0)-(Number(x[1].hits)||0)).slice(0,3);status.textContent='TOP 3 · DIAMOND GESCHENK: '+top.map(([id,p],i)=>(i+1)+'. '+(p.name||'Spieler')).join(' · ');}catch(e){status.textContent=e?.message||'Rundenabschluss fehlgeschlagen.';}}}},1000);
-  status.textContent='Free-for-all: 3 Leben. 3D-Arena mit Echtzeit-Spielerpositionen. Die drei besten erhalten je ein DIAMOND GESCHENK.';
+  const finishRef=path('events/laserFinished');let finishUnsub=onValue(finishRef,snap=>{if(snap.val()===true){timer.textContent='MATCH BEENDET · TOP 3';const winnersRef=path('events/laserWinners');get(winnersRef).then(v=>{const ids=v.val()||[];status.textContent='TOP 3 · DIAMOND GESCHENK: '+ids.map((id,i)=>(i+1)+'. '+(latestPlayers[id]?.name||'Spieler')).join(' · ');});}});
+  const tick=setInterval(()=>{if(!body.isConnected){clearInterval(tick);if(unsub)unsub();if(finishUnsub)finishUnsub();return;}const ms=elapsed();if(ms<10000)timer.textContent='Skin-Auswahl: '+Math.ceil((10000-ms)/1000)+' Sekunden';else if(timer.textContent!=='MATCH BEENDET · TOP 3')timer.textContent='MATCH LIVE · Letzter Spieler mit Leben gewinnt!';},1000);
+  status.textContent='Free-for-all: 3 Leben. 3D-Arena mit Echtzeit-Spielerpositionen. Bei nur einem verbleibenden Spieler endet das Match automatisch. Die Top 3 erhalten je ein DIAMOND GESCHENK.';
  }else if(type==='ocean'){
   const q=document.createElement('p');q.textContent='THE LOST TREASURE: Drei versunkene Schatztruhen warten auf dich. Wähle genau eine.';body.append(q);
   const hint=Math.floor(Math.random()*3);let used=false;
