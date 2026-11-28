@@ -403,3 +403,9 @@ test("Safari challenge requires focusing an animal and taking a photo", () => {
   assert.match(client, /FOTO AUFNEHMEN/);
   assert.match(client, /Fokus eingestellt/);
 });
+
+test("Wild West event includes a gold hunt followed by a puzzle duel", () => {
+  assert.match(client, /wildwest:\{title:'WILD WEST · GOLDJAGD & RÄTSEL-DUELL',mode:'goldhunt'/);
+  assert.match(client, /Wähle eine Goldpfanne/);
+  assert.match(client, /Gold gefunden! Löse das Rätsel/);
+});
