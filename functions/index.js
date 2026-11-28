@@ -19,6 +19,7 @@ const EVENT_TYPES = new Set([
   "multiverse", "football", "dinosaur", "candy", "castle", "space",
   "ghost", "winter", "egypt", "superhero", "racing", "dragon", "music",
   "mystery",
+  "pirate", "carnival", "ninja", "toy", "crystal", "wildwest", "bakery", "comic", "safari", "cyber", "wizard", "moon", "arcade", "samurai", "stoneage", "masquerade", "science", "luxury", "rainbow", "timemachine",
 ]);
 
 function hashCode(value) {
