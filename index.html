@@ -747,13 +747,14 @@ async function renderEventChallenge(){
    const b=document.createElement('button');b.className='secondary';b.textContent=playerName;
    b.onclick=async()=>{
     if(playing)return;
-    if(!await claim()){status.textContent='Du hast deine Zeitreise in diesem Event bereits benutzt.';return;}
     playing=true;body.querySelectorAll('button').forEach(x=>x.disabled=true);
     const list=videos[playerName],videoId=list[Math.floor(Math.random()*list.length)];
     const frame=document.createElement('iframe');frame.width='100%';frame.height='520';frame.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';frame.allowFullscreen=true;
     frame.style.cssText='display:block;width:100%;max-width:420px;min-height:520px;margin:12px auto;border:0;border-radius:16px';
     frame.src='https://www.youtube-nocookie.com/embed/'+videoId+'?autoplay=1&mute=1&enablejsapi=1&playsinline=1&rel=0&origin='+encodeURIComponent(location.origin);
     body.append(frame);q.textContent=playerName+'s Video läuft einmal. Nach dem Ende kehrt das Spiel zurück.';
+    let claimed=false;try{const fullscreenPromise=frame.requestFullscreen?frame.requestFullscreen():Promise.resolve();const claimPromise=claim();await fullscreenPromise.catch(()=>{});claimed=await claimPromise;}catch{claimed=false;}
+    if(!claimed){frame.remove();playing=false;status.textContent='Du hast deine Zeitreise bereits benutzt oder sie ist nicht verfügbar.';return;}
     let finished=false;
     const onMessage=async event=>{
      if(event.source!==frame.contentWindow||finished)return;
