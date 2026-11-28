@@ -650,7 +650,7 @@ function renderPlannedMiniGame(type,body,result,status,claim,win){
   ninja:{title:'NINJA TRIAL · SCHATTEN-TEST',mode:'sequence',prompt:'Merke dir die Ninja-Zeichen und tippe sie in derselben Reihenfolge.',sequence:['🥷','⭐','🌙','🥷'],success:'Ninja-Prüfung bestanden!'},
   toy:{title:'TOY MAKER · SPIELZEUG BAUEN',mode:'order',prompt:'Setze das Spielzeug in der richtigen Reihenfolge zusammen.',items:['🧩 Körper','🛞 Räder','⭐ Dekoration'],answer:['🧩 Körper','🛞 Räder','⭐ Dekoration'],success:'Spielzeug fertig gebaut!'},
   crystal:{title:'CRYSTAL CAVE · KRISTALL-KOMBI',mode:'pairs',prompt:'Finde die drei passenden Kristallpaare.',success:'Die Kristalle sind kombiniert!'},
-  wildwest:{title:'WILD WEST · RÄTSEL-DUELL',mode:'quiz',prompt:'Ein Cowboy reitet 10 km nach Westen und 10 km nach Osten. Wie weit ist er vom Start entfernt?',options:['0 km','10 km','20 km'],answer:0,success:'Du gewinnst das Rätsel-Duell!'},
+  wildwest:{title:'WILD WEST · GOLDJAGD & RÄTSEL-DUELL',mode:'goldhunt',prompt:'Suche zuerst Gold in einer der drei Pfannen und gewinne danach das Rätsel-Duell.',success:'Gold gefunden und Rätsel-Duell gewonnen!'},
   bakery:{title:'BAKERY · TORTEN-DEKORATION',mode:'order',prompt:'Dekoriere die Torte in der richtigen Reihenfolge.',items:['🍰 Boden','🧁 Creme','🍓 Erdbeeren'],answer:['🍰 Boden','🧁 Creme','🍓 Erdbeeren'],success:'Die Torte ist fertig dekoriert!'},
   comic:{title:'COMIC WORLD · STORY-ENTSCHEIDUNG',mode:'story',prompt:'Deine Entscheidungen verändern den Verlauf der Comic-Geschichte.',success:'Deine Comic-Geschichte hat ein gutes Ende!'},
   safari:{title:'SAFARI · TIERFORSCHER',mode:'photo',prompt:'Suche das gesuchte Tier im Sucher und mache ein Foto.',success:'Tier entdeckt und fotografiert!'},
@@ -703,6 +703,8 @@ function renderPlannedMiniGame(type,body,result,status,claim,win){
   let count=0,left=spec.seconds,timer=null;const b=button('START',async()=>{if(!await begin())return;left=spec.seconds;count=0;panel.textContent='0 / '+spec.target+' · '+left+' Sekunden';controls.innerHTML='';const hit=button('⚡ DRÜCKEN!',()=>{if(done)return;count++;panel.textContent=count+' / '+spec.target+' · '+left+' Sekunden';if(count>=spec.target){clearInterval(timer);finish();}});timer=setInterval(()=>{left--;if(left<=0){clearInterval(timer);fail('Zeit abgelaufen!');}else panel.textContent=count+' / '+spec.target+' · '+left+' Sekunden';},1000);});
  }else if(spec.mode==='cups'){
   const gift=Math.floor(Math.random()*3);panel.textContent='🎁 Das Geschenk ist in einer der drei Geister-Boxen versteckt.';['👻 Box A','👻 Box B','👻 Box C'].forEach((label,i)=>button(label,async()=>{if(!await begin())return;if(i===gift)await finish();else fail('Die Box war eine Illusion!');}));
+ }else if(spec.mode==='goldhunt'){
+  const gold=Math.floor(Math.random()*3);panel.textContent='⛏️ Wähle eine Goldpfanne.';['🥣 Pfanne A','🥣 Pfanne B','🥣 Pfanne C'].forEach((label,i)=>button(label,async()=>{if(!await begin())return;if(i!==gold){fail('In dieser Pfanne war kein Gold.');return;}panel.textContent='✨ Gold gefunden! Löse das Rätsel: Ein Cowboy reitet 10 km nach Westen und 10 km nach Osten. Wie weit ist er vom Start entfernt?';controls.innerHTML='';['0 km','10 km','20 km'].forEach((answer,j)=>button(answer,()=>{if(j===0)finish();else fail('Das Rätsel-Duell verloren.');}));}));
  }else if(spec.mode==='photo'){
   const animals=['🦓 ZEBRA','🦒 GIRAFFE','🐘 ELEFANT','🦁 LÖWE'];const target=animals[Math.floor(Math.random()*animals.length)];let focused=null;
   panel.textContent='📷 SAFARI-SUCHER · Fotografiere: '+target;
