@@ -145,3 +145,21 @@ test("Message Man uses the same server-authoritative live chat endpoint", () => 
   assert.ok(section.includes("httpsCallable(functions,'sendChatMessage')"));
   assert.ok(!section.includes("push(path('messages')"));
 });
+
+test("admin game settings are validated and written by a trusted callable", () => {
+  assert.ok(source.includes("exports.saveGameSettings = onCall"));
+  assert.ok(source.includes('requireRole(request, ["mainAdmin"])'));
+  assert.ok(source.includes('claims.halfAdmin !== true'));
+  assert.ok(source.includes("settings/roleLuck/"));
+  assert.ok(source.includes("blitzChance"));
+  assert.ok(source.includes("diamondChance"));
+});
+
+test("browser admin settings no longer write directly to settings", () => {
+  for (const id of ["saveLuck", "saveEventOdds", "saveDiamondChance"]) {
+    const at = client.indexOf("$('" + id + "').onclick=");
+    assert.notEqual(at, -1);
+    const section = client.slice(at, at + 1400);
+    assert.ok(section.includes("httpsCallable(functions,'saveGameSettings')"));
+  }
+});
