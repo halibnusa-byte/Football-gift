@@ -1166,7 +1166,7 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
   const claimKey = eventId + ":" + runId;
   if (eventId === "zombie") {
     const rescue = (await db.ref("events/zombieRescue/" + runId).get()).val();
-    if (!rescue || rescue.completed !== true || rescue.ownerUid !== auth.uid) {
+    if (!rescue || rescue.completed !== true || rescue.ownerUid !== auth.uid || rescue.votes?.[auth.uid] !== true) {
       throw new HttpsError("failed-precondition", "Die gemeinsame Zombie-Rettung ist noch nicht abgeschlossen oder du bist nicht der Geschenkbesitzer.");
     }
   }
