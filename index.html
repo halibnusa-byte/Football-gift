@@ -272,7 +272,7 @@ let uid=null,name='',player={},role='normal',roleName='',settings={},eventState=
 const path=p=>ref(db,p),clean=s=>String(s||'').trim().replace(/[.#$\[\]/]/g,'').slice(0,24);
 const show=(id,on)=>$(id)?.classList.toggle('hidden',!on),msg=(id,t)=>{if($(id))$(id).textContent=t};
 const hash=async s=>{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')};
-const isPower=()=>{const a=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Berlin',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());const o=Object.fromEntries(a.map(x=>[x.type,x.value]));const m=Number(o.hour)*60+Number(o.minute);return o.weekday==='Sat'||(m>=900&&m<1020)};
+const isPower=()=>false; // Keine festen Power-Hours-Zeiten erfinden; erst aktivieren, wenn der Admin echte Zeiten konfiguriert.
 const luck=()=>Math.max(settings.luckEnabled?Number(settings.luckMultiplier||1):1,role==='special'?2:1,isPower()?2:1,role==='halfAdmin'?Math.min(50,Number(settings.roleLuck?.[uid]||1)):1);
 const newTokensUnlocked=()=>settings.completedEvents?.skibidi===true;
 const prizeById=id=>PRIZES.find(p=>p.id===id)||({id:'diamondGift',name:'Diamond-Geschenk',emoji:'💎',chance:0});
