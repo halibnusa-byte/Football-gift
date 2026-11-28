@@ -258,7 +258,7 @@ async function rollAndAward(targetUid,rareMult=1,source='Box',forceGalaxy=false)
  }else if(targetUid===uid){$('result').textContent='Niete! Vielleicht beim nächsten Mal.';}
  return prize;
 }
-async function addActivity(textValue){if(!uid)return;await push(path('activity'),{name,text:textValue,at:Date.now()})}
+async function addActivity(textValue){if(!uid)return;await httpsCallable(functions,'addPlayerActivity')({text:textValue});}
 function renderBoxes(){
  const g=$('boxGrid');g.innerHTML='';
  boxes.forEach((b,i)=>{
@@ -480,19 +480,18 @@ function applyRolePanelPermissions(){
 async function adminSaveCode(){if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf den Admin-Code ändern.');const v=$('newAdminCode').value;if(v.length<8)return msg('adminMsg','Mindestens 8 Zeichen.');const nh=await hash(v);await set(path('admin/codeHash'),nh);try{await set(path('adminProof/'+uid),nh);ownerCode=v;}catch(e){}$('newAdminCode').value='';msg('adminMsg','Admin-Code geändert.');}
 async function saveSpecial(){
  if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf besondere Spieler festlegen.');
- const n=clean($('specialName').value),code=$('newSpecialCode').value;if(!n||code.length<4)return msg('adminMsg','Spielername und Code (mindestens 4 Zeichen) eingeben.');
- const s=await get(path('players'));const found=Object.entries(s.val()||{}).find(([id,p])=>(p.name||'').toLowerCase()===n.toLowerCase());if(!found)return msg('adminMsg','Spieler muss sich zuerst angemeldet haben.');
- await set(path('admin/special'),{uid:found[0],name:n,codeHash:await hash(code)});$('newSpecialCode').value='';msg('adminMsg','Besonderer Spieler gespeichert.');
+ const name=clean($('specialName').value),code=$('newSpecialCode').value;
+ if(!name||code.length<4)return msg('adminMsg','Spielername und Code (mindestens 4 Zeichen) eingeben.');
+ try{await httpsCallable(functions,'saveNamedRoleCodes')({kind:'special',entries:[{name,code}]});$('newSpecialCode').value='';msg('adminMsg','Besonderer Spieler sicher gespeichert.');}
+ catch(e){msg('adminMsg',e?.message||'Speichern fehlgeschlagen.');}
 }
 async function saveMessageMen(){
  if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Message Men festlegen.');
  const names=[$('messageMan1').value.trim(),$('messageMan2').value.trim()],codes=[$('messageManCode1').value,$('messageManCode2').value];
- const entries=[];for(let i=0;i<2;i++){if(!names[i]&&!codes[i])continue;if(!names[i]||codes[i].length<4)return msg('adminMsg','Für jeden Message Man Namen und Code (mindestens 4 Zeichen) eingeben.');
-  const all=(await get(path('players'))).val()||{};const found=Object.entries(all).find(([id,p])=>(p.name||'').toLowerCase()===clean(names[i]).toLowerCase());if(!found)return msg('adminMsg','Spieler nicht gefunden: '+names[i]);entries.push({uid:found[0],hash:await hash(codes[i]),name:names[i]});
- }
+ const entries=[];for(let i=0;i<2;i++){if(!names[i]&&!codes[i])continue;if(!names[i]||codes[i].length<4)return msg('adminMsg','Für jeden Message Man Namen und Code (mindestens 4 Zeichen) eingeben.');entries.push({name:names[i],code:codes[i]});}
  if(entries.length>2)return msg('adminMsg','Maximal zwei Message Men.');
- const old=(await get(path('admin/messageManCodes'))).val()||{};const next={};entries.forEach(x=>next[x.hash]={uid:x.uid,name:x.name});await set(path('admin/messageManCodes'),next);
- $('messageManCode1').value='';$('messageManCode2').value='';msg('adminMsg','Message-Man-Codes gespeichert. Die Spieler können ihren Code selbst eingeben.');
+ try{await httpsCallable(functions,'saveNamedRoleCodes')({kind:'messageMan',entries});$('messageManCode1').value='';$('messageManCode2').value='';msg('adminMsg','Message-Man-Codes sicher gespeichert.');}
+ catch(e){msg('adminMsg',e?.message||'Speichern fehlgeschlagen.');}
 }
 async function resolveTargets(scope,targetName){
  const all=(await get(path('players'))).val()||{};if(scope==='global')return Object.entries(all);
@@ -677,33 +676,18 @@ function renderGodzilla(body,result,status,claim,win){
 async function saveGodzilla(){
  const url=$('godzillaUrl').value.trim(),id=youtubeId(url);if(!id)return msg('adminMsg','Bitte einen gültigen YouTube-Link einfügen.');
  const pause=Math.max(5,Number($('godzillaPause').value)||45),end=Math.max(pause+5,Number($('godzillaEnd').value)||120),winner=$('godzillaWinner').value;
- await update(path('settings'),{godzillaVideo:{url,pause,end,winner}});msg('adminMsg','Godzilla-Videoeinstellungen gespeichert.');
+ try{await httpsCallable(functions,'saveGodzillaSettings')({url,pause,end,winner});msg('adminMsg','Godzilla-Videoeinstellungen gespeichert.');}
+ catch(e){msg('adminMsg',e?.message||'Einstellungen konnten nicht gespeichert werden.');}
 }
 async function registerAdminRole(kind){
  if(role!=='admin')throw new Error('Nur der Hauptadmin darf Rollen vergeben.');
- const half=kind==='half';
- const codes=half?[$('halfCode1').value,$('halfCode2').value]:[$('quarterCode').value];
- const out={};
- for(let i=0;i<codes.length;i++){
-  const c=String(codes[i]||'').trim();
-  if(!c)continue;
-  if(c.length<4)throw new Error('Jeder Rollen-Code muss mindestens 4 Zeichen haben.');
-  const codeHash=await hash(c);
-  if(out[codeHash])throw new Error('Jeder Admin braucht einen eigenen Code.');
-  out[codeHash]={createdAt:Date.now()};
- }
- if(!Object.keys(out).length)throw new Error('Bitte mindestens einen Code eingeben.');
- const [adminSnap,specialSnap,quarterSnap,halfSnap,mmSnap]=await Promise.all([
-  get(path('admin/codeHash')),get(path('admin/special')),get(path('admin/quarterAdmins')),get(path('admin/halfAdmins')),get(path('admin/messageManCodes'))
- ]);
- const forbidden=new Set([adminSnap.val(),specialSnap.val()?.codeHash,...Object.keys(mmSnap.val()||{}),...Object.keys((half?quarterSnap:halfSnap).val()||{})].filter(Boolean));
- for(const codeHash of Object.keys(out))if(forbidden.has(codeHash))throw new Error('Dieser Code wird bereits für eine andere Rolle verwendet. Bitte einen anderen Code wählen.');
- await set(path('admin/'+(half?'halfAdmins':'quarterAdmins')),out);
- if(half){$('halfCode1').value='';$('halfCode2').value='';}
- else $('quarterCode').value='';
- msg('adminMsg',half?'Halb-Admin-Code(s) gespeichert. Die Spieler müssen nur ihren Code im Rollen-Zugang eingeben.':'Viertel-Admin-Code gespeichert. Der Spieler muss nur seinen Code im Rollen-Zugang eingeben.');
+ const half=kind==='half',ids=half?['halfCode1','halfCode2']:['quarterCode'];
+ const entries=ids.map(id=>({code:String($(id).value||'').trim()})).filter(x=>x.code);
+ if(!entries.length)throw new Error('Bitte mindestens einen Code eingeben.');
+ const r=await httpsCallable(functions,'saveRoleCodes')({kind:half?'half':'quarter',entries});
+ ids.forEach(id=>$(id).value='');
+ msg('adminMsg',(half?'Halb-Admin':'Viertel-Admin')+'-Code(s) sicher gespeichert.');
 }
-
 // ===== COMEBACK GIFT =====
 let cbState=null,cbTitle='',cbBusy=false;
 function renderComeback(){
