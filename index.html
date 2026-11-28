@@ -110,6 +110,15 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <section class="panel hidden" id="eventChallengePanel"><h2 id="eventChallengeTitle">🎪 Event</h2><p class="muted" id="eventChallengeDescription"></p><div class="event-challenge" id="eventChallengeBody"></div></section>
 <section class="panel" id="inventoryPanel"><h2>🎒 Deine Sammlung</h2><div class="list" id="inventory"></div></section>
 <section class="panel" id="livePanel"><h2>📺 Live-Übertragung</h2><p class="muted">Wähle einen Spieler, der online ist. Angezeigt werden nur seine Boxen – keine Sammlung und keine Glückswerte.</p><div class="row"><select id="watchPlayer"><option value="">Spieler auswählen…</option></select><button class="secondary" id="watchBtn">LIVE ANSEHEN</button></div><div id="liveScreen" class="status">Noch keine Übertragung ausgewählt.</div><div class="list" id="activity"></div></section>
+<section class="panel" id="liveChatPanel">
+ <h2>💬 Live-Chat</h2>
+ <p class="muted">Schreibe mit den anderen Spielern. Du kannst deine Nachrichten löschen und fremde Nachrichten melden.</p>
+ <textarea id="chatInput" rows="2" maxlength="240" placeholder="Deine Nachricht …"></textarea>
+ <button id="chatSendBtn">NACHRICHT SENDEN</button>
+ <div id="chatStatus" class="hint"></div>
+ <div id="chatFeed" class="list" aria-live="polite">Noch keine Nachrichten.</div>
+</section>
+
 <section class="panel" id="rankingPanel"><h2>🏆 Rangliste der Geschenke</h2><div class="list" id="ranking"></div></section>
 <section class="panel hidden" id="rosterPanel"><h2>👥 Spielerübersicht</h2><p class="muted">Online- und Offline-Spieler. Der Hauptadmin sieht die Namen.</p><div class="roster" id="playerRoster">Wird geladen …</div></section>
 <section class="panel" id="giftPanel"><h2>🎁 Geschenk weitergeben</h2><div id="giftLocked" class="status">Für diese Funktion brauchst du eine entsprechende Rolle.</div><div id="giftControls" class="hidden"><div class="row"><select id="giftScope"><option value="single">Einzelner Spieler</option><option value="global">Alle Spieler</option></select><input id="giftTarget" placeholder="Spielername (bei einzeln)"></div><select id="giftPrize"></select><input id="giftAmount" type="number" min="1" max="20" value="1"><label><input id="giftPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="giftBtn">GESCHENK SENDEN</button><div id="giftMsg" class="hint"></div></div></section>
@@ -296,7 +305,39 @@ function subscribe(){
  unsubs.push(onValue(path('players/'+uid),s=>{if(s.exists()){player=s.val();renderInventory();}}));
  unsubs.push(onValue(path('announcements/global'),s=>{if(s.exists())showAnnouncement(s.val())}));
  unsubs.push(onValue(path('announcements/users/'+uid),s=>{if(s.exists())showAnnouncement(s.val())}));
- unsubs.push(onValue(path('messages'),s=>{const arr=Object.values(s.val()||{}).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,5);if(role==='admin')msg('adminMsg','Letzte Nachricht: '+(arr[0]?.name||'')+' – '+(arr[0]?.text||''));}));
+ unsubs.push(onValue(path('messages'),s=>{const all=s.val()||{};renderLiveChat(all);const arr=Object.values(all).filter(x=>x&&typeof x.at==='number').sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,5);if(role==='admin'&&arr[0])msg('adminMsg','Letzte Nachricht: '+(arr[0].name||'')+' – '+(arr[0].text||''));}));
+}
+
+function renderLiveChat(messages){
+ const feed=$('chatFeed');if(!feed)return;
+ feed.innerHTML='';
+ const rows=Object.entries(messages||{}).filter(([,m])=>m&&typeof m.text==='string'&&!m.hidden&&typeof m.at==='number')
+  .sort((a,b)=>a[1].at-b[1].at).slice(-50);
+ if(!rows.length){feed.textContent='Noch keine Nachrichten.';return;}
+ for(const [id,m] of rows){
+  const item=document.createElement('div');item.className='item';
+  const content=document.createElement('div');
+  const head=document.createElement('b');head.textContent=String(m.name||'Spieler').slice(0,24);
+  const body=document.createElement('div');body.textContent=String(m.text).slice(0,240);
+  const time=document.createElement('small');time.textContent=new Date(m.at).toLocaleTimeString();
+  content.append(head,body,time);item.append(content);
+  if(m.uid===uid||role==='admin'){
+   const del=document.createElement('button');del.className='secondary';del.textContent='Löschen';
+   del.onclick=async()=>{try{await httpsCallable(functions,'deleteChatMessage')({messageId:id});}catch(e){msg('chatStatus',e?.message||'Löschen fehlgeschlagen.');}};
+   item.append(del);
+  }
+  if(m.uid!==uid){
+   const report=document.createElement('button');report.className='secondary';report.textContent='Melden';
+   report.onclick=async()=>{try{await httpsCallable(functions,'reportChatMessage')({messageId:id,reason:'Meldung durch Spieler'});msg('chatStatus','Nachricht wurde gemeldet.');}catch(e){msg('chatStatus',e?.message||'Melden fehlgeschlagen.');}};
+   item.append(report);
+  }
+  if(role==='admin'){
+   const hide=document.createElement('button');hide.className='secondary';hide.textContent='Ausblenden';
+   hide.onclick=async()=>{try{await httpsCallable(functions,'moderateChatMessage')({messageId:id,action:'hide'});}catch(e){msg('chatStatus',e?.message||'Moderation fehlgeschlagen.');}};
+   item.append(hide);
+  }
+  feed.append(item);
+ }
 }
 function showAnnouncement(a){if(!a?.text||a.targetUid&&a.targetUid!==uid)return;$('ownerBannerLabel').textContent=(a.sender||'OWNER')+':';$('ownerBannerText').textContent=a.text;show('ownerBanner',true);clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>show('ownerBanner',false),3000);}
 function updateHeader(){
@@ -755,6 +796,16 @@ $('spawnGalaxy').onclick=()=>spawnGalaxy().catch(e=>msg('adminMsg',e.message));
 $('spawnBlitz').onclick=async()=>{if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Blitze manuell auslösen.');const scope=$('blitzScope').value;let targets;if(scope==='self')targets=[[uid,player]];else targets=await resolveTargets(scope,$('blitzTarget').value);for(const [id,p] of targets)await update(path('players/'+id),{pendingBlitz:Number(p.pendingBlitz||0)+1});msg('adminMsg','Blitz vorgemerkt. Der Einschlag erscheint in der nächsten Runde.');};
 $('awardBtn').onclick=grantTokens;$('giftBtn').onclick=sendGift;$('resetPlayer').onclick=()=>resetData().catch(e=>msg('adminMsg',e.message));
 $('watchBtn').onclick=watch;
+
+$('chatSendBtn').onclick=async()=>{
+ const textValue=$('chatInput').value.trim();
+ if(!textValue)return msg('chatStatus','Bitte eine Nachricht eingeben.');
+ try{
+  await httpsCallable(functions,'sendChatMessage')({text:textValue});
+  $('chatInput').value='';
+  msg('chatStatus','Nachricht gesendet.');
+ }catch(e){msg('chatStatus',e?.message||'Nachricht konnte nicht gesendet werden.');}
+};
 $('messageManSend').onclick=async()=>{const t=$('messageManText').value.trim();if(!t)return msg('messageManStatus','Bitte eine Nachricht eingeben.');await push(path('messages'),{uid,name,text:t,at:Date.now()});await addActivity('hat eine Nachricht geschrieben.');$('messageManText').value='';msg('messageManStatus','Nachricht gesendet.')};
 $('logoutBtn').onclick=async()=>{if(uid)await remove(path('online/'+uid));unsubs.forEach(f=>f());if(watchUnsub)watchUnsub();unsubs=[];await signOut(auth);uid=null;show('app',false);show('loginPanel',true)};
 $('awardPrize').innerHTML='';PRIZES.concat([{id:'diamondGift',name:'Diamond-Geschenk'}]).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;$('awardPrize').append(o)});
