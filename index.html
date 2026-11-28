@@ -597,6 +597,77 @@ async function resetData(){
   msg('adminMsg','Zurückgesetzt: '+result.data.reset+' Spieler.');
  }catch(e){msg('adminMsg',e?.message||'Zurücksetzen fehlgeschlagen.');}
 }
+
+function renderPlannedMiniGame(type,body,result,status,claim,win){
+ const specs={
+  football:{title:'GOLDEN CUP · ELFMETER',mode:'quiz',prompt:'Du stehst am Elfmeterpunkt. In welche Ecke schießt du?',options:['Links unten','Mittig','Rechts oben'],answer:2,success:'TOR! GOLDEN CUP geschafft.'},
+  dinosaur:{title:'JURASSIC TREASURE · FOSSILIEN',mode:'steps',prompt:'Brüte ein Ei aus und setze das Fossil zusammen.',steps:['🥚 Dinosaurier-Ei ausbrüten','🦴 Fossil-Teil 1 finden','🦴 Fossil-Teil 2 zusammensetzen'],success:'Das Dinosaurier-Fossil ist vollständig!'},
+  candy:{title:'SWEET CHAOS · SÜSSIGKEITEN-KOMBI',mode:'pairs',prompt:'Finde alle drei gleichen Süßigkeiten-Paare.',success:'Alle Süßigkeiten wurden richtig kombiniert!'},
+  castle:{title:'THE ROYAL SECRET · BURG-AUFGABE',mode:'quiz',prompt:'Wähle deine Rolle und beantworte die Frage: Was schützt eine Burg?',options:['Zugbrücke und Mauern','Ein Surfbrett','Ein U-Boot'],answer:0,success:'Die Burgprüfung bestanden!'},
+  space:{title:'GALACTIC MISSION · PLANETENROUTE',mode:'order',prompt:'Ordne die drei Planeten von der Sonne aus: Erde, Merkur, Venus.',items:['Erde','Merkur','Venus'],answer:['Merkur','Venus','Erde'],success:'Raumschiff sicher am Ziel gelandet!'},
+  ghost:{title:'HAUNTED GIFTS · GEISTER-ILLUSION',mode:'quiz',prompt:'Ein Geist versteckt das Geschenk. Welche Spur bleibt sichtbar?',options:['Leuchtende Fußspuren','Ein Sonnenbrand','Ein nasser Regenschirm'],answer:0,success:'Du hast die echte Spur gefunden!'},
+  winter:{title:'FROZEN KINGDOM · EIS-RÄTSEL',mode:'quiz',prompt:'Was lässt Eis normalerweise schmelzen?',options:['Wärme','Schatten','Schnee'],answer:0,success:'Der Eisblock ist geschmolzen!'},
+  egypt:{title:"THE PHARAOH'S SECRET · HIEROGLYPHEN",mode:'quiz',prompt:'Das Sonnensymbol steht für welchen Himmelskörper?',options:['Mond','Sonne','Mars'],answer:1,success:'Die Hieroglyphe ist entschlüsselt!'},
+  superhero:{title:'HERO ACADEMY · HELDEN-TEST',mode:'steps',prompt:'Schließe deine Helden-Ausbildung ab.',steps:['🛡️ Schutzschild aktivieren','⚡ Energie sammeln','🦸 Zivilisten retten'],success:'Heldenprüfung bestanden!'},
+  racing:{title:'TURBO CHALLENGE · ZEITRENNEN',mode:'tap',prompt:'Drücke den Turbo-Knopf 12-mal, bevor die Zeit abläuft.',target:12,seconds:15,success:'ZIELLINIE! Deine Rennzeit ist gespeichert.'},
+  dragon:{title:'DRAGON EGGS · DRACHENBRUT',mode:'steps',prompt:'Brüte das Drachenei aus und kombiniere seine Eigenschaften.',steps:['🥚 Drachenei wärmen','🔥 Feuer-Attribut entdecken','🐉 Drachenflügel kombinieren'],success:'Dein Drache ist geschlüpft!'},
+  music:{title:'BEAT MASTER · RHYTHMUS',mode:'sequence',prompt:'Merke dir den Rhythmus und wiederhole ihn.',sequence:['🥁','🎵','👏','🎵'],success:'Beat perfekt getroffen!'},
+  mystery:{title:'THE UNKNOWN · FALLAKTE',mode:'quiz',prompt:'Ein Schlüssel ist nass, obwohl es nicht geregnet hat. Wo könnte er gewesen sein?',options:['Im Wasser','Im Bücherregal','Im Ofen'],answer:0,success:'Fall gelöst!'},
+  madness:{title:'60 SECOND MADNESS',mode:'quizset',prompt:'Beantworte drei schnelle Fragen innerhalb von 60 Sekunden.',questions:[['Wie viele Minuten hat eine Stunde?',['30','60','100'],1],['Welche Zahl ist gerade?',['7','9','12'],2],['Was ist 8 × 3?',['24','18','32'],0]],success:'Alle Aufgaben in 60 Sekunden geschafft!'},
+  secretgarden:{title:'SECRET GARDEN · MAGISCHE PFLANZE',mode:'steps',prompt:'Pflanze und pflege deinen magischen Samen.',steps:['🌱 Samen pflanzen','💧 Pflanze gießen','🌸 Blüte ernten'],success:'Deine magische Pflanze ist gewachsen!'},
+  elephantparade:{title:'ELEPHANT PARADE · SORTIEREN',mode:'order',prompt:'Sortiere die Elefanten nach ihren Farben: Blau, Grün, Rot.',items:['Rot','Blau','Grün'],answer:['Blau','Grün','Rot'],success:'Alle Elefanten stehen in der richtigen Parade!'},
+  pirate:{title:'PIRATE TREASURE · SCHATZKARTE',mode:'route',prompt:'Folge der Karte: Starte am Schiff, gehe zum Palmenstrand und dann zur Höhle.',items:['🚢 Schiff','🏝️ Palmenstrand','🪨 Höhle'],answer:['🚢 Schiff','🏝️ Palmenstrand','🪨 Höhle'],success:'Der Piratenschatz gehört dir!'},
+  carnival:{title:'CARNIVAL · JAHRMARKT',mode:'tap',prompt:'Triff 10 Ziele am Jahrmarktstand.',target:10,seconds:20,success:'Jahrmarkt-Champion!'},
+  ninja:{title:'NINJA TRIAL · SCHATTEN-TEST',mode:'sequence',prompt:'Merke dir die Ninja-Zeichen und tippe sie in derselben Reihenfolge.',sequence:['🥷','⭐','🌙','🥷'],success:'Ninja-Prüfung bestanden!'},
+  toy:{title:'TOY MAKER · SPIELZEUG BAUEN',mode:'order',prompt:'Setze das Spielzeug in der richtigen Reihenfolge zusammen.',items:['🧩 Körper','🛞 Räder','⭐ Dekoration'],answer:['🧩 Körper','🛞 Räder','⭐ Dekoration'],success:'Spielzeug fertig gebaut!'},
+  crystal:{title:'CRYSTAL CAVE · KRISTALL-KOMBI',mode:'pairs',prompt:'Finde die drei passenden Kristallpaare.',success:'Die Kristalle sind kombiniert!'},
+  wildwest:{title:'WILD WEST · RÄTSEL-DUELL',mode:'quiz',prompt:'Ein Cowboy reitet 10 km nach Westen und 10 km nach Osten. Wie weit ist er vom Start entfernt?',options:['0 km','10 km','20 km'],answer:0,success:'Du gewinnst das Rätsel-Duell!'},
+  bakery:{title:'BAKERY · TORTEN-DEKORATION',mode:'order',prompt:'Dekoriere die Torte in der richtigen Reihenfolge.',items:['🍰 Boden','🧁 Creme','🍓 Erdbeeren'],answer:['🍰 Boden','🧁 Creme','🍓 Erdbeeren'],success:'Die Torte ist fertig dekoriert!'},
+  comic:{title:'COMIC WORLD · STORY-ENTSCHEIDUNG',mode:'quiz',prompt:'Der Held sieht eine Person in Gefahr. Was macht er?',options:['Hilfe holen und retten','Weggehen','Die Gefahr ignorieren'],answer:0,success:'Du hast die gute Story-Route gewählt!'},
+  safari:{title:'SAFARI · TIERFORSCHER',mode:'quiz',prompt:'Welches Tier hat einen langen Rüssel?',options:['Elefant','Giraffe','Zebra'],answer:0,success:'Tier entdeckt und fotografiert!'},
+  cyber:{title:'CYBER MISSION · CODE KNACKEN',mode:'quiz',prompt:'Entschlüssle den Code: 2, 4, 6, 8, ?',options:['9','10','12'],answer:1,success:'System erfolgreich entschlüsselt!'},
+  wizard:{title:'WIZARD TOWER · ZAUBERFORMEL',mode:'sequence',prompt:'Wiederhole die Zauberformel in der richtigen Reihenfolge.',sequence:['✨','🔥','💧','✨'],success:'Der Zauber ist gelungen!'},
+  moon:{title:'MOON QUEST · STERNBILD',mode:'order',prompt:'Verbinde die Sterne vom kleinsten zum größten Himmelskörper: Mond, Erde, Sonne.',items:['☀️ Sonne','🌙 Mond','🌍 Erde'],answer:['🌙 Mond','🌍 Erde','☀️ Sonne'],success:'Sternbild verbunden!'},
+  arcade:{title:'ARCADE CHALLENGE · HIGH SCORE',mode:'tap',prompt:'Sammle 15 Punkte, indem du den Arcade-Knopf drückst.',target:15,seconds:20,success:'Neuer Arcade-Highscore!'},
+  samurai:{title:'SAMURAI DOJO · REAKTION',mode:'reaction',prompt:'Warte auf das grüne Signal und drücke dann SOFORT.',success:'Perfekte Reaktion!'},
+  stoneage:{title:'STONE AGE · STEINPLATTEN',mode:'order',prompt:'Ordne die Werkzeuge vom einfachen zum fertigen Werkzeug.',items:['🪨 Stein','🪵 Holzgriff','🪓 Axt'],answer:['🪨 Stein','🪵 Holzgriff','🪓 Axt'],success:'Die Steinplatten sind richtig zusammengesetzt!'},
+  masquerade:{title:'MASQUERADE · MASKENRÄTSEL',mode:'quiz',prompt:'Welche Maske passt zur geheimen Figur, die einen Dreizack trägt?',options:['Meereskönig','Bäcker','Astronaut'],answer:0,success:'Die geheime Figur wurde erkannt!'},
+  science:{title:'SCIENCE LAB · EXPERIMENT',mode:'order',prompt:'Führe das sichere virtuelle Experiment in der richtigen Reihenfolge durch.',items:['🧪 Wasser einfüllen','🎨 Farbe hinzufügen','🔬 Ergebnis beobachten'],answer:['🧪 Wasser einfüllen','🎨 Farbe hinzufügen','🔬 Ergebnis beobachten'],success:'Experiment erfolgreich abgeschlossen!'},
+  luxury:{title:'LUXURY QUEST · DIAMANTEN',mode:'sequence',prompt:'Merke dir die Diamantfolge und wiederhole sie.',sequence:['💎','👑','💎','✨'],success:'Luxus-Challenge geschafft!'},
+  rainbow:{title:'RAINBOW MEMORY · FARBEN',mode:'sequence',prompt:'Merke dir die Regenbogen-Farben und wiederhole die Reihenfolge.',sequence:['🔴','🟡','🟢','🔵'],success:'Regenbogenfolge richtig wiederholt!'},
+  timemachine:{title:'TIME MACHINE · ZEITLINIE',mode:'order',prompt:'Ordne die Ereignisse zeitlich: Dinosaurier, Mittelalter, heute.',items:['🏰 Mittelalter','🦖 Dinosaurier','📱 Heute'],answer:['🦖 Dinosaurier','🏰 Mittelalter','📱 Heute'],success:'Zeitlinie korrekt eingestellt!'}
+ };
+ const spec=specs[type];if(!spec)return false;
+ $('eventChallengeTitle').textContent=spec.title;$('eventChallengeDescription').textContent=spec.prompt;
+ const panel=document.createElement('div');panel.className='status';body.append(panel);
+ const controls=document.createElement('div');controls.className='cards';body.append(controls);
+ let started=false,done=false;
+ const begin=async()=>{if(started)return false;started=true;controls.querySelectorAll('button').forEach(b=>b.disabled=true);if(!await claim()){done=true;status.textContent='Du hast dieses Event in dieser Runde bereits gespielt.';return false;}controls.innerHTML='';return true;};
+ const finish=async()=>{if(done)return;done=true;controls.querySelectorAll('button').forEach(b=>b.disabled=true);await win(spec.success);};
+ const fail=msg=>{if(done)return;done=true;controls.querySelectorAll('button').forEach(b=>b.disabled=true);result.textContent=msg||'Challenge nicht geschafft – diesmal keine Belohnung.';};
+ const button=(label,fn)=>{const b=document.createElement('button');b.className='secondary';b.textContent=label;b.onclick=fn;controls.append(b);return b;};
+ if(spec.mode==='quiz'){
+  spec.options.forEach((v,i)=>button(v,async()=>{if(!await begin())return;if(i===spec.answer)await finish();else fail('Falsch – die Challenge ist vorbei.');}));
+ }else if(spec.mode==='quizset'){
+  let qi=0;let timer=null;const ask=()=>{if(qi>=spec.questions.length){clearTimeout(timer);finish();return;}const q=spec.questions[qi];panel.textContent='Frage '+(qi+1)+' / '+spec.questions.length+': '+q[0];controls.innerHTML='';q[1].forEach((v,i)=>button(v,()=>{if(i!==q[2]){clearTimeout(timer);fail('Falsche Antwort – Zeit-Challenge beendet.');return;}qi++;ask();}));};
+  const b=button('60-SEKUNDEN-CHALLENGE STARTEN',async()=>{if(!await begin())return;let left=60;panel.textContent='Noch '+left+' Sekunden';timer=setInterval(()=>{left--;panel.textContent='Noch '+left+' Sekunden';if(left<=0){clearInterval(timer);fail('Zeit abgelaufen!');}},1000);ask();});
+ }else if(spec.mode==='steps'){
+  let step=0;panel.textContent='Schritt 1 von '+spec.steps.length;button(spec.steps[0],async()=>{if(!started&&!await begin())return;step++;if(step>=spec.steps.length){await finish();return;}panel.textContent='Schritt '+(step+1)+' von '+spec.steps.length;controls.innerHTML='';button(spec.steps[step],()=>{step++;if(step>=spec.steps.length)finish();else{panel.textContent='Schritt '+(step+1)+' von '+spec.steps.length;controls.innerHTML='';button(spec.steps[step],()=>{step++;if(step>=spec.steps.length)finish();else fail('Interner Schrittfehler – bitte Event neu starten.');});}});});
+ }else if(spec.mode==='order'||spec.mode==='route'){
+  const picked=[];const shuffled=[...spec.items].reverse();panel.textContent='Ausgewählt: 0 / '+spec.items.length;
+  shuffled.forEach(item=>button(item,async()=>{if(done||picked.includes(item))return;if(!started&&!await begin())return;picked.push(item);panel.textContent='Ausgewählt: '+picked.length+' / '+spec.items.length; if(picked.length===spec.items.length){if(picked.every((x,i)=>x===spec.answer[i]))await finish();else fail('Reihenfolge falsch – Challenge beendet.');}}));
+ }else if(spec.mode==='pairs'){
+  const icons=['🍬','🍭','🍫'];const cards=[...icons,...icons].sort(()=>Math.random()-.5);let first=null,found=0;cards.forEach((icon,i)=>button('🎁 '+(i+1),async ev=>{if(done)return;if(!started&&!await begin())return;const b=controls.children[i];b.textContent=icon;b.disabled=true;if(first===null){first={icon,b};return;}if(first.icon===icon){found++;first=null;if(found===3)await finish();}else{const old=first;first=null;setTimeout(()=>{if(!done){old.b.textContent='🎁';old.b.disabled=false;b.textContent='🎁';b.disabled=false;}},650);}}));
+ }else if(spec.mode==='sequence'){
+  let showing=true;const seq=spec.sequence;panel.textContent='Merke dir: '+seq.join('  ');let pos=0;const start=button('ICH BIN BEREIT',async()=>{if(!await begin())return;showing=false;panel.textContent='Wiederhole die Folge.';controls.innerHTML='';['🔴','🟡','🟢','🔵','🥁','🎵','👏','🥷','⭐','🌙','✨','🔥','💧','💎','👑'].forEach(x=>button(x,()=>{if(showing||done)return;if(x!==seq[pos]){fail('Falsche Reihenfolge!');return;}pos++;if(pos===seq.length)finish();}));});
+ }else if(spec.mode==='tap'){
+  let count=0,left=spec.seconds,timer=null;const b=button('START',async()=>{if(!await begin())return;left=spec.seconds;count=0;panel.textContent='0 / '+spec.target+' · '+left+' Sekunden';controls.innerHTML='';const hit=button('⚡ DRÜCKEN!',()=>{if(done)return;count++;panel.textContent=count+' / '+spec.target+' · '+left+' Sekunden';if(count>=spec.target){clearInterval(timer);finish();}});timer=setInterval(()=>{left--;if(left<=0){clearInterval(timer);fail('Zeit abgelaufen!');}else panel.textContent=count+' / '+spec.target+' · '+left+' Sekunden';},1000);});
+ }else if(spec.mode==='reaction'){
+  let armed=false;const b=button('REAKTION STARTEN',async()=>{if(!await begin())return;b.disabled=true;panel.textContent='Warte auf das grüne Signal …';const delay=1800+Math.floor(Math.random()*2500);setTimeout(()=>{if(done)return;armed=true;panel.textContent='🟢 JETZT!';button('JETZT DRÜCKEN',()=>{if(!armed){fail('Zu früh!');return;}finish();});},delay);});
+ }
+ return true;
+}
+
 async function renderEventChallenge(){
  const type=eventState.active,available=['unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery','madness','secretgarden','elephantparade','pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type);
  show('eventChallengePanel',available);if(!available||!uid)return;
@@ -710,47 +781,7 @@ async function renderEventChallenge(){
   const draw=()=>{const elapsed=Math.floor((Date.now()-started)/1000);timer.textContent='Nächster Dimensionswechsel in '+(30-(elapsed%30))+' Sekunden';};
   draw();interval=setInterval(()=>{if(!body.isConnected){clearInterval(interval);return;}draw();},1000);
   status.textContent='Die einzelnen Dimensions-Überraschungsmechaniken und das geheime Dimensionsgeschenk benötigen noch ihre festgelegten Regeln.';
-  }else if(['football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery','madness','secretgarden','elephantparade','pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type)){
-  const concepts={
-   football:'Stadion-Event mit GOLDEN CUP und Elfmeter-Challenge.',
-   dinosaur:'JURASSIC TREASURE: Dinosaurier-Eier ausbrüten sowie Fossilien sammeln und kombinieren.',
-   candy:'SWEET CHAOS: Süßigkeiten-Geschenke und Süßigkeiten kombinieren.',
-   castle:'THE ROYAL SECRET: Königliche Schatztruhen, Rollen als König, Ritter oder Zauberer und Aufgaben.',
-   space:'GALACTIC MISSION: Raumschiffe und Planetenbesuche.',
-   ghost:'HAUNTED GIFTS: Geister-Geschenke und Illusionen.',
-   winter:'FROZEN KINGDOM: Geschenke in Eisblöcken und Rätsel zum Auftauen.',
-   egypt:"THE PHARAOH'S SECRET: Sarkophage und Hieroglyphen-Rätsel.",
-   superhero:'HERO ACADEMY: Kapseln und Superhelden-Aufgaben.',
-   racing:'TURBO CHALLENGE: Zeitrennen; die besten drei erhalten Belohnungen.',
-   dragon:'DRAGON EGGS: Dracheneier ausbrüten und Eigenschaften kombinieren.',
-   music:'BEAT MASTER: Rhythmus wiederholen.',
-   mystery:'THE UNKNOWN: Fälle mit Hinweisen lösen.',
-   madness:'60 SECOND MADNESS: Aufgaben innerhalb von 60 Sekunden.',
-   secretgarden:'SECRET GARDEN: Magische Samen pflanzen; Pflanzen wachsen in mehreren Stufen.',
-   elephantparade:'ELEPHANT PARADE: Elefanten nach Farben und Mustern sortieren.',
-   pirate:'Piraten-Schatzkarten-Suche.',
-   carnival:'Jahrmarkt-Spiele.',
-   ninja:'Geheime Ninja-Aufgaben.',
-   toy:'Spielzeuge aus Einzelteilen zusammensetzen.',
-   crystal:'Kristalle sammeln und kombinieren.',
-   wildwest:'Goldsuche und Rätsel-Duelle.',
-   bakery:'Kuchen dekorieren.',
-   comic:'Comic-Geschichte, deren Verlauf sich durch Entscheidungen verändert.',
-   safari:'Tiere fotografieren.',
-   cyber:'Codes entschlüsseln.',
-   wizard:'Zaubersprüche und Kombinationen.',
-   moon:'Mondsteine sammeln und Sternbilder verbinden.',
-   arcade:'Mini-Games und Highscores.',
-   samurai:'Geschicklichkeits- und Reaktionsaufgaben.',
-   stoneage:'Steinplatten zusammensetzen.',
-   masquerade:'Geheime Masken und Figuren identifizieren.',
-   science:'Virtuelle Zutaten und Experimente.',
-   luxury:'Luxus-Aufgaben und virtuelle Diamanten.',
-   rainbow:'Farbfolgen merken und wiederholen.',
-   timemachine:'Ereignisse chronologisch sortieren.'
-  };
-  const p=document.createElement('p');p.textContent=concepts[type]||'Event-Konzept';body.append(p);
-  const note=document.createElement('p');note.className='hint';note.textContent='Die bisher festgelegte Event-Mechanik ist hier korrekt hinterlegt. Eine interaktive Challenge wird erst aktiviert, wenn alle dafür nötigen Spielregeln feststehen – es wird keine erfundene Quiz- oder Gewinnchance verwendet.';body.append(note);
+  }else if(['football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery','madness','secretgarden','elephantparade','pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type)){renderPlannedMiniGame(type,body,result,status,claim,win);
  }else if(type==='godzilla'){
   renderGodzilla(body,result,status,claim,win);
  }
