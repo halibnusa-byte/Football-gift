@@ -245,3 +245,35 @@ test("Comeback gifts are restricted to registered participants", () => {
   assert.ok(source.includes("events/comebackAdminAbuse/participants"));
   assert.ok(client.includes("httpsCallable(functions,'openComebackGift')"));
 });
+
+test("the 50 planned event IDs exist in the browser catalog and trusted backend allowlist", () => {
+  const ids = [
+    "galaxy","unicorn","hacker","robot","cube","diamond","time","school","lava","alien",
+    "lasertag","ocean","zombie","multiverse","football","dinosaur","candy","castle","space",
+    "ghost","winter","egypt","superhero","racing","dragon","music","mystery","madness",
+    "secretgarden","elephantparade","pirate","carnival","ninja","toy","crystal","wildwest",
+    "bakery","comic","safari","cyber","wizard","moon","arcade","samurai","stoneage",
+    "masquerade","science","luxury","rainbow","timemachine"
+  ];
+  for (const id of ids) {
+    assert.ok(client.includes(id + ":["), "missing browser catalog entry: " + id);
+    assert.ok(source.includes('"' + id + '"'), "missing backend event allowlist entry: " + id);
+  }
+  assert.ok(client.includes('id="madnessOn"'));
+  assert.ok(client.includes('id="secretgardenOn"'));
+  assert.ok(client.includes('id="elephantparadeOn"'));
+});
+
+test("Galaxy gifts can only be queued or assigned to a round during the Galaxy event", () => {
+  const spawn = source.slice(source.indexOf("exports.spawnGalaxyGifts"), source.indexOf("exports.resetPlayerData"));
+  assert.match(spawn, /activeEvent !== "galaxy"/);
+  const round = source.slice(source.indexOf("exports.startPlayerRound"), source.indexOf("exports.openPlayerGift"));
+  assert.match(round, /activeEvent === "galaxy" && pendingGalaxy > 0/);
+  assert.match(source, /eventType === "galaxy" && secureUnit\(\) < 0\.00001/);
+});
+
+test("Unicorn piñata does not use an invented 50-percent reward chance", () => {
+  const section = client.slice(client.indexOf("if(type==='unicorn')"), client.indexOf("}else if(type==='cube')"));
+  assert.match(section, /await win\('Die Piñata spuckt aus'\)/);
+  assert.doesNotMatch(section, /Math\.random\(\)\s*<\s*\.5/);
+});
