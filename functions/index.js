@@ -1178,6 +1178,30 @@ exports.openMagicCube = onCall({ region: "europe-west1" }, async (request) => {
   return { won: outcome.won === true };
 });
 
+exports.openDiamondGift = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const roll = secureUnit();
+  const outcome = roll < 0.9999 ? "torwartSwitchToken"
+    : roll < 0.9999 + 0.000000000000001 ? "revenge"
+    : "unassigned";
+  const ref = db.ref("players/" + auth.uid);
+  const tx = await ref.transaction((p) => {
+    if (!p) return;
+    const inventory = { ...(p.inventory || {}) };
+    const count = Math.max(0, Number(inventory.diamondGift) || 0);
+    if (count < 1) return;
+    if (count === 1) delete inventory.diamondGift;
+    else inventory.diamondGift = count - 1;
+    const specialInventory = { ...(p.specialInventory || {}) };
+    if (outcome === "torwartSwitchToken") specialInventory.torwartSwitchToken = (Number(specialInventory.torwartSwitchToken) || 0) + 1;
+    if (outcome === "revenge") inventory.revenge = (Number(inventory.revenge) || 0) + 1;
+    return { ...p, inventory, specialInventory };
+  });
+  if (!tx.committed) throw new HttpsError("failed-precondition", "Du besitzt kein Diamond-Geschenk.");
+  return { outcome, inventory: tx.snapshot.val().inventory, specialInventory: tx.snapshot.val().specialInventory || {} };
+});
+
 exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
   await assertMainAdminDuringLock(auth);
