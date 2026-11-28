@@ -702,3 +702,26 @@ exports.saveGameSettings = onCall({ region: "europe-west1" }, async (request) =>
   await db.ref("settings").update(patch);
   return { saved: true, fields: Object.keys(patch) };
 });
+
+
+// Player profile creation/update and initial presence are performed by the backend.
+exports.joinGame = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const name = typeof request.data?.name === "string" ? request.data.name.trim().slice(0, 24) : "";
+  if (name.length < 2 || /[.#$\[\]/]/.test(name)) {
+    throw new HttpsError("invalid-argument", "Der Spielername muss 2 bis 24 Zeichen lang sein und darf keine Firebase-Sonderzeichen enthalten.");
+  }
+  const playerRef = db.ref("players/" + auth.uid);
+  const tx = await playerRef.transaction((current) => ({
+    ...(current || {}),
+    name,
+    inventory: current?.inventory || {},
+    firstWon: current?.firstWon || {},
+    totalWins: Number(current?.totalWins) || 0,
+    created: Number(current?.created) || Date.now(),
+  }));
+  if (!tx.committed) throw new HttpsError("aborted", "Dein Spielerprofil konnte nicht gespeichert werden.");
+  await db.ref("online/" + auth.uid).set({ name, at: Date.now() });
+  return { player: tx.snapshot.val() };
+});
