@@ -37,6 +37,13 @@ function requireRole(request, roles) {
   return auth;
 }
 
+async function assertMainAdminDuringLock(auth) {
+  const locked = (await db.ref("serverControl/locked").get()).val() === true;
+  if (locked && auth.token?.mainAdmin !== true) {
+    throw new HttpsError("failed-precondition", "Während der Update-Sperre hat nur der Hauptadmin Zugriff.");
+  }
+}
+
 // Deliberately disabled until box openings and event claims are tracked
 // authoritatively on the server. A callable that lets a client request a
 // fresh random reward without a server-verified game action would be exploitable.
@@ -48,6 +55,7 @@ exports.rollAndAward = onCall({ region: "europe-west1" }, async () => {
 });
 
 exports.setActiveEvent = onCall({ region: "europe-west1" }, async (request) => {
+  await assertMainAdminDuringLock(auth);
   const auth = requireRole(request, ["mainAdmin", "halfAdmin", "quarterAdmin"]);
   const type = request.data && request.data.type;
   const claims = auth.token || {};
@@ -239,6 +247,7 @@ exports.grantAdminTokens = onCall({ region: "europe-west1" }, async (request) =>
 
 // Gift transfers are authorized and applied by the trusted backend.
 exports.sendGift = onCall({ region: "europe-west1" }, async (request) => {
+  await assertMainAdminDuringLock(auth);
   const auth = requireAuth(request);
   const claims = auth.token || {};
   const isMainAdmin = claims.mainAdmin === true;
@@ -469,6 +478,7 @@ exports.resetPlayerData = onCall({ region: "europe-west1" }, async (request) => 
 
 // Announcement delivery is performed by the trusted backend.
 exports.sendAnnouncement = onCall({ region: "europe-west1" }, async (request) => {
+  await assertMainAdminDuringLock(auth);
   const auth = requireRole(request, ["mainAdmin", "halfAdmin", "quarterAdmin"]);
   const data = request.data || {};
   const message = typeof data.text === "string" ? data.text.trim() : "";
@@ -534,7 +544,7 @@ function validMessageId(value) {
 
 exports.sendChatMessage = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
-  await assertGameUnlocked();
+  await assertMainAdminDuringLock(auth);
   const text = typeof request.data?.text === "string" ? request.data.text.trim() : "";
   if (!text || text.length > 240) {
     throw new HttpsError("invalid-argument", "Eine Nachricht darf 1 bis 240 Zeichen lang sein.");
@@ -566,7 +576,7 @@ exports.sendChatMessage = onCall({ region: "europe-west1" }, async (request) => 
 
 exports.deleteChatMessage = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
-  await assertGameUnlocked();
+  await assertMainAdminDuringLock(auth);
   const messageId = request.data?.messageId;
   if (!validMessageId(messageId)) {
     throw new HttpsError("invalid-argument", "Ungültige Nachricht.");
@@ -584,7 +594,7 @@ exports.deleteChatMessage = onCall({ region: "europe-west1" }, async (request) =
 
 exports.reportChatMessage = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
-  await assertGameUnlocked();
+  await assertMainAdminDuringLock(auth);
   const messageId = request.data?.messageId;
   const reason = typeof request.data?.reason === "string" ? request.data.reason.trim().slice(0, 120) : "";
   if (!validMessageId(messageId)) {
