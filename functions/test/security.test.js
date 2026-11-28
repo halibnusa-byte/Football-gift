@@ -584,3 +584,18 @@ test("Unicorn piñata hit is recorded once on the server before reward", () => {
   assert.match(award, /hit\.hit !== true/);
   assert.match(client, /hitUnicornPinata/);
 });
+
+test("School exam difficulty, answers and Golden Report Card retry are server-validated", () => {
+  const start = source.slice(source.indexOf("exports.startSchoolExam"), source.indexOf("exports.hitUnicornPinata"));
+  const submit = source.slice(source.indexOf("exports.submitSchoolExam"), source.indexOf("exports.hitUnicornPinata"));
+  const awardStart = source.indexOf("exports.awardEventReward");
+  const award = source.slice(awardStart, source.indexOf("exports.", awardStart + 10));
+  assert.match(start, /currentLuck/);
+  assert.match(start, /difficulty = multiplier >= 3 \? "leicht" : multiplier >= 2 \? "mittel" : "schwer"/);
+  assert.match(submit, /inventory\.goldenReportCard/);
+  assert.match(submit, /retryUsed/);
+  assert.match(award, /eventId === "school"/);
+  assert.match(award, /exam\.completed !== true/);
+  assert.match(client, /startSchoolExam/);
+  assert.match(client, /submitSchoolExam/);
+});
