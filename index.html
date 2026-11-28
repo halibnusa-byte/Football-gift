@@ -420,6 +420,11 @@ const SHOP_CATALOG=[
  {id:'alienRadar',name:'ALIEN RADAR',emoji:'👽'},
  {id:'pearlRadar',name:'PEARL RADAR',emoji:'🦪'}
 ];
+async function useShopItem(productId){
+ const response=await httpsCallable(functions,'consumeShopItem')({productId});
+ if(player?.shopInventory){if(response.data.remaining>0)player.shopInventory[productId]=response.data.remaining;else delete player.shopInventory[productId];}
+ return response.data.remaining;
+}
 async function renderShop(){
  const conf=(await get(path('shop/products'))).val()||{};
  $('shopBalance').textContent='Deine Punkte: '+Number(player?.shopPoints||0);
