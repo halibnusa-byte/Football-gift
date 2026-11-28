@@ -573,3 +573,14 @@ test("Hacker and Robot scanner responses never expose the exact token ID", () =>
   assert.match(client, /response\.data\.hasReward/);
   assert.match(client, /response\.data\.rarityRank/);
 });
+
+test("Unicorn piñata hit is recorded once on the server before reward", () => {
+  const hit = source.slice(source.indexOf("exports.hitUnicornPinata"), source.indexOf("exports.startPenaltyChallenge"));
+  const awardStart = source.indexOf("exports.awardEventReward");
+  const award = source.slice(awardStart, source.indexOf("exports.", awardStart + 10));
+  assert.match(hit, /events\/unicornHits/);
+  assert.match(hit, /existing \|\| \{ hitAt:/);
+  assert.match(award, /eventId === "unicorn"/);
+  assert.match(award, /hit\.hit !== true/);
+  assert.match(client, /hitUnicornPinata/);
+});
