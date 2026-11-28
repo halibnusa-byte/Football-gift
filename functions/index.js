@@ -1168,7 +1168,7 @@ exports.joinLaserTag = onCall({ region: "europe-west1" }, async (request) => {
   const events = (await db.ref("events").get()).val() || {};
   if (events.active !== "lasertag") throw new HttpsError("failed-precondition", "LaserTag ist nicht aktiv.");
   const elapsed = Date.now() - Number(events.startedAt || Date.now());
-  if (elapsed < 0 || elapsed > 30000) throw new HttpsError("deadline-exceeded", "Die Skin-Auswahl ist beendet.");
+  if (elapsed < 0 || elapsed > 10000) throw new HttpsError("deadline-exceeded", "Die Skin-Auswahl ist beendet.");
   const name = String((await db.ref("players/" + auth.uid + "/name").get()).val() || "Spieler").slice(0,24);
   await db.ref("events/laserPlayers/" + auth.uid).set({ name, skin, score: 0, hits: 0, lives: 3, joinedAt: Date.now(), spectator: false, lastShotAt: 0 });
   return { joined: true };
@@ -1179,7 +1179,7 @@ exports.scoreLaserTag = onCall({ region: "europe-west1" }, async (request) => {
   const events = (await db.ref("events").get()).val() || {};
   if (events.active !== "lasertag") throw new HttpsError("failed-precondition", "LaserTag ist nicht aktiv.");
   const elapsed = Date.now() - Number(events.startedAt || Date.now());
-  if (elapsed < 30000 || elapsed >= 330000) throw new HttpsError("deadline-exceeded", "LaserTag-Punkte können gerade nicht gesammelt werden.");
+  if (elapsed < 10000 || elapsed >= 310000) throw new HttpsError("deadline-exceeded", "LaserTag-Punkte können gerade nicht gesammelt werden.");
   const ref = db.ref("events/laserPlayers/" + auth.uid);
   const tx = await ref.transaction((p) => {
     if (!p || p.spectator) return;
@@ -1201,7 +1201,7 @@ exports.laserHit = onCall({ region: "europe-west1" }, async (request) => {
   const events = (await db.ref("events").get()).val() || {};
   if (events.active !== "lasertag") throw new HttpsError("failed-precondition", "LaserTag ist nicht aktiv.");
   const elapsed = Date.now() - Number(events.startedAt || Date.now());
-  if (elapsed < 30000 || elapsed >= 330000) throw new HttpsError("deadline-exceeded", "Die LaserTag-Runde läuft gerade nicht.");
+  if (elapsed < 10000 || elapsed >= 310000) throw new HttpsError("deadline-exceeded", "Die LaserTag-Runde läuft gerade nicht.");
   const attackerRef = db.ref("events/laserPlayers/" + auth.uid);
   const targetRef = db.ref("events/laserPlayers/" + targetUid);
   const attackerTx = await attackerRef.transaction((p) => {
@@ -1226,7 +1226,7 @@ exports.finishLaserTag = onCall({ region: "europe-west1" }, async (request) => {
   const events = (await db.ref("events").get()).val() || {};
   if (events.active !== "lasertag") throw new HttpsError("failed-precondition", "LaserTag ist nicht aktiv.");
   const elapsed = Date.now() - Number(events.startedAt || Date.now());
-  if (elapsed < 330000) throw new HttpsError("failed-precondition", "Die Runde ist noch nicht beendet.");
+  if (elapsed < 310000) throw new HttpsError("failed-precondition", "Die Runde ist noch nicht beendet.");
   const lock = await db.ref("events/laserFinished").transaction((v) => v === true ? undefined : true);
   if (!lock.committed) return { finished: true, alreadyFinished: true };
   const players = (await db.ref("events/laserPlayers").get()).val() || {};
