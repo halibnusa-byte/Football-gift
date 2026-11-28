@@ -298,3 +298,17 @@ test("shop items are consumed by a trusted server transaction", () => {
   assert.match(source, /shopInventory\[productId\] = remaining/);
   assert.match(client, /httpsCallable\(functions,'consumeShopItem'\)/);
 });
+
+test("LaserTag uses ten-second skin selection, three lives, eliminations and top-three Diamond Gifts", () => {
+  const join = source.slice(source.indexOf("exports.joinLaserTag"), source.indexOf("exports.scoreLaserTag"));
+  const hit = source.slice(source.indexOf("exports.laserHit"), source.indexOf("exports.finishLaserTag"));
+  const finish = source.slice(source.indexOf("exports.finishLaserTag"), source.indexOf("exports.setComebackAdminAbuse"));
+  assert.match(join, /elapsed > 10000/);
+  assert.match(join, /lives: 3/);
+  assert.match(hit, /lives - 1/);
+  assert.match(hit, /spectator: lives === 0/);
+  assert.match(finish, /slice\(0,3\)/);
+  assert.match(finish, /inventory\.diamondGift/);
+  assert.match(client, /httpsCallable\(functions,'laserHit'\)/);
+  assert.match(client, /httpsCallable\(functions,'finishLaserTag'\)/);
+});
