@@ -892,6 +892,28 @@ exports.joinGame = onCall({ region: "europe-west1" }, async (request) => {
 
 // Persistent admin-configured shop. Prices are intentionally unset until the main admin configures them.
 const SHOP_PRODUCTS = ["hackerScanner", "robotScanner", "magicRemix", "goldenReportCard", "lavaShield", "alienRadar", "pearlRadar"];
+exports.consumeShopItem = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const productId = String(request.data?.productId || "");
+  const allowed = new Set(["hackerScanner","robotScanner","magicRemix","goldenReportCard","lavaShield","alienRadar","pearlRadar"]);
+  if (!allowed.has(productId)) throw new HttpsError("invalid-argument", "Unbekannter Shop-Artikel.");
+  const ref = db.ref("players/" + auth.uid);
+  let remaining = 0;
+  const tx = await ref.transaction((p) => {
+    if (!p) return;
+    const shopInventory = { ...(p.shopInventory || {}) };
+    const quantity = Math.max(0, Number(shopInventory[productId]) || 0);
+    if (quantity < 1) return;
+    remaining = quantity - 1;
+    if (remaining) shopInventory[productId] = remaining;
+    else delete shopInventory[productId];
+    return { ...p, shopInventory };
+  });
+  if (!tx.committed) throw new HttpsError("failed-precondition", "Du besitzt diesen Shop-Artikel nicht.");
+  return { consumed: true, remaining };
+});
+
 exports.saveShopConfig = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireRole(request, ["mainAdmin"]);
   await assertMainAdminDuringLock(auth);
