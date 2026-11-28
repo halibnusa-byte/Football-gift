@@ -110,6 +110,20 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <section class="panel hidden" id="eventChallengePanel"><h2 id="eventChallengeTitle">🎪 Event</h2><p class="muted" id="eventChallengeDescription"></p><div class="event-challenge" id="eventChallengeBody"></div></section>
 <section class="panel" id="inventoryPanel"><h2>🎒 Deine Sammlung</h2><div class="list" id="inventory"></div></section>
 <section class="panel" id="livePanel"><h2>📺 Live-Übertragung</h2><p class="muted">Wähle einen Spieler, der online ist. Angezeigt werden nur seine Boxen – keine Sammlung und keine Glückswerte.</p><div class="row"><select id="watchPlayer"><option value="">Spieler auswählen…</option></select><button class="secondary" id="watchBtn">LIVE ANSEHEN</button></div><div id="liveScreen" class="status">Noch keine Übertragung ausgewählt.</div><div class="list" id="activity"></div></section>
+<section class="panel" id="liveChatPanel">
+ <h2>💬 Live-Chat</h2>
+ <p class="muted">Schreibe mit den anderen Spielern. Du kannst deine Nachrichten löschen und fremde Nachrichten melden.</p>
+ <textarea id="chatInput" rows="2" maxlength="240" placeholder="Deine Nachricht …"></textarea>
+ <button id="chatSendBtn">NACHRICHT SENDEN</button>
+ <div id="chatStatus" class="hint"></div>
+ <div id="chatFeed" class="list" aria-live="polite">Noch keine Nachrichten.</div>
+
+ <div id="chatReportsPanel" class="panel hidden">
+  <h3>🚩 Gemeldete Nachrichten</h3>
+  <div id="chatReports" class="list">Keine Meldungen.</div>
+ </div>
+</section>
+
 <section class="panel" id="rankingPanel"><h2>🏆 Rangliste der Geschenke</h2><div class="list" id="ranking"></div></section>
 <section class="panel hidden" id="rosterPanel"><h2>👥 Spielerübersicht</h2><p class="muted">Online- und Offline-Spieler. Der Hauptadmin sieht die Namen.</p><div class="roster" id="playerRoster">Wird geladen …</div></section>
 <section class="panel" id="giftPanel"><h2>🎁 Geschenk weitergeben</h2><div id="giftLocked" class="status">Für diese Funktion brauchst du eine entsprechende Rolle.</div><div id="giftControls" class="hidden"><div class="row"><select id="giftScope"><option value="single">Einzelner Spieler</option><option value="global">Alle Spieler</option></select><input id="giftTarget" placeholder="Spielername (bei einzeln)"></div><select id="giftPrize"></select><input id="giftAmount" type="number" min="1" max="20" value="1"><label><input id="giftPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="giftBtn">GESCHENK SENDEN</button><div id="giftMsg" class="hint"></div></div></section>
@@ -145,7 +159,7 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <h3 id="admin-settings" class="admin-section-title">⚙️ Event-Einstellungen</h3><h3>Event-Chancen & Glück</h3><div class="row"><label>Blitz-Chance %<input id="blitzChance" type="number" step="0.001" value="1.5"></label><label>Spider-Man-Chance %<input id="spiderChance" type="number" step="0.001" value="1"></label></div><div class="row"><label>Spider-Man Glück ×<input id="spiderLuck" type="number" value="5"></label><label>Coca-Cola Chance %<input id="colaChance" type="number" step="0.001" value="1"></label></div><div class="row"><label>Coca-Cola Glück ×<input id="colaLuck" type="number" value="5"></label><label>Ranken-Chance %<input id="vineChance" type="number" step="0.001" value="1"></label></div><div class="row"><label>Pflanzen Glück ×<input id="plantLuck" type="number" value="5"></label><label>Elefanten-Truhe %<input id="elephantChance" type="number" step="0.0001" value="0.001"></label></div><button id="saveEventOdds">EVENT-WERTE SPEICHERN</button><h3>Blitz-Einschlag manuell auslösen</h3><p class="muted">„Eigener Raum“ bedeutet hier deinen eigenen Spielerraum. Es gibt in dieser Web-App keine getrennten echten Server.</p><div class="row"><select id="blitzScope"><option value="self">Eigener Spielerraum</option><option value="single">Einzelner Spieler</option><option value="global">Global – alle Spieler</option></select><input id="blitzTarget" placeholder="Spielername (einzeln)"></div><button id="spawnBlitz">⚡ BLITZ EINSCHLAGEN LASSEN</button><h3>Diamond-Geschenk</h3><label>Spawnchance während Diamond Event (%)</label><input id="diamondChance" type="number" min="0" max="100" step="0.001" value="0.1"><button id="saveDiamondChance">CHANCE SPEICHERN</button><p class="muted">Galaxy-Geschenk: 0,001 % pro Box und nur während Galaxy Event. Admin kann Galaxy-Truhen zusätzlich manuell spawnen.</p>
 <h3 id="admin-actions" class="admin-section-title">🎁 Admin-Aktionen</h3><h3>Owner Announcement</h3><textarea id="announcementText" rows="2" maxlength="240" placeholder="Deine Nachricht…"></textarea><div class="row"><select id="announcementScope"><option value="global">Alle Spieler</option><option value="single">Einzelner Spieler</option></select><input id="announcementTarget" placeholder="Spielername (einzeln)"></div><label><input id="announcementPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="sendAnnouncement">ANNOUNCEMENT SENDEN</button>
 <h3>Galaxy-Truhen spawnen</h3><div class="row"><select id="galaxyScope"><option value="global">Alle Spieler</option><option value="single">Einzelner Spieler</option></select><input id="galaxyTarget" placeholder="Spielername (einzeln)"></div><input id="galaxyAmount" type="number" min="1" max="100" value="1"><label><input id="galaxyPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="spawnGalaxy">🌌 GALAXY-TRUHEN SPAWNEN</button>
-<h3>Tokens vergeben</h3><div class="row"><select id="awardScope"><option value="single">Einzelner Spieler</option><option value="global">Alle Spieler</option></select><input id="awardTarget" placeholder="Spielername (einzeln)"></div><select id="awardPrize"></select><input id="awardAmount" type="number" min="1" max="50" value="1"><label><input id="awardPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="awardBtn">TOKEN VERGEBEN</button>
+<h3>Tokens vergeben</h3><div class="row"><select id="awardScope"><option value="single">Einzelner Spieler</option><option value="global">Alle Spieler</option></select><input id="awardTarget" placeholder="Spielername (einzeln)"></div><select id="awardPrize"></select><input id="awardAmount" type="number" min="1" max="50" value="1"><label><input id="awardPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="awardBtn">TOKEN VERGEBEN</button><button id="awardRandom" class="secondary">ZUFÄLLIG</button>
 <h3>Alles zurücksetzen</h3><select id="resetScope"><option value="global">Alle Spieler</option><option value="single">Einzelner Spieler</option></select><input id="resetTarget" placeholder="Spielername (einzeln)"><button class="danger" id="resetPlayer">ALLES ZURÜCKSETZEN</button><div id="adminMsg" class="hint"></div>
 </section>
 <section class="panel hidden" id="specialPanel"><h2>⭐ Besonderer Spieler</h2><p class="muted">Dauerhaft 2× Glück. Du kannst nur Geschenke verschenken, die du selbst besitzt.</p></section>
@@ -271,13 +285,11 @@ async function openBox(i){
  await saveRound();renderInventory();renderRanking();
 }
 async function enter(){
- if(serverState!=='open'&&!isOwner){applyServerState();return msg('loginMsg',serverState==='locked'?'Server gesperrt.':LOCK_ERR);}
  name=clean($('playerName').value);if(name.length<2)return msg('loginMsg','Bitte mindestens 2 Zeichen eingeben.');
  try{
   if(!auth.currentUser)await signInAnonymously(auth);uid=auth.currentUser.uid;
-  const snap=await get(path('players/'+uid));player=snap.val()||{name,inventory:{},firstWon:{},totalWins:0,created:Date.now()};
-  player.name=name;await update(path('players/'+uid),{name,created:player.created||Date.now()});
-  await set(path('online/'+uid),{name,at:Date.now()});
+  const joined=await httpsCallable(functions,'joinGame')({name});
+  player=joined.data.player;name=player.name;
   show('loginPanel',false);show('app',true);$('hello').textContent='Willkommen, '+name+'!';
   if(Array.isArray(player.lastBoxes)&&player.lastBoxes.length===15){
     boxes=player.lastBoxes.map((b,i)=>({...b,id:i,opened:!!b.opened}));opened=boxes.filter(b=>b.opened).map(b=>b.id);
@@ -296,7 +308,62 @@ function subscribe(){
  unsubs.push(onValue(path('players/'+uid),s=>{if(s.exists()){player=s.val();renderInventory();}}));
  unsubs.push(onValue(path('announcements/global'),s=>{if(s.exists())showAnnouncement(s.val())}));
  unsubs.push(onValue(path('announcements/users/'+uid),s=>{if(s.exists())showAnnouncement(s.val())}));
- unsubs.push(onValue(path('messages'),s=>{const arr=Object.values(s.val()||{}).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,5);if(role==='admin')msg('adminMsg','Letzte Nachricht: '+(arr[0]?.name||'')+' – '+(arr[0]?.text||''));}));
+ unsubs.push(onValue(path('messages'),s=>{const all=s.val()||{};renderLiveChat(all);const arr=Object.values(all).filter(x=>x&&typeof x.at==='number').sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,5);if(role==='admin'&&arr[0])msg('adminMsg','Letzte Nachricht: '+(arr[0].name||'')+' – '+(arr[0].text||''));}));
+ unsubs.push(onValue(path('messageReports'),s=>renderChatReports(s.val()||{})));
+}
+
+function renderLiveChat(messages){
+ const feed=$('chatFeed');if(!feed)return;
+ feed.innerHTML='';
+ const rows=Object.entries(messages||{}).filter(([,m])=>m&&typeof m.text==='string'&&!m.hidden&&typeof m.at==='number')
+  .sort((a,b)=>a[1].at-b[1].at).slice(-50);
+ if(!rows.length){feed.textContent='Noch keine Nachrichten.';return;}
+ for(const [id,m] of rows){
+  const item=document.createElement('div');item.className='item';
+  const content=document.createElement('div');
+  const head=document.createElement('b');head.textContent=String(m.name||'Spieler').slice(0,24);
+  const body=document.createElement('div');body.textContent=String(m.text).slice(0,240);
+  const time=document.createElement('small');time.textContent=new Date(m.at).toLocaleTimeString();
+  content.append(head,body,time);item.append(content);
+  if(m.uid===uid||role==='admin'){
+   const del=document.createElement('button');del.className='secondary';del.textContent='Löschen';
+   del.onclick=async()=>{try{await httpsCallable(functions,'deleteChatMessage')({messageId:id});}catch(e){msg('chatStatus',e?.message||'Löschen fehlgeschlagen.');}};
+   item.append(del);
+  }
+  if(m.uid!==uid){
+   const report=document.createElement('button');report.className='secondary';report.textContent='Melden';
+   report.onclick=async()=>{try{await httpsCallable(functions,'reportChatMessage')({messageId:id,reason:'Meldung durch Spieler'});msg('chatStatus','Nachricht wurde gemeldet.');}catch(e){msg('chatStatus',e?.message||'Melden fehlgeschlagen.');}};
+   item.append(report);
+  }
+  if(role==='admin'){
+   const hide=document.createElement('button');hide.className='secondary';hide.textContent='Ausblenden';
+   hide.onclick=async()=>{try{await httpsCallable(functions,'moderateChatMessage')({messageId:id,action:'hide'});}catch(e){msg('chatStatus',e?.message||'Moderation fehlgeschlagen.');}};
+   item.append(hide);
+  }
+  feed.append(item);
+ }
+}
+
+function renderChatReports(reports){
+ const panel=$('chatReportsPanel'),feed=$('chatReports');if(!panel||!feed)return;
+ panel.classList.toggle('hidden',role!=='admin');
+ feed.innerHTML='';
+ if(role!=='admin')return;
+ const rows=Object.entries(reports||{}).flatMap(([messageId,byUid])=>Object.entries(byUid||{}).map(([reporter,r])=>({messageId,reporter,...(r||{})}))).slice(-100);
+ if(!rows.length){feed.textContent='Keine Meldungen.';return;}
+ for(const r of rows){
+  const item=document.createElement('div');item.className='item';
+  const label=document.createElement('div');
+  label.textContent='Nachricht '+r.messageId+' · gemeldet von '+String(r.uid||r.reporter).slice(0,12)+' · '+String(r.reason||'Keine Begründung');
+  item.append(label);
+  const actions=document.createElement('div');actions.className='row';
+  for(const [caption,action] of [['Ausblenden','hide'],['Wiederherstellen','restore'],['Löschen','delete']]){
+   const btn=document.createElement('button');btn.className='secondary';btn.textContent=caption;
+   btn.onclick=async()=>{try{await httpsCallable(functions,'moderateChatMessage')({messageId:r.messageId,action});msg('chatStatus','Moderation gespeichert.');}catch(e){msg('chatStatus',e?.message||'Moderation fehlgeschlagen.');}};
+   actions.append(btn);
+  }
+  item.append(actions);feed.append(item);
+ }
 }
 function showAnnouncement(a){if(!a?.text||a.targetUid&&a.targetUid!==uid)return;$('ownerBannerLabel').textContent=(a.sender||'OWNER')+':';$('ownerBannerText').textContent=a.text;show('ownerBanner',true);clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>show('ownerBanner',false),3000);}
 function updateHeader(){
@@ -358,7 +425,7 @@ async function roleCheck(){
  }catch(e){role='normal';roleName='';isOwner=false;msg('roleMsg','Rollenprüfung fehlgeschlagen: '+(e?.message||e));updateHeader();}
 }
 function applyRolePanelPermissions(){
- const mainOnly=['changeAdminCode','newAdminCode','setSpecial','specialName','newSpecialCode','saveQuarter','quarterName','quarterCode','saveHalves','halfName1','halfCode1','halfName2','halfCode2','saveMessageMen','messageMan1','messageMan2','messageManCode1','messageManCode2','spawnBlitz','resetPlayer','resetScope','resetTarget','awardBtn','awardScope','awardTarget','awardPrize','awardAmount','awardPublic','saveEventOdds','blitzChance','spiderChance','spiderLuck','colaChance','colaLuck','vineChance','plantLuck','elephantChance','saveDiamondChance','diamondChance','serverControlBox','spawnGalaxy','galaxyScope','galaxyTarget','galaxyAmount','galaxyPublic','oceanOn','zombieOn','multiverseOn','footballOn','dinosaurOn','candyOn','castleOn','spaceOn','ghostOn','winterOn','egyptOn','superheroOn','racingOn','dragonOn','musicOn','mysteryOn'];
+ const mainOnly=['changeAdminCode','newAdminCode','setSpecial','specialName','newSpecialCode','saveQuarter','quarterName','quarterCode','saveHalves','halfName1','halfCode1','halfName2','halfCode2','saveMessageMen','messageMan1','messageMan2','messageManCode1','messageManCode2','spawnBlitz','resetPlayer','resetScope','resetTarget','awardBtn','awardRandom','awardScope','awardTarget','awardPrize','awardAmount','awardPublic','saveEventOdds','blitzChance','spiderChance','spiderLuck','colaChance','colaLuck','vineChance','plantLuck','elephantChance','saveDiamondChance','diamondChance','serverControlBox','spawnGalaxy','galaxyScope','galaxyTarget','galaxyAmount','galaxyPublic','oceanOn','zombieOn','multiverseOn','footballOn','dinosaurOn','candyOn','castleOn','spaceOn','ghostOn','winterOn','egyptOn','superheroOn','racingOn','dragonOn','musicOn','mysteryOn'];
  mainOnly.forEach(id=>{const el=$(id);if(el)el.classList.toggle('hidden',role!=='admin');});
  const quarterEvents=['hackerOn','unicornOn','galaxyOn','diamondOn','robotOn'];
  const halfEvents=['cubeOn',...quarterEvents,'schoolOn'];
@@ -392,21 +459,38 @@ async function resolveTargets(scope,targetName){
 }
 async function sendGift(){
  try{
-  const id=$('giftPrize').value,amount=Math.max(1,Math.min(20,Number($('giftAmount').value)||1)),targets=await resolveTargets($('giftScope').value,$('giftTarget').value);
-  if(id==='football'&&($('giftScope').value==='global'||settings.footballTokenOwner||amount!==1))throw new Error('Football Token kann nur einmal im gesamten Spiel vergeben werden. Wähle einen einzelnen Spieler und Menge 1.');
-  if(role==='special'){if(targets.length!==1||targets[0][0]===uid)throw new Error('Wähle einen anderen einzelnen Spieler.');if(Number(player.inventory?.[id]||0)<amount)throw new Error('Du besitzt nicht genug davon.');const inv={...(player.inventory||{})};inv[id]-=amount;await update(path('players/'+uid),{inventory:inv});}
-  for(const [idTarget] of targets)await awardPrizeTo(idTarget,id,amount);
-  msg('giftMsg','Geschenk erfolgreich gesendet.');if(role==='admin'&&$('giftPublic').checked)await addActivity('Owner hat Geschenke verteilt.');renderInventory();
- }catch(e){msg('giftMsg',e.message)}
+  if(!['admin','special'].includes(role))throw new Error('Keine Berechtigung.');
+  const id=$('giftPrize').value;
+  const amount=Math.max(1,Math.min(20,Number($('giftAmount').value)||1));
+  const scope=$('giftScope').value;
+  if(role==='special'&&scope!=='single')throw new Error('Besondere Spieler dürfen nur an einen einzelnen Spieler senden.');
+  if(id==='football'&&(scope==='global'||settings.footballTokenOwner||amount!==1))throw new Error('Football Token kann nur einmal im gesamten Spiel vergeben werden. Wähle einen einzelnen Spieler und Menge 1.');
+  const result=await httpsCallable(functions,'sendGift')({
+    prizeId:id,
+    amount,
+    scope,
+    targetName:$('giftTarget').value.trim(),
+    public:role==='admin'&&$('giftPublic').checked
+  });
+  msg('giftMsg','Geschenk erfolgreich gesendet ('+result.data.delivered+' Empfänger).');
+  renderInventory();
+ }catch(e){msg('giftMsg',e?.message||'Geschenk konnte nicht gesendet werden.');}
 }
-async function grantTokens(){
+async function grantTokens(randomRecipient=false){
  if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Tokens vergeben.');
  try{
-  const id=$('awardPrize').value,amount=Math.max(1,Math.min(50,Number($('awardAmount').value)||1)),targets=await resolveTargets($('awardScope').value,$('awardTarget').value);
-  if(id==='football'&&($('awardScope').value==='global'||settings.footballTokenOwner||amount!==1))throw new Error('Football Token darf nur einmal insgesamt und nur an einen einzelnen Spieler vergeben werden.');
-  for(const [target] of targets)await awardPrizeTo(target,id,amount);
-  msg('adminMsg','Token an '+targets.length+' Spieler vergeben.');if($('awardPublic').checked)await addActivity('Owner hat Tokens vergeben.');
- }catch(e){msg('adminMsg',e.message)}
+  const scope=randomRecipient?'random':$('awardScope').value;
+  if(scope==='single'&&!$('awardTarget').value.trim())return msg('adminMsg','Bitte einen Spielernamen eingeben.');
+  const result=await httpsCallable(functions,'grantAdminTokens')({
+   prizeId:$('awardPrize').value,
+   amount:Math.max(1,Math.min(50,Number($('awardAmount').value)||1)),
+   scope,
+   targetName:$('awardTarget').value,
+   public:$('awardPublic').checked
+  });
+  const data=result.data||{};
+  msg('adminMsg',data.prizeId+' an '+data.granted+' Spieler vergeben'+(scope==='random'?' (zufälliger Empfänger).':'.'));
+ }catch(e){msg('adminMsg',e?.message||'Token-Vergabe fehlgeschlagen.');}
 }
 async function startEvent(type){
  if(!['admin','quarterAdmin','halfAdmin'].includes(role))return msg('adminMsg','Keine Berechtigung.');
@@ -419,24 +503,40 @@ async function stopEvent(){
  catch(e){msg('adminMsg','Event konnte nicht gestoppt werden: '+(e?.message||e));}
 }
 async function adminAnnouncement(){
- const textValue=$('announcementText').value.trim();if(!textValue)return msg('adminMsg','Bitte eine Nachricht schreiben.');
- if(!['admin','quarterAdmin','halfAdmin'].includes(role))return msg('adminMsg','Keine Berechtigung.');const targets=await resolveTargets($('announcementScope').value,$('announcementTarget').value),a={text:textValue,at:Date.now(),sender:role==='admin'?'OWNER':(roleName||name)};
- if($('announcementScope').value==='global')await set(path('announcements/global'),a);else{const [id]=targets[0];await set(path('announcements/users/'+id),{...a,targetUid:id});}
- if($('announcementPublic').checked)await addActivity((a.sender||'OWNER')+' hat eine Ankündigung gesendet.');msg('adminMsg','Announcement gesendet.');
+ const textValue=$('announcementText').value.trim();
+ if(!textValue)return msg('adminMsg','Bitte eine Nachricht schreiben.');
+ if(!['admin','quarterAdmin','halfAdmin'].includes(role))return msg('adminMsg','Keine Berechtigung.');
+ try{
+  const result=await httpsCallable(functions,'sendAnnouncement')({
+   text:textValue,
+   scope:$('announcementScope').value,
+   targetName:$('announcementTarget').value.trim(),
+   public:$('announcementPublic').checked
+  });
+  msg('adminMsg','Announcement gesendet ('+result.data.delivered+' Empfänger).');
+ }catch(e){msg('adminMsg',e?.message||'Announcement konnte nicht gesendet werden.');}
 }
 async function spawnGalaxy(){
  if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Galaxy-Truhen spawnen.');
- const amount=Math.max(1,Math.min(100,Number($('galaxyAmount').value)||1)),targets=await resolveTargets($('galaxyScope').value,$('galaxyTarget').value);
- for(const [id,p] of targets)await update(path('players/'+id),{pendingGalaxy:Number(p.pendingGalaxy||0)+amount});
- if($('galaxyPublic').checked)await addActivity('Owner hat Galaxy-Truhen gespawnt.');msg('adminMsg','Galaxy-Truhe(n) vorgemerkt. Sie erscheinen in der nächsten Runde.');
+ try{
+  const result=await httpsCallable(functions,'spawnGalaxyGifts')({
+   scope:$('galaxyScope').value,
+   amount:Math.max(1,Math.min(100,Number($('galaxyAmount').value)||1)),
+   targetName:$('galaxyTarget').value.trim(),
+   public:$('galaxyPublic').checked
+  });
+  msg('adminMsg',result.data.queued+' Spieler: Galaxy-Truhe(n) vorgemerkt. Sie erscheinen in der nächsten Runde.');
+ }catch(e){msg('adminMsg',e?.message||'Galaxy-Truhen konnten nicht vorgemerkt werden.');}
 }
 async function resetData(){
  if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Spieler zurücksetzen.');
- const scope=$('resetScope').value,targets=await resolveTargets(scope,$('resetTarget').value);
+ const scope=$('resetScope').value;
+ const targetName=$('resetTarget').value.trim();
  if(!confirm(scope==='global'?'Wirklich ALLE registrierten Spieler (auch offline) zurücksetzen?':'Diesen Spieler vollständig zurücksetzen?'))return;
- for(const [id,p] of targets)await update(path('players/'+id),{inventory:{},firstWon:{},totalWins:0,lastBoxes:[],opensThisRound:0,pendingGalaxy:0,eventClaims:{}});
- if(scope==='global'){await remove(path('settings/footballTokenOwner'));await update(path('settings'),{completedEvents:{}});}else if(settings.footballTokenOwner===targets[0][0]){await remove(path('settings/footballTokenOwner'));}
- msg('adminMsg','Zurückgesetzt: '+targets.length+' Spieler.');
+ try{
+  const result=await httpsCallable(functions,'resetPlayerData')({scope,targetName,confirm:true});
+  msg('adminMsg','Zurückgesetzt: '+result.data.reset+' Spieler.');
+ }catch(e){msg('adminMsg',e?.message||'Zurücksetzen fehlgeschlagen.');}
 }
 async function renderEventChallenge(){
  const type=eventState.active,available=['unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type);
@@ -712,19 +812,29 @@ $('nextRound').onclick=()=>{if(opened.length===3){buildRound();$('result').textC
 $('roleLogin').onclick=()=>{role='normal';roleName='';roleCheck();};$('claimAdmin').onclick=()=>msg('roleMsg','Die Ersteinrichtung wird sicher über Firebase Secret Manager durch den Projektverantwortlichen vorgenommen.');
 $('roleLogout').onclick=()=>{role='normal';roleName='';['adminPanel','specialPanel','messageManPanel','rosterPanel'].forEach(x=>show(x,false));show('giftControls',false);show('giftLocked',true);show('gamePanel',true);show('inventoryPanel',true);show('livePanel',true);show('rankingPanel',true);show('rosterPanel',true);updateHeader();msg('roleMsg','Rolle abgemeldet.')};
 $('changeAdminCode').onclick=adminSaveCode;$('saveQuarter').onclick=()=>registerAdminRole('quarter').catch(e=>msg('adminMsg',e.message));$('saveHalves').onclick=()=>registerAdminRole('half').catch(e=>msg('adminMsg',e.message));$('setSpecial').onclick=saveSpecial;$('saveMessageMen').onclick=saveMessageMen;
-$('saveLuck').onclick=async()=>{const v=Number($('adminLuck').value);if(!Number.isFinite(v)||v<1)return msg('adminMsg','Bitte eine Zahl ab 1 eingeben.');if(role==='halfAdmin'){if(v>50)return msg('adminMsg','Halb-Admins dürfen maximal 50× einstellen.');await update(path('settings/roleLuck'),{[uid]:v});msg('adminMsg','Dein Glück wurde auf '+v+'× gesetzt.');return;}if(role!=='admin')return msg('adminMsg','Keine Berechtigung.');await update(path('settings'),{luckMultiplier:v,luckEnabled:$('adminLuckOn').value==='true'});msg('adminMsg','Globales Glück gespeichert: '+v+'×.');};
+$('saveLuck').onclick=async()=>{const v=Number($('adminLuck').value);try{if(role==='halfAdmin'){await httpsCallable(functions,'saveGameSettings')({roleLuck:v});msg('adminMsg','Dein Glück wurde auf '+v+'× gesetzt.');return;}if(role!=='admin')return msg('adminMsg','Keine Berechtigung.');await httpsCallable(functions,'saveGameSettings')({luckMultiplier:v,luckEnabled:$('adminLuckOn').value==='true'});msg('adminMsg','Globales Glück gespeichert: '+v+'×.');}catch(e){msg('adminMsg',e?.message||'Einstellung konnte nicht gespeichert werden.');}};
 $('oceanOn').onclick=()=>startEvent('ocean');$('zombieOn').onclick=()=>startEvent('zombie');$('multiverseOn').onclick=()=>startEvent('multiverse');$('footballOn').onclick=()=>startEvent('football');$('dinosaurOn').onclick=()=>startEvent('dinosaur');$('candyOn').onclick=()=>startEvent('candy');$('castleOn').onclick=()=>startEvent('castle');$('spaceOn').onclick=()=>startEvent('space');$('ghostOn').onclick=()=>startEvent('ghost');$('winterOn').onclick=()=>startEvent('winter');$('egyptOn').onclick=()=>startEvent('egypt');$('superheroOn').onclick=()=>startEvent('superhero');$('racingOn').onclick=()=>startEvent('racing');$('dragonOn').onclick=()=>startEvent('dragon');$('musicOn').onclick=()=>startEvent('music');$('mysteryOn').onclick=()=>startEvent('mystery');
 $('galaxyOn').onclick=()=>startEvent('galaxy');$('diamondOn').onclick=()=>startEvent('diamond');$('eventsOff').onclick=stopEvent;
 $('hackerOn').onclick=()=>startEvent('hacker');$('unicornOn').onclick=()=>startEvent('unicorn');$('robotOn').onclick=()=>startEvent('robot');$('cubeOn').onclick=()=>startEvent('cube');$('skibidiOn').onclick=()=>startEvent('skibidi');$('godzillaOn').onclick=()=>startEvent('godzilla');$('blitzOn').onclick=()=>startEvent('blitz');$('laserOn').onclick=()=>startEvent('lasertag');$('spiderOn').onclick=()=>startEvent('spiderman');$('colaOn').onclick=()=>startEvent('cocacola');$('plantsOn').onclick=()=>startEvent('plants');$('elephantOn').onclick=()=>startEvent('elephant');$('timeOn').onclick=()=>startEvent('time');$('schoolOn').onclick=()=>startEvent('school');$('lavaOn').onclick=()=>startEvent('lava');$('alienOn').onclick=()=>startEvent('alien');
 $('saveGodzillaVideo').onclick=saveGodzilla;
-$('saveEventOdds').onclick=async()=>{const v={blitzChance:Number($('blitzChance').value)/100,spiderChance:Number($('spiderChance').value)/100,spiderLuck:Math.max(1,Number($('spiderLuck').value)||5),colaChance:Number($('colaChance').value)/100,colaLuck:Math.max(1,Number($('colaLuck').value)||5),vineChance:Number($('vineChance').value)/100,plantLuck:Math.max(1,Number($('plantLuck').value)||5),elephantChestChance:Number($('elephantChance').value)/100};await update(path('settings'),v);msg('adminMsg','Event-Chancen und Multiplikatoren gespeichert.');};
-$('saveDiamondChance').onclick=async()=>{const v=Number($('diamondChance').value);if(!Number.isFinite(v)||v<0||v>100)return msg('adminMsg','Chance muss zwischen 0 und 100 liegen.');await update(path('settings'),{diamondChance:v});msg('adminMsg','Diamond-Chance gespeichert.')};
+$('saveEventOdds').onclick=async()=>{const v={blitzChance:Number($('blitzChance').value)/100,spiderChance:Number($('spiderChance').value)/100,spiderLuck:Math.max(1,Number($('spiderLuck').value)||5),colaChance:Number($('colaChance').value)/100,colaLuck:Math.max(1,Number($('colaLuck').value)||5),vineChance:Number($('vineChance').value)/100,plantLuck:Math.max(1,Number($('plantLuck').value)||5),elephantChestChance:Number($('elephantChance').value)/100};try{await httpsCallable(functions,'saveGameSettings')(v);msg('adminMsg','Event-Chancen und Multiplikatoren gespeichert.');}catch(e){msg('adminMsg',e?.message||'Einstellungen konnten nicht gespeichert werden.');}};
+$('saveDiamondChance').onclick=async()=>{const v=Number($('diamondChance').value);try{await httpsCallable(functions,'saveGameSettings')({diamondChance:v});msg('adminMsg','Diamond-Chance gespeichert.');}catch(e){msg('adminMsg',e?.message||'Diamond-Chance konnte nicht gespeichert werden.');}};
 $('sendAnnouncement').onclick=()=>adminAnnouncement().catch(e=>msg('adminMsg',e.message));
 $('spawnGalaxy').onclick=()=>spawnGalaxy().catch(e=>msg('adminMsg',e.message));
 $('spawnBlitz').onclick=async()=>{if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Blitze manuell auslösen.');const scope=$('blitzScope').value;let targets;if(scope==='self')targets=[[uid,player]];else targets=await resolveTargets(scope,$('blitzTarget').value);for(const [id,p] of targets)await update(path('players/'+id),{pendingBlitz:Number(p.pendingBlitz||0)+1});msg('adminMsg','Blitz vorgemerkt. Der Einschlag erscheint in der nächsten Runde.');};
-$('awardBtn').onclick=grantTokens;$('giftBtn').onclick=sendGift;$('resetPlayer').onclick=()=>resetData().catch(e=>msg('adminMsg',e.message));
+$('awardBtn').onclick=()=>grantTokens(false);$('awardRandom').onclick=()=>grantTokens(true);$('giftBtn').onclick=sendGift;$('resetPlayer').onclick=()=>resetData().catch(e=>msg('adminMsg',e.message));
 $('watchBtn').onclick=watch;
-$('messageManSend').onclick=async()=>{const t=$('messageManText').value.trim();if(!t)return msg('messageManStatus','Bitte eine Nachricht eingeben.');await push(path('messages'),{uid,name,text:t,at:Date.now()});await addActivity('hat eine Nachricht geschrieben.');$('messageManText').value='';msg('messageManStatus','Nachricht gesendet.')};
+
+$('chatSendBtn').onclick=async()=>{
+ const textValue=$('chatInput').value.trim();
+ if(!textValue)return msg('chatStatus','Bitte eine Nachricht eingeben.');
+ try{
+  await httpsCallable(functions,'sendChatMessage')({text:textValue});
+  $('chatInput').value='';
+  msg('chatStatus','Nachricht gesendet.');
+ }catch(e){msg('chatStatus',e?.message||'Nachricht konnte nicht gesendet werden.');}
+};
+$('messageManSend').onclick=async()=>{const textValue=$('messageManText').value.trim();if(!textValue)return msg('messageManStatus','Bitte eine Nachricht eingeben.');try{await httpsCallable(functions,'sendChatMessage')({text:textValue});$('messageManText').value='';msg('messageManStatus','Nachricht gesendet.');}catch(e){msg('messageManStatus',e?.message||'Nachricht konnte nicht gesendet werden.');}};
 $('logoutBtn').onclick=async()=>{if(uid)await remove(path('online/'+uid));unsubs.forEach(f=>f());if(watchUnsub)watchUnsub();unsubs=[];await signOut(auth);uid=null;show('app',false);show('loginPanel',true)};
 $('awardPrize').innerHTML='';PRIZES.concat([{id:'diamondGift',name:'Diamond-Geschenk'}]).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;$('awardPrize').append(o)});
 setInterval(()=>{if(uid){update(path('online/'+uid),{name,at:Date.now()}).catch(()=>{});updateHeader();}},30000);

@@ -37,6 +37,13 @@ function requireRole(request, roles) {
   return auth;
 }
 
+async function assertMainAdminDuringLock(auth) {
+  const locked = (await db.ref("serverControl/locked").get()).val() === true;
+  if (locked && auth.token?.mainAdmin !== true) {
+    throw new HttpsError("failed-precondition", "Während der Update-Sperre hat nur der Hauptadmin Zugriff.");
+  }
+}
+
 // Deliberately disabled until box openings and event claims are tracked
 // authoritatively on the server. A callable that lets a client request a
 // fresh random reward without a server-verified game action would be exploitable.
@@ -49,6 +56,7 @@ exports.rollAndAward = onCall({ region: "europe-west1" }, async () => {
 
 exports.setActiveEvent = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireRole(request, ["mainAdmin", "halfAdmin", "quarterAdmin"]);
+  await assertMainAdminDuringLock(auth);
   const type = request.data && request.data.type;
   const claims = auth.token || {};
   if (type !== null && !EVENT_TYPES.has(type)) {
@@ -136,4 +144,584 @@ exports.setServerControl = onCall({ region: "europe-west1" }, async (request) =>
     updatedByUid: auth.uid,
   });
   return { locked, updatedBy: user.uid };
+});
+
+
+// Main-admin manual token grants are performed by the trusted backend.
+exports.grantAdminTokens = onCall({ region: "europe-west1" }, async (request) => {
+  requireRole(request, ["mainAdmin"]);
+  const data = request.data || {};
+  const prizeId = typeof data.prizeId === "string" ? data.prizeId : "";
+  const scope = data.scope;
+  const amount = Number(data.amount);
+  const targetName = typeof data.targetName === "string" ? data.targetName.trim().slice(0, 24) : "";
+  const isPublic = data.public === true;
+  const allowedIds = new Set(["deinewahl", "revenge", "comeback", "doublegoal", "selfretter", "freistoss", "football", "penalty", "goal", "redcard", "keeper", "switch", "diamondGift"]);
+
+  if (!allowedIds.has(prizeId)) {
+    throw new HttpsError("invalid-argument", "Dieses Geschenk ist nicht verfügbar.");
+  }
+  if (!Number.isInteger(amount) || amount < 1 || amount > 50) {
+    throw new HttpsError("invalid-argument", "Die Menge muss zwischen 1 und 50 liegen.");
+  }
+  if (scope !== "single" && scope !== "global" && scope !== "random") {
+    throw new HttpsError("invalid-argument", "Ungültiger Vergabebereich.");
+  }
+  if (prizeId === "football" && ((scope === "global") || amount !== 1)) {
+    throw new HttpsError("failed-precondition", "Der Football Token kann nur einmal an einen einzelnen Spieler vergeben werden.");
+  }
+
+  const playersSnapshot = await db.ref("players").get();
+  const players = playersSnapshot.val() || {};
+  let targets;
+  if (scope === "global") {
+    targets = Object.keys(players);
+    if (targets.length > 200) {
+      throw new HttpsError("failed-precondition", "Zu viele Spieler für eine globale Aktion. Bitte in kleinere Gruppen aufteilen.");
+    }
+  } else if (scope === "random") {
+    const candidates = Object.keys(players);
+    if (!candidates.length) throw new HttpsError("failed-precondition", "Es gibt keine Spieler.");
+    targets = [candidates[crypto.randomInt(candidates.length)]];
+  } else {
+    if (!targetName) throw new HttpsError("invalid-argument", "Bitte einen Spielernamen eingeben.");
+    const normalized = targetName.toLowerCase();
+    const found = Object.entries(players).find(([, player]) =>
+      String(player && player.name || "").trim().toLowerCase() === normalized
+    );
+    if (!found) throw new HttpsError("not-found", "Spieler nicht gefunden.");
+    targets = [found[0]];
+  }
+
+  let footballReserved = false;
+  const targetUid = targets[0];
+  if (prizeId === "football") {
+    const ownerTx = await db.ref("settings/footballTokenOwner").transaction((current) => {
+      if (current !== null && current !== undefined) return;
+      return targetUid;
+    });
+    if (!ownerTx.committed) {
+      throw new HttpsError("already-exists", "Der Football Token wurde bereits im gesamten Spiel vergeben.");
+    }
+    footballReserved = true;
+  }
+
+  let granted = 0;
+  try {
+    for (const uid of targets) {
+      const playerRef = db.ref("players/" + uid);
+      const tx = await playerRef.transaction((current) => {
+        if (!current) return;
+        const inventory = { ...(current.inventory || {}) };
+        if (prizeId === "football" && Number(inventory.football || 0) > 0) return;
+        inventory[prizeId] = (Number(inventory[prizeId]) || 0) + amount;
+        const firstWon = { ...(current.firstWon || {}) };
+        if (!firstWon[prizeId]) firstWon[prizeId] = Date.now();
+        return {
+          ...current,
+          inventory,
+          firstWon,
+          totalWins: (Number(current.totalWins) || 0) + amount,
+        };
+      });
+      if (tx.committed) granted += 1;
+      else if (prizeId === "football") throw new Error("Der Spieler besitzt den Football Token bereits.");
+    }
+  } catch (error) {
+    if (footballReserved) {
+      await db.ref("settings/footballTokenOwner").transaction((current) => current === targetUid ? null : undefined);
+    }
+    throw new HttpsError("aborted", error.message || "Die Token-Vergabe ist fehlgeschlagen.");
+  }
+
+  if (isPublic) {
+    await db.ref("activity").push({
+      name: "OWNER",
+      text: "Owner hat Tokens vergeben.",
+      at: Date.now(),
+    }).catch(() => {});
+  }
+  return { granted, prizeId, amount };
+});
+
+
+// Gift transfers are authorized and applied by the trusted backend.
+exports.sendGift = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const claims = auth.token || {};
+  const isMainAdmin = claims.mainAdmin === true;
+  const isSpecial = claims.special === true;
+  if (!isMainAdmin && !isSpecial) {
+    throw new HttpsError("permission-denied", "Nur der Hauptadmin oder besondere Spieler dürfen Geschenke senden.");
+  }
+
+  const data = request.data || {};
+  const prizeId = typeof data.prizeId === "string" ? data.prizeId : "";
+  const scope = data.scope;
+  const amount = Number(data.amount);
+  const targetName = typeof data.targetName === "string" ? data.targetName.trim().slice(0, 24) : "";
+  const isPublic = data.public === true;
+  const allowedIds = new Set(["deinewahl", "revenge", "comeback", "doublegoal", "selfretter", "freistoss", "football", "penalty", "goal", "redcard", "keeper", "switch", "diamondGift"]);
+
+  if (!allowedIds.has(prizeId)) throw new HttpsError("invalid-argument", "Dieses Geschenk ist nicht verfügbar.");
+  if (!Number.isInteger(amount) || amount < 1 || amount > 20) {
+    throw new HttpsError("invalid-argument", "Die Menge muss zwischen 1 und 20 liegen.");
+  }
+  if (scope !== "single" && scope !== "global") {
+    throw new HttpsError("invalid-argument", "Ungültiger Empfängerbereich.");
+  }
+  if (isSpecial && scope !== "single") {
+    throw new HttpsError("permission-denied", "Besondere Spieler dürfen nur an einen einzelnen Spieler senden.");
+  }
+  if (prizeId === "football" && (scope !== "single" || amount !== 1)) {
+    throw new HttpsError("failed-precondition", "Der Football Token kann nur einmal an einen einzelnen Spieler gesendet werden.");
+  }
+
+  const playersSnapshot = await db.ref("players").get();
+  const players = playersSnapshot.val() || {};
+  let targets;
+  if (scope === "global") {
+    targets = Object.keys(players);
+    if (targets.length > 200) {
+      throw new HttpsError("failed-precondition", "Zu viele Spieler für eine globale Aktion.");
+    }
+  } else {
+    if (!targetName) throw new HttpsError("invalid-argument", "Bitte einen Spielernamen eingeben.");
+    const normalized = targetName.toLowerCase();
+    const found = Object.entries(players).find(([, player]) =>
+      String(player && player.name || "").trim().toLowerCase() === normalized
+    );
+    if (!found) throw new HttpsError("not-found", "Spieler nicht gefunden.");
+    if (found[0] === auth.uid) throw new HttpsError("failed-precondition", "Du kannst dir selbst kein Geschenk senden.");
+    targets = [found[0]];
+  }
+  if (targets.length === 0) throw new HttpsError("failed-precondition", "Es gibt keine gültigen Empfänger.");
+
+  let footballReserved = false;
+  const targetUid = targets[0];
+  if (prizeId === "football") {
+    const ownerTx = await db.ref("settings/footballTokenOwner").transaction((current) => {
+      if (current !== null && current !== undefined) return;
+      return targetUid;
+    });
+    if (!ownerTx.committed) {
+      throw new HttpsError("already-exists", "Der Football Token wurde bereits im gesamten Spiel vergeben.");
+    }
+    footballReserved = true;
+  }
+
+  let senderDeducted = false;
+  try {
+    if (isSpecial) {
+      const senderRef = db.ref("players/" + auth.uid);
+      const senderTx = await senderRef.transaction((current) => {
+        if (!current) return;
+        const inventory = { ...(current.inventory || {}) };
+        const owned = Number(inventory[prizeId] || 0);
+        if (!Number.isFinite(owned) || owned < amount) return;
+        inventory[prizeId] = owned - amount;
+        return { ...current, inventory };
+      });
+      if (!senderTx.committed) {
+        throw new HttpsError("failed-precondition", "Du besitzt nicht genug davon.");
+      }
+      senderDeducted = true;
+    }
+
+    let delivered = 0;
+    for (const recipientUid of targets) {
+      const recipientRef = db.ref("players/" + recipientUid);
+      const tx = await recipientRef.transaction((current) => {
+        if (!current) return;
+        const inventory = { ...(current.inventory || {}) };
+        if (prizeId === "football" && Number(inventory.football || 0) > 0) return;
+        inventory[prizeId] = (Number(inventory[prizeId]) || 0) + amount;
+        const firstWon = { ...(current.firstWon || {}) };
+        if (!firstWon[prizeId]) firstWon[prizeId] = Date.now();
+        return {
+          ...current,
+          inventory,
+          firstWon,
+          totalWins: (Number(current.totalWins) || 0) + amount,
+        };
+      });
+      if (!tx.committed) {
+        if (prizeId === "football") throw new Error("Der Empfänger besitzt den Football Token bereits.");
+        continue;
+      }
+      delivered += 1;
+    }
+    if (delivered === 0) throw new Error("Das Geschenk konnte keinem Spieler zugestellt werden.");
+
+    if (isPublic && isMainAdmin) {
+      await db.ref("activity").push({
+        name: "OWNER",
+        text: "Owner hat Geschenke verteilt.",
+        at: Date.now(),
+      }).catch(() => {});
+    }
+    return { delivered, prizeId, amount };
+  } catch (error) {
+    if (senderDeducted) {
+      await db.ref("players/" + auth.uid).transaction((current) => {
+        if (!current) return;
+        const inventory = { ...(current.inventory || {}) };
+        inventory[prizeId] = (Number(inventory[prizeId]) || 0) + amount;
+        return { ...current, inventory };
+      }).catch(() => {});
+    }
+    if (footballReserved) {
+      await db.ref("settings/footballTokenOwner").transaction((current) => current === targetUid ? null : undefined);
+    }
+    if (error instanceof HttpsError) throw error;
+    throw new HttpsError("aborted", error.message || "Das Geschenk konnte nicht gesendet werden.");
+  }
+});
+
+
+// Queue Galaxy gifts without trusting client-side inventory writes.
+exports.spawnGalaxyGifts = onCall({ region: "europe-west1" }, async (request) => {
+  requireRole(request, ["mainAdmin"]);
+  const data = request.data || {};
+  const scope = data.scope;
+  const amount = Number(data.amount);
+  const targetName = typeof data.targetName === "string" ? data.targetName.trim().slice(0, 24) : "";
+  if (scope !== "single" && scope !== "global") {
+    throw new HttpsError("invalid-argument", "Ungültiger Empfängerbereich.");
+  }
+  if (!Number.isInteger(amount) || amount < 1 || amount > 100) {
+    throw new HttpsError("invalid-argument", "Die Menge muss zwischen 1 und 100 liegen.");
+  }
+  const players = (await db.ref("players").get()).val() || {};
+  let targets;
+  if (scope === "global") {
+    targets = Object.keys(players);
+    if (targets.length > 200) {
+      throw new HttpsError("failed-precondition", "Zu viele Spieler für eine globale Aktion.");
+    }
+  } else {
+    if (!targetName) throw new HttpsError("invalid-argument", "Bitte einen Spielernamen eingeben.");
+    const normalized = targetName.toLowerCase();
+    const found = Object.entries(players).find(([, player]) =>
+      String(player && player.name || "").trim().toLowerCase() === normalized
+    );
+    if (!found) throw new HttpsError("not-found", "Spieler nicht gefunden.");
+    targets = [found[0]];
+  }
+  let queued = 0;
+  for (const targetUid of targets) {
+    const tx = await db.ref("players/" + targetUid).transaction((current) => {
+      if (!current) return;
+      return { ...current, pendingGalaxy: (Number(current.pendingGalaxy) || 0) + amount };
+    });
+    if (tx.committed) queued += 1;
+  }
+  if (queued === 0) throw new HttpsError("failed-precondition", "Es konnten keine Galaxy-Geschenke vorgemerkt werden.");
+  if (data.public === true) {
+    await db.ref("activity").push({ name: "OWNER", text: "Owner hat Galaxy-Truhen gespawnt.", at: Date.now() }).catch(() => {});
+  }
+  return { queued, amount };
+});
+
+// Player resets are restricted to the verified main-admin claim.
+exports.resetPlayerData = onCall({ region: "europe-west1" }, async (request) => {
+  requireRole(request, ["mainAdmin"]);
+  const data = request.data || {};
+  const scope = data.scope;
+  const targetName = typeof data.targetName === "string" ? data.targetName.trim().slice(0, 24) : "";
+  if (data.confirm !== true) throw new HttpsError("failed-precondition", "Zurücksetzen wurde nicht bestätigt.");
+  if (scope !== "single" && scope !== "global") {
+    throw new HttpsError("invalid-argument", "Ungültiger Zurücksetzungsbereich.");
+  }
+  const players = (await db.ref("players").get()).val() || {};
+  let targets;
+  if (scope === "global") {
+    targets = Object.keys(players);
+    if (targets.length > 500) {
+      throw new HttpsError("failed-precondition", "Zu viele Spieler für einen globalen Reset.");
+    }
+  } else {
+    if (!targetName) throw new HttpsError("invalid-argument", "Bitte einen Spielernamen eingeben.");
+    const normalized = targetName.toLowerCase();
+    const found = Object.entries(players).find(([, player]) =>
+      String(player && player.name || "").trim().toLowerCase() === normalized
+    );
+    if (!found) throw new HttpsError("not-found", "Spieler nicht gefunden.");
+    targets = [found[0]];
+  }
+  let reset = 0;
+  for (const targetUid of targets) {
+    const tx = await db.ref("players/" + targetUid).transaction((current) => {
+      if (!current) return;
+      return {
+        ...current,
+        inventory: {},
+        firstWon: {},
+        totalWins: 0,
+        lastBoxes: [],
+        opensThisRound: 0,
+        pendingGalaxy: 0,
+        eventClaims: {},
+      };
+    });
+    if (tx.committed) reset += 1;
+  }
+  if (scope === "global") {
+    await db.ref("settings").update({ footballTokenOwner: null, completedEvents: {} });
+  } else if (targets[0] && (await db.ref("settings/footballTokenOwner").get()).val() === targets[0]) {
+    await db.ref("settings/footballTokenOwner").remove();
+  }
+  return { reset, scope };
+});
+
+
+// Announcement delivery is performed by the trusted backend.
+exports.sendAnnouncement = onCall({ region: "europe-west1" }, async (request) => {
+  await assertMainAdminDuringLock(auth);
+  const auth = requireRole(request, ["mainAdmin", "halfAdmin", "quarterAdmin"]);
+  const data = request.data || {};
+  const message = typeof data.text === "string" ? data.text.trim() : "";
+  const scope = data.scope;
+  const targetName = typeof data.targetName === "string" ? data.targetName.trim().slice(0, 24) : "";
+  const isPublic = data.public === true;
+  if (!message || message.length > 240) {
+    throw new HttpsError("invalid-argument", "Die Nachricht muss 1 bis 240 Zeichen lang sein.");
+  }
+  if (scope !== "single" && scope !== "global") {
+    throw new HttpsError("invalid-argument", "Ungültiger Empfängerbereich.");
+  }
+  const players = (await db.ref("players").get()).val() || {};
+  let targets;
+  if (scope === "global") {
+    targets = Object.keys(players);
+    if (targets.length > 200) {
+      throw new HttpsError("failed-precondition", "Zu viele Spieler für eine globale Ankündigung.");
+    }
+  } else {
+    if (!targetName) throw new HttpsError("invalid-argument", "Bitte einen Spielernamen eingeben.");
+    const normalized = targetName.toLowerCase();
+    const found = Object.entries(players).find(([, player]) =>
+      String(player && player.name || "").trim().toLowerCase() === normalized
+    );
+    if (!found) throw new HttpsError("not-found", "Spieler nicht gefunden.");
+    targets = [found[0]];
+  }
+  if (targets.length === 0) throw new HttpsError("failed-precondition", "Es gibt keine Empfänger.");
+  const roleName = auth.token && auth.token.roleName;
+  const sender = auth.token && auth.token.mainAdmin === true ? "OWNER" :
+    String(roleName || (auth.token && auth.token.halfAdmin ? "HALB-ADMIN" : "VIERTEL-ADMIN")).slice(0, 40);
+  const announcement = { text: message, at: Date.now(), sender };
+  if (scope === "global") {
+    await db.ref("announcements/global").set(announcement);
+  } else {
+    const targetUid = targets[0];
+    await db.ref("announcements/users/" + targetUid).set({ ...announcement, targetUid });
+  }
+  if (isPublic) {
+    await db.ref("activity").push({
+      name: sender,
+      text: sender + " hat eine Ankündigung gesendet.",
+      at: Date.now(),
+    });
+  }
+  return { delivered: targets.length, scope };
+});
+
+
+// Live chat writes are server-authoritative. The database client is read-only
+// for messages once the matching rules are deployed.
+async function assertGameUnlocked() {
+  const snapshot = await db.ref("serverControl/locked").get();
+  if (snapshot.val() === true) {
+    throw new HttpsError("failed-precondition", "Das Spiel ist gerade gesperrt.");
+  }
+}
+
+function validMessageId(value) {
+  return typeof value === "string" && /^[A-Za-z0-9_-]{8,64}$/.test(value);
+}
+
+exports.sendChatMessage = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const text = typeof request.data?.text === "string" ? request.data.text.trim() : "";
+  if (!text || text.length > 240) {
+    throw new HttpsError("invalid-argument", "Eine Nachricht darf 1 bis 240 Zeichen lang sein.");
+  }
+  const playerSnapshot = await db.ref("players/" + auth.uid).get();
+  if (!playerSnapshot.exists()) {
+    throw new HttpsError("failed-precondition", "Dein Spielerprofil wurde nicht gefunden.");
+  }
+  const player = playerSnapshot.val() || {};
+  const name = String(player.name || "Spieler").trim().slice(0, 24) || "Spieler";
+  const rateRef = db.ref("chatRateLimit/" + auth.uid);
+  const now = Date.now();
+  const rate = await rateRef.transaction((lastAt) => {
+    if (Number(lastAt) && now - Number(lastAt) < 1500) return;
+    return now;
+  });
+  if (!rate.committed) {
+    throw new HttpsError("resource-exhausted", "Bitte warte kurz vor deiner nächsten Nachricht.");
+  }
+  const messageRef = db.ref("messages").push();
+  await messageRef.set({
+    uid: auth.uid,
+    name,
+    text,
+    at: now,
+  });
+  return { messageId: messageRef.key };
+});
+
+exports.deleteChatMessage = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const messageId = request.data?.messageId;
+  if (!validMessageId(messageId)) {
+    throw new HttpsError("invalid-argument", "Ungültige Nachricht.");
+  }
+  const ref = db.ref("messages/" + messageId);
+  const snapshot = await ref.get();
+  if (!snapshot.exists()) throw new HttpsError("not-found", "Nachricht nicht gefunden.");
+  const message = snapshot.val() || {};
+  if (message.uid !== auth.uid && auth.token?.mainAdmin !== true) {
+    throw new HttpsError("permission-denied", "Du kannst nur deine eigenen Nachrichten löschen.");
+  }
+  await ref.remove();
+  return { deleted: true };
+});
+
+exports.reportChatMessage = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const messageId = request.data?.messageId;
+  const reason = typeof request.data?.reason === "string" ? request.data.reason.trim().slice(0, 120) : "";
+  if (!validMessageId(messageId)) {
+    throw new HttpsError("invalid-argument", "Ungültige Nachricht.");
+  }
+  const snapshot = await db.ref("messages/" + messageId).get();
+  if (!snapshot.exists()) throw new HttpsError("not-found", "Nachricht nicht gefunden.");
+  if ((snapshot.val() || {}).uid === auth.uid) {
+    throw new HttpsError("failed-precondition", "Du kannst deine eigene Nachricht nicht melden.");
+  }
+  const reportRef = db.ref("messageReports/" + messageId + "/" + auth.uid);
+  const tx = await reportRef.transaction((current) => current || {
+    uid: auth.uid,
+    reason,
+    at: Date.now(),
+  });
+  if (!tx.committed) {
+    throw new HttpsError("already-exists", "Du hast diese Nachricht bereits gemeldet.");
+  }
+  return { reported: true };
+});
+
+exports.moderateChatMessage = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireRole(request, ["mainAdmin"]);
+  await assertMainAdminDuringLock(auth);
+  const messageId = request.data?.messageId;
+  const action = request.data?.action;
+  if (!validMessageId(messageId) || !["hide", "restore", "delete"].includes(action)) {
+    throw new HttpsError("invalid-argument", "Ungültige Moderationsaktion.");
+  }
+  const ref = db.ref("messages/" + messageId);
+  const snapshot = await ref.get();
+  if (!snapshot.exists()) throw new HttpsError("not-found", "Nachricht nicht gefunden.");
+  if (action === "delete") {
+    await ref.remove();
+  } else {
+    await ref.update({
+      hidden: action === "hide",
+      moderatedAt: Date.now(),
+      moderatedBy: auth.uid,
+    });
+  }
+  return { action };
+});
+
+
+// Admin-controlled game settings are validated and written only by the backend.
+exports.saveGameSettings = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  const claims = auth.token || {};
+  const data = request.data || {};
+  const patch = {};
+  if (Object.prototype.hasOwnProperty.call(data, "roleLuck")) {
+    if (claims.halfAdmin !== true || claims.mainAdmin === true) {
+      throw new HttpsError("permission-denied", "Diese Einstellung ist nur für Halb-Admins verfügbar.");
+    }
+    const value = Number(data.roleLuck);
+    if (!Number.isFinite(value) || value < 1 || value > 50) {
+      throw new HttpsError("invalid-argument", "Der persönliche Multiplikator muss zwischen 1× und 50× liegen.");
+    }
+    const locked = (await db.ref("serverControl/locked").get()).val() === true;
+    if (locked) throw new HttpsError("failed-precondition", "Während der Sperre darf nur der Hauptadmin Einstellungen ändern.");
+    await db.ref("settings/roleLuck/" + auth.uid).set(value);
+    return { saved: true, roleLuck: value };
+  }
+  requireRole(request, ["mainAdmin"]);
+  const locked = (await db.ref("serverControl/locked").get()).val() === true;
+  if (locked !== true && data.luckMultiplier !== undefined) {
+    const value = Number(data.luckMultiplier);
+    if (!Number.isFinite(value) || value < 1 || value > 1000000 || typeof data.luckEnabled !== "boolean") {
+      throw new HttpsError("invalid-argument", "Ungültige Glücks-Einstellungen.");
+    }
+    patch.luckMultiplier = value;
+    patch.luckEnabled = data.luckEnabled;
+  } else if (data.luckMultiplier !== undefined) {
+    throw new HttpsError("failed-precondition", "Die Server-Sperre verhindert diese Änderung.");
+  }
+  const decimalOdds = ["blitzChance", "spiderChance", "colaChance", "vineChance", "elephantChestChance"];
+  for (const key of decimalOdds) {
+    if (data[key] === undefined) continue;
+    const value = Number(data[key]);
+    if (!Number.isFinite(value) || value < 0 || value > 1) {
+      throw new HttpsError("invalid-argument", "Ungültige Event-Chance: " + key);
+    }
+    patch[key] = value;
+  }
+  for (const key of ["spiderLuck", "colaLuck", "plantLuck"]) {
+    if (data[key] === undefined) continue;
+    const value = Number(data[key]);
+    if (!Number.isFinite(value) || value < 1 || value > 1000000) {
+      throw new HttpsError("invalid-argument", "Ungültiger Multiplikator: " + key);
+    }
+    patch[key] = value;
+  }
+  if (data.diamondChance !== undefined) {
+    const value = Number(data.diamondChance);
+    if (!Number.isFinite(value) || value < 0 || value > 100) {
+      throw new HttpsError("invalid-argument", "Die Diamond-Chance muss zwischen 0 und 100 liegen.");
+    }
+    patch.diamondChance = value;
+  }
+  if (Object.keys(patch).length === 0) {
+    throw new HttpsError("invalid-argument", "Keine gültigen Einstellungen übergeben.");
+  }
+  await db.ref("settings").update(patch);
+  return { saved: true, fields: Object.keys(patch) };
+});
+
+
+// Player profile creation/update and initial presence are performed by the backend.
+exports.joinGame = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const name = typeof request.data?.name === "string" ? request.data.name.trim().slice(0, 24) : "";
+  if (name.length < 2 || [".", "#", "$", "/", "[", "]"].some((char) => name.includes(char))) {
+    throw new HttpsError("invalid-argument", "Der Spielername muss 2 bis 24 Zeichen lang sein und darf keine Firebase-Sonderzeichen enthalten.");
+  }
+  const playerRef = db.ref("players/" + auth.uid);
+  const tx = await playerRef.transaction((current) => ({
+    ...(current || {}),
+    name,
+    inventory: current?.inventory || {},
+    firstWon: current?.firstWon || {},
+    totalWins: Number(current?.totalWins) || 0,
+    created: Number(current?.created) || Date.now(),
+  }));
+  if (!tx.committed) throw new HttpsError("aborted", "Dein Spielerprofil konnte nicht gespeichert werden.");
+  await db.ref("online/" + auth.uid).set({ name, at: Date.now() });
+  return { player: tx.snapshot.val() };
 });

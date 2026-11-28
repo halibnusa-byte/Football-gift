@@ -77,3 +77,132 @@ test("event updates preserve unrelated event configuration", () => {
   assert.match(source, /db\.ref\(["']events["']\)\.update\(/);
   assert.doesNotMatch(source, /db\.ref\(["']events["']\)\.set\(/);
 });
+
+
+
+test("gift transfers are authenticated and restricted to main admins or special players", () => {
+  assert.match(source, /exports\.sendGift\s*=\s*onCall/);
+  assert.match(source, /claims\.mainAdmin === true/);
+  assert.match(source, /claims\.special === true/);
+  assert.match(source, /amount > 20/);
+  assert.match(source, /settings\/footballTokenOwner/);
+});
+
+test("Galaxy queue and player reset actions are main-admin-only callables", () => {
+  assert.match(source, /exports\.spawnGalaxyGifts\s*=\s*onCall/);
+  assert.match(source, /exports\.resetPlayerData\s*=\s*onCall/);
+  assert.match(source, /data\.confirm !== true/);
+});
+
+test("browser gift transfer, Galaxy queue and reset use server callables", () => {
+  const gift = client.slice(client.indexOf("async function sendGift"), client.indexOf("async function grantTokens"));
+  const galaxy = client.slice(client.indexOf("async function spawnGalaxy"), client.indexOf("async function resetData"));
+  const reset = client.slice(client.indexOf("async function resetData"), client.indexOf("async function renderEventChallenge"));
+  assert.match(gift, /httpsCallable\(functions,'sendGift'\)/);
+  assert.doesNotMatch(gift, /update\(path\('players\//);
+  assert.match(galaxy, /httpsCallable\(functions,'spawnGalaxyGifts'\)/);
+  assert.doesNotMatch(galaxy, /update\(path\('players\//);
+  assert.match(reset, /httpsCallable\(functions,'resetPlayerData'\)/);
+  assert.doesNotMatch(reset, /update\(path\('players\//);
+});
+
+
+test("announcements are sent through a role-checked backend callable", () => {
+  assert.ok(source.includes("exports.sendAnnouncement = onCall"));
+  assert.ok(source.includes('requireRole(request, ["mainAdmin", "halfAdmin", "quarterAdmin"])'));
+  assert.ok(source.includes("message.length > 240"));
+  assert.ok(source.includes('"announcements/global"'));
+  assert.ok(source.includes('"announcements/users/"'));
+});
+
+test("browser announcement UI uses the trusted callable instead of direct database writes", () => {
+  const section = client.slice(client.indexOf("async function adminAnnouncement"), client.indexOf("async function spawnGalaxy"));
+  assert.ok(section.includes("httpsCallable(functions,'sendAnnouncement')"));
+  assert.ok(!section.includes("set(path('announcements"));
+});
+
+test("live chat mutations are server-authoritative and role-checked", () => {
+  assert.ok(source.includes("exports.sendChatMessage = onCall"));
+  assert.ok(source.includes("exports.deleteChatMessage = onCall"));
+  assert.ok(source.includes("exports.reportChatMessage = onCall"));
+  assert.ok(source.includes("exports.moderateChatMessage = onCall"));
+  assert.ok(source.includes('requireRole(request, ["mainAdmin"])'));
+  assert.ok(source.includes("messageReports/"));
+  assert.ok(source.includes("chatRateLimit/"));
+});
+
+test("browser live chat uses callable mutations and renders text safely", () => {
+  assert.ok(client.includes("httpsCallable(functions,'sendChatMessage')"));
+  assert.ok(client.includes("httpsCallable(functions,'deleteChatMessage')"));
+  assert.ok(client.includes("httpsCallable(functions,'reportChatMessage')"));
+  assert.ok(client.includes("httpsCallable(functions,'moderateChatMessage')"));
+  assert.ok(client.includes("body.textContent=String(m.text)"));
+  assert.ok(client.includes('id="liveChatPanel"'));
+});
+
+test("Message Man uses the same server-authoritative live chat endpoint", () => {
+  const section = client.slice(client.indexOf("$('messageManSend').onclick"), client.indexOf("$('logoutBtn').onclick"));
+  assert.ok(section.includes("httpsCallable(functions,'sendChatMessage')"));
+  assert.ok(!section.includes("push(path('messages')"));
+});
+
+test("admin game settings are validated and written by a trusted callable", () => {
+  assert.ok(source.includes("exports.saveGameSettings = onCall"));
+  assert.ok(source.includes('requireRole(request, ["mainAdmin"])'));
+  assert.ok(source.includes('claims.halfAdmin !== true'));
+  assert.ok(source.includes("settings/roleLuck/"));
+  assert.ok(source.includes("blitzChance"));
+  assert.ok(source.includes("diamondChance"));
+});
+
+test("browser admin settings no longer write directly to settings", () => {
+  for (const id of ["saveLuck", "saveEventOdds", "saveDiamondChance"]) {
+    const at = client.indexOf("$('" + id + "').onclick=");
+    assert.notEqual(at, -1);
+    const section = client.slice(at, at + 1400);
+    assert.ok(section.includes("httpsCallable(functions,'saveGameSettings')"));
+  }
+});
+
+test("admin live chat exposes report moderation controls", () => {
+  assert.ok(client.includes('id="chatReportsPanel"'));
+  assert.ok(client.includes("onValue(path('messageReports')"));
+  assert.ok(client.includes("function renderChatReports"));
+  assert.ok(client.includes("['Wiederherstellen','restore']"));
+});
+
+test("main admin random recipient grant selects a player server-side without randomizing reward", () => {
+  const section = source.slice(source.indexOf("exports.grantAdminTokens"), source.indexOf("// Gift transfers"));
+  assert.ok(section.includes('scope !== "random"'));
+  assert.ok(section.includes("crypto.randomInt(candidates.length)"));
+  assert.ok(section.includes("const prizeId ="));
+  assert.ok(client.includes('id="awardRandom"'));
+  assert.ok(client.includes("grantTokens(true)"));
+  assert.ok(client.includes("prizeId:$('awardPrize').value"));
+});
+
+test("update lockdown rejects non-main-admin event, gift, announcement and chat actions", () => {
+  assert.ok(source.includes("async function assertMainAdminDuringLock(auth)"));
+  assert.ok(source.includes("Während der Update-Sperre hat nur der Hauptadmin Zugriff."));
+  for (const fn of ["setActiveEvent", "sendGift", "sendAnnouncement", "sendChatMessage", "deleteChatMessage", "reportChatMessage"]) {
+    const at = source.indexOf("exports." + fn + " = onCall");
+    assert.notEqual(at, -1);
+    const section = source.slice(at, at + 700);
+    assert.ok(section.includes("assertMainAdminDuringLock(auth)"), fn + " should enforce update lockdown");
+  }
+});
+
+test("joining the game checks server lockdown and preserves the existing player profile", () => {
+  assert.ok(source.includes("exports.joinGame = onCall"));
+  const join = source.slice(source.indexOf("exports.joinGame"));
+  assert.ok(join.includes("assertMainAdminDuringLock(auth)"));
+  assert.ok(join.includes("...(current || {})"));
+  assert.ok(join.includes("current?.inventory || {}"));
+});
+
+test("browser join uses the server callable instead of direct profile and presence writes", () => {
+  const enter = client.slice(client.indexOf("async function enter"), client.indexOf("function subscribe"));
+  assert.ok(enter.includes("httpsCallable(functions,'joinGame')"));
+  assert.ok(!enter.includes("update(path('players/'"));
+  assert.ok(!enter.includes("set(path('online/'"));
+});
