@@ -105,6 +105,7 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <div id="app" class="hidden">
 <section class="panel"><div class="row"><div><b id="hello">Willkommen!</b><div class="muted" id="playerMeta"></div></div><button class="secondary small" id="logoutBtn">Abmelden</button></div>
 <div class="cards"><div class="mini"><b>Deine Öffnungen</b><div id="opens">0 / 3</div></div><div class="mini"><b>Deine Tokens</b><div id="tokenCount">0</div></div><div class="mini"><b>Globales Glück</b><div id="luckLabel">1×</div></div><div class="mini"><b>Power Hours</b><div id="powerLabel">Inaktiv</div></div><div class="mini"><b>Event</b><div id="eventLabel">Keins aktiv</div></div></div></section>
+<section class="panel" id="chatPanel"><b>💬 LIVE-CHAT</b><div id="chatList" style="max-height:220px;overflow:auto;margin:8px 0"></div><div class="row"><input id="chatInput" maxlength="200" placeholder="Nachricht schreiben …"><button id="chatSend">SENDEN</button></div></section>
 <section class="panel hidden" id="comebackBox"><div class="row"><div><b>🏆 LEGENDARY COMEBACK GIFT</b><div class="muted">Danke fürs Mitmachen beim Comeback Admin Abuse!</div></div><button id="cbOpen">ÖFFNEN</button></div></section>
 <section class="panel" id="gamePanel"><div class="row"><div><h2>🎁 Deine 15 Geschenkboxen</h2><div class="muted" id="roundText">Öffne 3 Boxen.</div></div><span class="tag" id="rareLabel">Normale Runde</span></div><div class="grid" id="boxGrid"></div><div class="result" id="result">Wähle eine Box!</div><button class="secondary" id="nextRound" disabled>Boxen neu mischen</button></section>
 <section class="panel hidden" id="eventChallengePanel"><h2 id="eventChallengeTitle">🎪 Event</h2><p class="muted" id="eventChallengeDescription"></p><div class="event-challenge" id="eventChallengeBody"></div></section>
@@ -112,7 +113,7 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <section class="panel" id="livePanel"><h2>📺 Live-Übertragung</h2><p class="muted">Wähle einen Spieler, der online ist. Angezeigt werden nur seine Boxen – keine Sammlung und keine Glückswerte.</p><div class="row"><select id="watchPlayer"><option value="">Spieler auswählen…</option></select><button class="secondary" id="watchBtn">LIVE ANSEHEN</button></div><div id="liveScreen" class="status">Noch keine Übertragung ausgewählt.</div><div class="list" id="activity"></div></section>
 <section class="panel" id="rankingPanel"><h2>🏆 Rangliste der Geschenke</h2><div class="list" id="ranking"></div></section>
 <section class="panel hidden" id="rosterPanel"><h2>👥 Spielerübersicht</h2><p class="muted">Online- und Offline-Spieler. Der Hauptadmin sieht die Namen.</p><div class="roster" id="playerRoster">Wird geladen …</div></section>
-<section class="panel" id="giftPanel"><h2>🎁 Geschenk weitergeben</h2><div id="giftLocked" class="status">Für diese Funktion brauchst du eine entsprechende Rolle.</div><div id="giftControls" class="hidden"><div class="row"><select id="giftScope"><option value="single">Einzelner Spieler</option><option value="global">Alle Spieler</option></select><input id="giftTarget" placeholder="Spielername (bei einzeln)"></div><select id="giftPrize"></select><input id="giftAmount" type="number" min="1" max="20" value="1"><label><input id="giftPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="giftBtn">GESCHENK SENDEN</button><div id="giftMsg" class="hint"></div></div></section>
+<section class="panel" id="giftPanel"><h2>🎁 Geschenk weitergeben</h2><div id="giftLocked" class="status">Für diese Funktion brauchst du eine entsprechende Rolle.</div><div id="giftControls" class="hidden"><div class="row"><select id="giftScope"><option value="single">Einzelner Spieler</option><option value="random">ZUFÄLLIG (Empfänger wird gelost)</option><option value="global">Alle Spieler</option></select><input id="giftTarget" placeholder="Spielername (bei einzeln)"></div><select id="giftPrize"></select><input id="giftAmount" type="number" min="1" max="20" value="1"><label><input id="giftPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="giftBtn">GESCHENK SENDEN</button><div id="giftMsg" class="hint"></div></div></section>
 <section class="panel" id="rolePanel"><h2>🔐 Rollen-Zugang</h2><p class="muted">Admin, besonderer Spieler, Halb-Admin, Viertel-Admin oder Message Man: Einfach den persönlichen Code eingeben.</p><input id="roleCode" type="password" autocomplete="off" placeholder="Dein Zugangscode"><div class="row"><button id="roleLogin">Code prüfen</button><button class="secondary" id="roleLogout">Rolle abmelden</button></div><div id="firstAdminSetup" class="notice hidden"><b>Ersteinrichtung:</b> Es gibt noch keinen Admin-Code. Lege den Hauptadmin-Code fest. Der erste Nutzer, der dies einrichtet, wird Hauptadmin.<input id="initialAdminCode" type="password" placeholder="Hauptadmin-Code (mind. 8 Zeichen)"><button id="claimAdmin">Hauptadmin einrichten</button></div><div id="roleMsg" class="hint"></div></section>
 <section class="panel hidden" id="messageManPanel"><h2>💬 Message Man</h2><p class="muted">Diese Rolle darf nur Nachrichten schreiben und hat keine Admin-Rechte.</p><textarea id="messageManText" rows="2" maxlength="240" placeholder="Deine Nachricht"></textarea><button id="messageManSend">NACHRICHT SENDEN</button><div id="messageManStatus" class="hint"></div></section>
 <section class="panel hidden" id="adminPanel"><h2>👑 Hauptadmin-Panel</h2><div class="notice">Kostenlose Firebase-Client-Lösung: Admin-Codes und Zufall können von technisch versierten Nutzern manipuliert werden. Für echte Sicherheit wäre ein eigener vertrauenswürdiger Server nötig. Die Admin-Oberfläche ist kein sicherer Schutz vor Manipulation.</div>
@@ -124,6 +125,7 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <button type="button" class="admin-nav-btn" data-target="admin-settings">⚙️ Event-Werte</button>
 <button type="button" class="admin-nav-btn" data-target="admin-actions">🎁 Aktionen</button>
 </nav>
+<div id="shopPanel" class="hidden"><h3>🛒 ADMIN SHOP</h3><div class="muted">Budget: <b id="shopBudget">0</b> Punkte (1 Punkt pro geöffnetem Geschenk)</div><div id="shopList"></div><div class="row"><button id="shopAddBtn" class="secondary">PRODUKT HINZUFÜGEN</button><button id="shopSeedBtn" class="secondary">FESTGELEGTE PRODUKTE ANLEGEN</button></div><div id="shopMsg" class="hint"></div></div>
 <div id="comebackAdminBox" class="hidden"><h3>🏆 COMEBACK ERA · Legendary Comeback Gift</h3><div class="muted">Vergibt einmalig an alle aktuell online befindlichen Spieler (= Teilnehmer am Comeback Admin Abuse) ein Legendary Comeback Gift und den Titel OG COMEBACK PLAYER. Wer es schon bekommen hat, wird übersprungen.</div><button id="cbGrant">COMEBACK GIFT AN TEILNEHMER VERGEBEN</button><div id="cbAdminMsg" class="hint"></div></div>
 <div id="serverControlBox" class="hidden"><h3>🔒 SERVER-KONTROLLE</h3><div id="srvStatus" class="srv unknown">STATUS WIRD GEPRÜFT …</div><div class="muted" id="srvMeta"></div><div class="row"><button id="srvLock" class="danger">SERVER SPERREN</button><button id="srvUnlock">SERVER FREIGEBEN</button></div><div id="srvMsg" class="hint"></div></div>
 <h3 id="admin-roles" class="admin-section-title">🔐 Rollen & Zugang</h3><h3>Admin-Code ändern</h3><input id="newAdminCode" type="password" placeholder="Neuer Admin-Code"><button id="changeAdminCode">Admin-Code speichern</button>
@@ -145,7 +147,7 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 <h3 id="admin-settings" class="admin-section-title">⚙️ Event-Einstellungen</h3><h3>Event-Chancen & Glück</h3><div class="row"><label>Blitz-Chance %<input id="blitzChance" type="number" step="0.001" value="1.5"></label><label>Spider-Man-Chance %<input id="spiderChance" type="number" step="0.001" value="1"></label></div><div class="row"><label>Spider-Man Glück ×<input id="spiderLuck" type="number" value="5"></label><label>Coca-Cola Chance %<input id="colaChance" type="number" step="0.001" value="1"></label></div><div class="row"><label>Coca-Cola Glück ×<input id="colaLuck" type="number" value="5"></label><label>Ranken-Chance %<input id="vineChance" type="number" step="0.001" value="1"></label></div><div class="row"><label>Pflanzen Glück ×<input id="plantLuck" type="number" value="5"></label><label>Elefanten-Truhe %<input id="elephantChance" type="number" step="0.0001" value="0.001"></label></div><button id="saveEventOdds">EVENT-WERTE SPEICHERN</button><h3>Blitz-Einschlag manuell auslösen</h3><p class="muted">„Eigener Raum“ bedeutet hier deinen eigenen Spielerraum. Es gibt in dieser Web-App keine getrennten echten Server.</p><div class="row"><select id="blitzScope"><option value="self">Eigener Spielerraum</option><option value="single">Einzelner Spieler</option><option value="global">Global – alle Spieler</option></select><input id="blitzTarget" placeholder="Spielername (einzeln)"></div><button id="spawnBlitz">⚡ BLITZ EINSCHLAGEN LASSEN</button><h3>Diamond-Geschenk</h3><label>Spawnchance während Diamond Event (%)</label><input id="diamondChance" type="number" min="0" max="100" step="0.001" value="0.1"><button id="saveDiamondChance">CHANCE SPEICHERN</button><p class="muted">Galaxy-Geschenk: 0,001 % pro Box und nur während Galaxy Event. Admin kann Galaxy-Truhen zusätzlich manuell spawnen.</p>
 <h3 id="admin-actions" class="admin-section-title">🎁 Admin-Aktionen</h3><h3>Owner Announcement</h3><textarea id="announcementText" rows="2" maxlength="240" placeholder="Deine Nachricht…"></textarea><div class="row"><select id="announcementScope"><option value="global">Alle Spieler</option><option value="single">Einzelner Spieler</option></select><input id="announcementTarget" placeholder="Spielername (einzeln)"></div><label><input id="announcementPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="sendAnnouncement">ANNOUNCEMENT SENDEN</button>
 <h3>Galaxy-Truhen spawnen</h3><div class="row"><select id="galaxyScope"><option value="global">Alle Spieler</option><option value="single">Einzelner Spieler</option></select><input id="galaxyTarget" placeholder="Spielername (einzeln)"></div><input id="galaxyAmount" type="number" min="1" max="100" value="1"><label><input id="galaxyPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="spawnGalaxy">🌌 GALAXY-TRUHEN SPAWNEN</button>
-<h3>Tokens vergeben</h3><div class="row"><select id="awardScope"><option value="single">Einzelner Spieler</option><option value="global">Alle Spieler</option></select><input id="awardTarget" placeholder="Spielername (einzeln)"></div><select id="awardPrize"></select><input id="awardAmount" type="number" min="1" max="50" value="1"><label><input id="awardPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="awardBtn">TOKEN VERGEBEN</button>
+<h3>Tokens vergeben</h3><div class="row"><select id="awardScope"><option value="single">Einzelner Spieler</option><option value="random">ZUFÄLLIG (Empfänger wird gelost)</option><option value="global">Alle Spieler</option></select><input id="awardTarget" placeholder="Spielername (einzeln)"></div><select id="awardPrize"></select><input id="awardAmount" type="number" min="1" max="50" value="1"><label><input id="awardPublic" type="checkbox" checked style="width:auto"> Aktion öffentlich anzeigen</label><button id="awardBtn">TOKEN VERGEBEN</button>
 <h3>Alles zurücksetzen</h3><select id="resetScope"><option value="global">Alle Spieler</option><option value="single">Einzelner Spieler</option></select><input id="resetTarget" placeholder="Spielername (einzeln)"><button class="danger" id="resetPlayer">ALLES ZURÜCKSETZEN</button><div id="adminMsg" class="hint"></div>
 </section>
 <section class="panel hidden" id="specialPanel"><h2>⭐ Besonderer Spieler</h2><p class="muted">Dauerhaft 2× Glück. Du kannst nur Geschenke verschenken, die du selbst besitzt.</p></section>
@@ -268,7 +270,7 @@ async function openBox(i){
  if(opened.length>=3||opened.includes(i)||Date.now()>EXPIRY.getTime())return;
  opened.push(i);boxes[i].opened=true;renderBoxes();$('result').textContent='Die Box wird geöffnet…';
  await rollAndAward(uid,(boxes[i].rare?rareType.mult:1)*(boxes[i].blitz?10:1),'Box',!!boxes[i].galaxy);if(boxes[i].blitz)$('result').textContent='⚡ BLITZ! 10× Glück! '+$('result').textContent;
- await saveRound();renderInventory();renderRanking();
+ await saveRound();bumpBudget();renderInventory();renderRanking();
 }
 async function enter(){
  if(serverState!=='open'&&!isOwner){applyServerState();return msg('loginMsg',serverState==='locked'?'Server gesperrt.':LOCK_ERR);}
@@ -305,7 +307,7 @@ function updateHeader(){
  $('powerLabel').textContent=isPower()?'AKTIV':'Inaktiv';$('luckLabel').textContent=luck()+'×'+(settings.luckEnabled?' (global)':'');
  $('eventLabel').textContent=EVENT_INFO[ev]?.[0]||'Keins aktiv';$('globalStatus').textContent='ONLINE · '+(EVENT_INFO[ev]?.[0]||'Normalbetrieb')+' · Glück '+luck()+'×';
  $('playerMeta').textContent=role==='special'?'Besonderer Spieler · 2× Glück':role==='admin'?'Hauptadmin':role==='quarterAdmin'?'Viertel-Admin · '+(roleName||name):role==='halfAdmin'?'Halb-Admin · '+(roleName||name):role==='messageMan'?'Message Man':'Spieler';
- renderBoxes();renderServerControl();renderComeback();
+ renderBoxes();renderServerControl();renderComeback();renderShop();
 }
 function renderInventory(){
  const inv=player?.inventory||{};$('tokenCount').textContent=Object.values(inv).reduce((a,b)=>a+Number(b||0),0);
@@ -386,7 +388,8 @@ async function saveMessageMen(){
  $('messageManCode1').value='';$('messageManCode2').value='';msg('adminMsg','Message-Man-Codes gespeichert. Die Spieler können ihren Code selbst eingeben.');
 }
 async function resolveTargets(scope,targetName){
- const all=(await get(path('players'))).val()||{};if(scope==='global')return Object.entries(all);
+ window.__rnd=null;const all=(await get(path('players'))).val()||{};if(scope==='global')return Object.entries(all);
+ if(scope==='random'){const e=Object.entries(all);if(!e.length)throw new Error('Keine Spieler vorhanden.');const pick=e[Math.floor(Math.random()*e.length)];window.__rnd=pick[1].name||'Spieler';return [pick];}
  const n=clean(targetName).toLowerCase();if(!n)throw new Error('Bitte einen Spielernamen eingeben.');
  const f=Object.entries(all).find(([id,p])=>(p.name||'').toLowerCase()===n);if(!f)throw new Error('Spieler nicht gefunden.');return [f];
 }
@@ -396,7 +399,7 @@ async function sendGift(){
   if(id==='football'&&($('giftScope').value==='global'||settings.footballTokenOwner||amount!==1))throw new Error('Football Token kann nur einmal im gesamten Spiel vergeben werden. Wähle einen einzelnen Spieler und Menge 1.');
   if(role==='special'){if(targets.length!==1||targets[0][0]===uid)throw new Error('Wähle einen anderen einzelnen Spieler.');if(Number(player.inventory?.[id]||0)<amount)throw new Error('Du besitzt nicht genug davon.');const inv={...(player.inventory||{})};inv[id]-=amount;await update(path('players/'+uid),{inventory:inv});}
   for(const [idTarget] of targets)await awardPrizeTo(idTarget,id,amount);
-  msg('giftMsg','Geschenk erfolgreich gesendet.');if(role==='admin'&&$('giftPublic').checked)await addActivity('Owner hat Geschenke verteilt.');renderInventory();
+  msg('giftMsg','Geschenk erfolgreich gesendet'+(window.__rnd?' an '+window.__rnd:'')+'.');if(role==='admin'&&$('giftPublic').checked)await addActivity('Owner hat Geschenke verteilt.');renderInventory();
  }catch(e){msg('giftMsg',e.message)}
 }
 async function grantTokens(){
@@ -562,6 +565,64 @@ async function registerAdminRole(kind){
  msg('adminMsg',half?'Halb-Admin-Code(s) gespeichert. Die Spieler müssen nur ihren Code im Rollen-Zugang eingeben.':'Viertel-Admin-Code gespeichert. Der Spieler muss nur seinen Code im Rollen-Zugang eingeben.');
 }
 
+// ===== CHAT & ADMIN SHOP =====
+let chatAll={},chatLast=0;
+const bumpBudget=()=>runTransaction(path('settings/shopBudget'),v=>(Number(v)||0)+1).catch(()=>{});
+const shopOk=()=>role==='admin'&&isOwner;
+const SHOP_DEFAULTS={hacker:['Hacker Scanner','Scannt ein Geschenk: Token oder Niete, nicht welches Token.'],robot:['Robot Scanner','Zeigt bei allen Geschenken die Seltenheit, nicht das genaue Token.'],remix:['MAGIC REMIX','Mischt einmal die drei Auswahlmöglichkeiten beim Magic-Cube-Event neu.'],report:['GOLDEN REPORT CARD','Lässt eine beantwortete Frage neu bewerten. Extrem selten.'],lava:['LAVA SHIELD','Schützt einmal vor einer falschen Entscheidung im Lava-Event.'],alien:['ALIEN RADAR','Hilft, entführte Geschenke zu lokalisieren.'],pearl:['PEARL RADAR','Gibt beim Ocean-Event einen Hinweis auf eine der drei Truhen.']};
+function renderChat(){
+ const box=$('chatList');box.innerHTML='';
+ Object.entries(chatAll).sort((a,b)=>a[1].at-b[1].at).slice(-50).forEach(([id,m])=>{
+  const d=document.createElement('div');d.className='muted';d.style.margin='4px 0';
+  const b=document.createElement('b'),t=document.createElement('span');b.textContent=(m.name||'?')+': ';t.textContent=m.text||'';d.append(b,t);
+  const rc=m.reports?Object.keys(m.reports).length:0;
+  if(role==='admin'&&rc)d.append(' 🚩'+rc);
+  const mk=(txt,f)=>{const x=document.createElement('button');x.className='secondary small';x.textContent=txt;x.onclick=f;d.append(' ',x);};
+  if(m.uid!==uid)mk('🚩',e=>{set(path('chat/'+id+'/reports/'+uid),true).catch(()=>{});e.target.disabled=true;});
+  if(m.uid===uid||shopOk())mk('✕',()=>remove(path('chat/'+id)).catch(()=>{}));
+  box.append(d);
+ });
+ box.scrollTop=box.scrollHeight;
+}
+async function sendChat(){
+ const text=String($('chatInput').value||'').trim().slice(0,200);
+ if(!text||!uid||Date.now()-chatLast<2000)return;chatLast=Date.now();$('chatInput').value='';
+ try{await push(path('chat'),{uid,name,text,at:Date.now()});}catch(e){$('chatInput').value=text;}
+}
+function renderShop(){
+ show('shopPanel',role==='admin');
+ const sh=settings.shop||{},own=settings.shopOwned||{},l=$('shopList');
+ $('shopBudget').textContent=Number(settings.shopBudget)||0;l.innerHTML='';
+ Object.entries(sh).forEach(([id,p])=>{
+  const d=document.createElement('div');d.style.margin='8px 0';
+  d.textContent=p.name+' – '+(p.price==null?'Preis offen':p.price+' Punkte')+' – Bestand '+(p.stock==null?'∞':p.stock)+' – gekauft '+(own[id]||0)+' ';
+  const mk=(t,f)=>{const b=document.createElement('button');b.className='secondary small';b.textContent=t;b.onclick=f;d.append(b,' ');};
+  mk('Kaufen',()=>shopBuy(id));mk('Preis',()=>shopSet(id,'price'));mk('Bestand',()=>shopSet(id,'stock'));mk('Entfernen',()=>shopDel(id));
+  l.append(d);
+ });
+}
+async function shopSeed(){if(!shopOk())return;const u={};Object.entries(SHOP_DEFAULTS).forEach(([k,v])=>{if(!(settings.shop||{})[k])u[k]={name:v[0],desc:v[1]};});if(Object.keys(u).length)await update(path('settings/shop'),u);msg('shopMsg','Produkte angelegt. Preise und Bestände musst du noch festlegen.');}
+async function shopSet(id,f){if(!shopOk())return;const v=prompt(f==='price'?'Preis in Budgetpunkten:':'Bestand (Zahl):');if(v===null)return;const n=Math.floor(Number(v));if(!(n>=0))return msg('shopMsg','Bitte eine Zahl ab 0 eingeben.');await update(path('settings/shop/'+id),{[f]:n});}
+async function shopDel(id){if(shopOk()&&confirm('Produkt entfernen?'))await remove(path('settings/shop/'+id));}
+async function shopAdd(){if(!shopOk())return;const n=clean(prompt('Produktname:')||'');if(n.length<2)return;await push(path('settings/shop'),{name:n,desc:clean(prompt('Beschreibung (optional):')||'')});}
+async function shopBuy(id){
+ if(!shopOk())return;const p=(settings.shop||{})[id];if(!p)return;
+ if(p.price==null)return msg('shopMsg','Erst einen Preis festlegen.');
+ if(p.stock!=null&&p.stock<=0)return msg('shopMsg','Nicht auf Lager.');
+ const tx=await runTransaction(path('settings/shopBudget'),v=>(Number(v)||0)>=p.price?(Number(v)||0)-p.price:undefined);
+ if(!tx.committed)return msg('shopMsg','Nicht genug Budgetpunkte.');
+ if(p.stock!=null){const st=await runTransaction(path('settings/shop/'+id+'/stock'),v=>v>0?v-1:undefined);if(!st.committed){await runTransaction(path('settings/shopBudget'),v=>(Number(v)||0)+p.price);return msg('shopMsg','Nicht auf Lager.');}}
+ await runTransaction(path('settings/shopOwned/'+id),v=>(Number(v)||0)+1);
+ msg('shopMsg','Gekauft: '+p.name);
+}
+function watchChatShop(){
+ unsubs.push(onValue(path('chat'),s=>{chatAll=s.val()||{};renderChat();}));
+ unsubs.push(onValue(path('settings'),()=>renderShop()));
+}
+$('chatSend').onclick=sendChat;$('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat();});
+$('shopAddBtn').onclick=shopAdd;$('shopSeedBtn').onclick=shopSeed;
+// ===== ENDE CHAT & ADMIN SHOP =====
+
 // ===== COMEBACK GIFT =====
 let cbState=null,cbTitle='',cbBusy=false;
 function renderComeback(){
@@ -572,6 +633,7 @@ function renderComeback(){
  t.textContent=cbTitle?'🏆 '+cbTitle:'';
 }
 function watchComeback(){
+ watchChatShop();
  unsubs.push(onValue(path('players/'+uid),s=>{const v=s.val()||{};cbState=v.comebackGift||null;cbTitle=v.title||'';renderComeback();}));
 }
 async function grantComeback(){
