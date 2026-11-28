@@ -524,3 +524,17 @@ test("Golden Cup goalkeeper choice and penalty outcome are server-authoritative"
   assert.match(award, /eventId === "football"/);
   assert.match(client, /shootPenalty/);
 });
+
+test("Multiverse secret dimension appears only after three switches and an admin-configured chance", () => {
+  const start = source.slice(source.indexOf("exports.startMultiverseChallenge"), source.indexOf("exports.startLavaChallenge"));
+  const discover = source.slice(source.indexOf("exports.discoverMultiverseSecret"), source.indexOf("exports.startLavaChallenge"));
+  const settings = source.slice(source.indexOf("exports.saveGameSettings"), source.indexOf("exports.saveShopConfig"));
+  assert.match(start, /multiverseSecretChance/);
+  assert.match(start, /secretAvailable: secureUnit\(\) < chance/);
+  assert.match(discover, /< 90000/);
+  assert.match(discover, /secretAvailable !== true/);
+  assert.match(settings, /multiverseSecretChance/);
+  assert.match(client, /startMultiverseChallenge/);
+  assert.match(client, /discoverMultiverseSecret/);
+  assert.match(client, /multiverseSecretChance/);
+});
