@@ -312,3 +312,12 @@ test("LaserTag uses ten-second skin selection, three lives, eliminations and top
   assert.match(client, /httpsCallable\(functions,'laserHit'\)/);
   assert.match(client, /httpsCallable\(functions,'finishLaserTag'\)/);
 });
+
+test("LaserTag ends on last player standing and has no invented five-minute timeout", () => {
+  assert.match(source, /async function finalizeLaserTagIfComplete\(\)/);
+  assert.match(source, /alive\.length > 1/);
+  const hit = source.slice(source.indexOf("exports.laserHit"), source.indexOf("exports.finishLaserTag"));
+  assert.match(hit, /finalizeLaserTagIfComplete\(\)/);
+  assert.doesNotMatch(hit, /310000/);
+  assert.match(client, /Letzter Spieler mit Leben gewinnt/);
+});
