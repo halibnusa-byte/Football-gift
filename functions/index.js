@@ -1170,7 +1170,7 @@ exports.joinLaserTag = onCall({ region: "europe-west1" }, async (request) => {
   const elapsed = Date.now() - Number(events.startedAt || Date.now());
   if (elapsed < 0 || elapsed > 30000) throw new HttpsError("deadline-exceeded", "Die Skin-Auswahl ist beendet.");
   const name = String((await db.ref("players/" + auth.uid + "/name").get()).val() || "Spieler").slice(0,24);
-  await db.ref("events/laserPlayers/" + auth.uid).set({ name, skin, score: 0, joinedAt: Date.now(), spectator: false, lastShotAt: 0 });
+  await db.ref("events/laserPlayers/" + auth.uid).set({ name, skin, score: 0, hits: 0, lives: 3, joinedAt: Date.now(), spectator: false, lastShotAt: 0 });
   return { joined: true };
 });
 exports.scoreLaserTag = onCall({ region: "europe-west1" }, async (request) => {
@@ -1189,6 +1189,61 @@ exports.scoreLaserTag = onCall({ region: "europe-west1" }, async (request) => {
   });
   if (!tx.committed) throw new HttpsError("resource-exhausted", "Bitte warte kurz vor dem nächsten Schuss.");
   return { score: tx.snapshot.val().score };
+});
+
+exports.laserHit = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const targetUid = String(request.data?.targetUid || "");
+  if (!targetUid || targetUid === auth.uid || !/^[A-Za-z0-9_-]{1,128}$/.test(targetUid)) {
+    throw new HttpsError("invalid-argument", "Ungültiges Ziel.");
+  }
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "lasertag") throw new HttpsError("failed-precondition", "LaserTag ist nicht aktiv.");
+  const elapsed = Date.now() - Number(events.startedAt || Date.now());
+  if (elapsed < 30000 || elapsed >= 330000) throw new HttpsError("deadline-exceeded", "Die LaserTag-Runde läuft gerade nicht.");
+  const attackerRef = db.ref("events/laserPlayers/" + auth.uid);
+  const targetRef = db.ref("events/laserPlayers/" + targetUid);
+  const attackerTx = await attackerRef.transaction((p) => {
+    const now = Date.now();
+    if (!p || p.spectator || now - Number(p.lastShotAt || 0) < 900) return;
+    return { ...p, lastShotAt: now };
+  });
+  if (!attackerTx.committed) throw new HttpsError("failed-precondition", "Du bist nicht im Spiel oder musst kurz warten.");
+  const targetTx = await targetRef.transaction((p) => {
+    if (!p || p.spectator || Number(p.lives ?? 3) <= 0) return;
+    const lives = Math.max(0, Number(p.lives ?? 3) - 1);
+    return { ...p, lives, spectator: lives === 0, eliminatedAt: lives === 0 ? Date.now() : null };
+  });
+  if (!targetTx.committed) throw new HttpsError("failed-precondition", "Dieses Ziel ist bereits ausgeschieden.");
+  await attackerRef.child("hits").transaction((v) => (Number(v) || 0) + 1);
+  return { targetLives: targetTx.snapshot.val().lives, eliminated: targetTx.snapshot.val().spectator };
+});
+
+exports.finishLaserTag = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "lasertag") throw new HttpsError("failed-precondition", "LaserTag ist nicht aktiv.");
+  const elapsed = Date.now() - Number(events.startedAt || Date.now());
+  if (elapsed < 330000) throw new HttpsError("failed-precondition", "Die Runde ist noch nicht beendet.");
+  const lock = await db.ref("events/laserFinished").transaction((v) => v === true ? undefined : true);
+  if (!lock.committed) return { finished: true, alreadyFinished: true };
+  const players = (await db.ref("events/laserPlayers").get()).val() || {};
+  const ranked = Object.entries(players).sort((a,b) =>
+    (Number(b[1]?.lives)||0) - (Number(a[1]?.lives)||0) ||
+    (Number(b[1]?.hits)||0) - (Number(a[1]?.hits)||0) ||
+    (Number(a[1]?.joinedAt)||0) - (Number(b[1]?.joinedAt)||0)
+  ).slice(0,3);
+  for (const [uid] of ranked) {
+    await db.ref("players/" + uid).transaction((p) => {
+      if (!p) return;
+      const inventory = { ...(p.inventory || {}) };
+      inventory.diamondGift = (Number(inventory.diamondGift) || 0) + 1;
+      return { ...p, inventory };
+    });
+  }
+  return { finished: true, winners: ranked.map(([uid]) => uid) };
 });
 
 exports.setComebackAdminAbuse = onCall({ region: "europe-west1" }, async (request) => {
