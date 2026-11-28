@@ -1163,3 +1163,68 @@ exports.scoreLaserTag = onCall({ region: "europe-west1" }, async (request) => {
   if (!tx.committed) throw new HttpsError("resource-exhausted", "Bitte warte kurz vor dem nächsten Schuss.");
   return { score: tx.snapshot.val().score };
 });
+
+exports.setComebackAdminAbuse = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireRole(request, ["mainAdmin"]);
+  await assertMainAdminDuringLock(auth);
+  const active = request.data?.active;
+  if (typeof active !== "boolean") throw new HttpsError("invalid-argument", "Ungültiger Event-Status.");
+  if (active) await db.ref("events/comebackAdminAbuse").set({ active: true, startedAt: Date.now(), participants: {} });
+  else await db.ref("events/comebackAdminAbuse/active").set(false);
+  return { active };
+});
+exports.joinComebackAdminAbuse = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  const ref = db.ref("events/comebackAdminAbuse");
+  const event = (await ref.get()).val() || {};
+  if (event.active !== true) throw new HttpsError("failed-precondition", "Comeback Admin Abuse ist nicht aktiv.");
+  await ref.child("participants/" + auth.uid).set({ joinedAt: Date.now() });
+  return { joined: true };
+});
+exports.grantComebackRewards = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireRole(request, ["mainAdmin"]);
+  await assertMainAdminDuringLock(auth);
+  const ref = db.ref("events/comebackAdminAbuse");
+  const event = (await ref.get()).val() || {};
+  if (event.active !== true) throw new HttpsError("failed-precondition", "Comeback Admin Abuse ist nicht aktiv.");
+  await ref.child("active").set(false);
+  const participants = Object.keys(event.participants || {});
+  if (!participants.length) throw new HttpsError("failed-precondition", "Es gibt keine registrierten Teilnehmer.");
+  let granted = 0, skipped = 0;
+  for (const id of participants) {
+    const tx = await db.ref("players/" + id).transaction((p) => {
+      if (!p || p.comebackGift) return;
+      return { ...p, comebackGift: "ready", title: "OG COMEBACK PLAYER" };
+    });
+    if (tx.committed) granted++; else skipped++;
+  }
+  return { granted, skipped, participants: participants.length };
+});
+exports.openComebackGift = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const ref = db.ref("players/" + auth.uid);
+  const before = (await ref.get()).val();
+  if (before?.comebackGift !== "ready") throw new HttpsError("failed-precondition", "Kein Comeback Gift verfügbar.");
+  const settings = (await db.ref("settings").get()).val() || {};
+  const reward = pickRoundPrize(currentLuck(auth, before, settings), null, settings, before);
+  let reserved = false;
+  if (reward?.id === "football") {
+    const own = await db.ref("settings/footballTokenOwner").transaction((v) => v == null ? auth.uid : undefined);
+    if (!own.committed) throw new HttpsError("already-exists", "Football Token bereits vergeben.");
+    reserved = true;
+  }
+  try {
+    const tx = await ref.transaction((p) => {
+      if (!p || p.comebackGift !== "ready") return;
+      const inventory = { ...(p.inventory || {}) }, firstWon = { ...(p.firstWon || {}) };
+      if (reward) { if (reward.id === "football" && Number(inventory.football || 0) > 0) return; inventory[reward.id] = (Number(inventory[reward.id]) || 0) + 1; if (!firstWon[reward.id]) firstWon[reward.id] = Date.now(); }
+      return { ...p, comebackGift: "opened", inventory, firstWon, totalWins: (Number(p.totalWins) || 0) + (reward ? 1 : 0) };
+    });
+    if (!tx.committed) throw new HttpsError("aborted", "Comeback Gift konnte nicht geöffnet werden.");
+    return { reward: reward?.id || null };
+  } catch (e) {
+    if (reserved) await db.ref("settings/footballTokenOwner").transaction((v) => v === auth.uid ? null : undefined);
+    throw e;
+  }
+});
