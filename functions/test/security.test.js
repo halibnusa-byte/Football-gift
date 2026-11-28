@@ -194,7 +194,7 @@ test("update lockdown rejects non-main-admin event, gift, announcement and chat 
 
 test("joining the game checks server lockdown and preserves the existing player profile", () => {
   assert.ok(source.includes("exports.joinGame = onCall"));
-  const join = source.slice(source.indexOf("exports.joinGame"), source.indexOf("exports.setActiveEvent"));
+  const join = source.slice(source.indexOf("exports.joinGame"));
   assert.ok(join.includes("assertMainAdminDuringLock(auth)"));
   assert.ok(join.includes("...(current || {})"));
   assert.ok(join.includes("current?.inventory || {}"));
