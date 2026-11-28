@@ -1253,7 +1253,7 @@ exports.laserHit = onCall({ region: "europe-west1" }, async (request) => {
   const events = (await db.ref("events").get()).val() || {};
   if (events.active !== "lasertag") throw new HttpsError("failed-precondition", "LaserTag ist nicht aktiv.");
   const elapsed = Date.now() - Number(events.startedAt || Date.now());
-  if (elapsed < 10000 || elapsed >= 310000) throw new HttpsError("deadline-exceeded", "Die LaserTag-Runde läuft gerade nicht.");
+  if (elapsed < 10000 || (await db.ref("events/laserFinished").get()).val() === true) throw new HttpsError("deadline-exceeded", "Die LaserTag-Runde läuft gerade nicht.");
   const attackerRef = db.ref("events/laserPlayers/" + auth.uid);
   const targetRef = db.ref("events/laserPlayers/" + targetUid);
   const [attackerSnap, targetSnap] = await Promise.all([attackerRef.get(), targetRef.get()]);
