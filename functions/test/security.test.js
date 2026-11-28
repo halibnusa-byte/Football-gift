@@ -356,3 +356,19 @@ test("Ocean reward requires a recorded chest opening", () => {
   assert.match(award, /events\/oceanChests/);
   assert.match(award, /Öffne zuerst eine Schatztruhe/);
 });
+
+test("Magic Cube uses three separately configured chances and server-stored outcomes", () => {
+  const open = source.slice(source.indexOf("exports.openMagicCube"), source.indexOf("exports.awardEventReward"));
+  const start = source.indexOf("exports.awardEventReward");
+  const award = source.slice(start, source.indexOf("exports.", start + 10));
+  const settings = source.slice(source.indexOf("exports.saveGameSettings"), source.indexOf("exports.saveShopConfig"));
+  assert.match(open, /magicCubeAChance/);
+  assert.match(open, /magicCubeBChance/);
+  assert.match(open, /magicCubeCChance/);
+  assert.match(open, /secureUnit\(\) < Number\(chances\[cube\]\)/);
+  assert.match(award, /events\/magicCubes/);
+  assert.match(award, /magicCubeOutcome\.rewardId/);
+  assert.match(settings, /magicCubeAChance/);
+  assert.match(client, /openMagicCube/);
+  assert.match(client, /magicCubeAChance/);
+});
