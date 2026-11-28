@@ -326,7 +326,8 @@ test("LaserTag ends on last player standing and has no invented five-minute time
 test("Zombie vials are server-selected and reward requires a completed two-player rescue", () => {
   const choose = source.slice(source.indexOf("exports.chooseZombieVial"), source.indexOf("exports.submitZombieRescue"));
   const rescue = source.slice(source.indexOf("exports.submitZombieRescue"), source.indexOf("exports.awardEventReward"));
-  const award = source.slice(source.indexOf("exports.awardEventReward"), source.indexOf("exports.addPlayerActivity"));
+  const awardStart = source.indexOf("exports.awardEventReward");
+  const award = source.slice(awardStart, source.indexOf("exports.", awardStart + 10));
   assert.match(choose, /crypto\.randomInt\(5\)/);
   assert.match(choose, /safe\.size < 3/);
   assert.match(rescue, /Object\.keys\(votes\)\.length >= 2/);
