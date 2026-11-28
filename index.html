@@ -95,6 +95,16 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 .cbcard{width:84px;height:120px;font-size:38px;border-radius:14px;background:linear-gradient(160deg,#f5d37a,#b8860b);color:#2a1d00;border:2px solid #fff3c4}
 .cbcard.show{font-size:15px;line-height:1.25;padding:6px;background:#fffbe8}
 .cbcard:disabled{opacity:1}
+@keyframes hackerGlow{0%,100%{text-shadow:0 0 5px #32ff68;filter:hue-rotate(0)}50%{text-shadow:0 0 22px #32ff68;filter:hue-rotate(25deg)}}
+@keyframes robotBlink{0%,44%,48%,100%{opacity:1}46%{opacity:.15}}
+@keyframes pinataSwing{0%,100%{transform:perspective(500px) rotateY(-12deg) rotateZ(-4deg)}50%{transform:perspective(500px) rotateY(12deg) rotateZ(4deg)}}
+@keyframes scanSweep{0%{transform:translateY(-35px);opacity:.2}50%{opacity:1}100%{transform:translateY(35px);opacity:.2}}
+.event-visual{position:relative;overflow:hidden;text-align:center;padding:18px;border-radius:14px;background:linear-gradient(135deg,#10291d,#08120d);border:1px solid var(--line);margin:10px 0}
+.event-visual .hero{font-size:76px;line-height:1.2;display:block;filter:drop-shadow(0 8px 8px #0008)}
+.event-visual.pinata .hero{animation:pinataSwing 2s ease-in-out infinite}
+.event-visual.hacker .hero{animation:hackerGlow 1.4s ease-in-out infinite}
+.event-visual.robot .hero{animation:robotBlink 3s infinite}
+.event-visual .scanline{position:absolute;left:0;right:0;height:3px;background:#72fff4;box-shadow:0 0 14px #72fff4;animation:scanSweep 1.8s linear infinite}
 </style>
 </head>
 <body>
@@ -696,7 +706,7 @@ async function renderEventChallenge(){
  if(type==='hacker'||type==='robot'){
   const hacker=type==='hacker',title=hacker?'HACKER EVENT · DIGITAL GIFT SCAN':'ROBOT EVENT · FACTORY SCAN';
   $('eventChallengeTitle').textContent=title;
-  const visual=document.createElement('div');visual.className='status';visual.style.cssText='font-size:20px;text-align:center;letter-spacing:2px;line-height:1.8;white-space:pre-wrap';
+  const visual=document.createElement('div');visual.className='event-visual '+(hacker?'hacker':'robot');visual.style.cssText='font-size:20px;text-align:center;letter-spacing:2px;line-height:1.8;white-space:pre-wrap';
   visual.textContent=hacker?'01001000 01000001 01000011 01001011\\n🟩 GIFT FIREWALL 🟩\\n01010100 01001111 01001011 01000101 01001110':'🤖 FACTORY SCAN ONLINE\\n[ LED ● ]  [ LED ● ]\\nMETALLIC GIFT HELMET';
   body.append(visual);
   const desc=document.createElement('p');desc.textContent=hacker?'Grüne Hacker-Geschenke, Binärcode und Scan-Effekt. Der Scanner zeigt nur TOKEN oder NIETE.':'Roboterhelm-Geschenke mit LED-Augen. Der Scanner zeigt die Seltenheitsstufe, nicht das genaue Token.';body.append(desc);
@@ -705,6 +715,7 @@ async function renderEventChallenge(){
   scan.onclick=async()=>{scan.disabled=true;if(owned){try{await useShopItem(hacker?'hackerScanner':'robotScanner');}catch(e){result.textContent=e?.message||'Scanner nicht verfügbar.';return;}}if(!await claim())return;try{const response=await httpsCallable(functions,'awardEventReward')({eventId:type});const id=response.data.reward;const prize=PRIZES.find(p=>p.id===id);if(!id){result.textContent='Scanner-Ergebnis: NIETE.';}else if(hacker){result.textContent='Scanner-Ergebnis: TOKEN! (Der genaue Token bleibt geheim.)';}else{const rarity=prize?.rarity||prize?.tier||'Seltenheit nicht hinterlegt';result.textContent='Robot Scanner: '+rarity+'. Das genaue Token bleibt geheim.';}await addActivity('hat am '+(EVENT_INFO[type]?.[0]||'Event')+' teilgenommen.');renderInventory();renderRanking();}catch(e){result.textContent=e?.message||'Scan fehlgeschlagen.';}};
   body.append(scan);
  }else if(type==='unicorn'){
+  const visual=document.createElement('div');visual.className='event-visual pinata';visual.innerHTML='<span class="hero">🪅</span><div>🌈 RAINBOW PIÑATA 🌈</div>';body.append(visual);
   const b=document.createElement('button');b.textContent='🪅 PINATA EINMAL SCHLAGEN';b.onclick=async()=>{b.disabled=true;if(!await claim()){status.textContent='Schon benutzt.';return;}await win('Die Piñata spuckt aus');status.textContent='Dein Schlag ist verbraucht.';};body.append(b);
  }else if(type==='cube'){
   const q=document.createElement('p');q.textContent='THE MAGIC MIX: Löse das Rätsel. Danach wählst du einen von drei Zauberwürfeln.';const inp=document.createElement('input');inp.placeholder='Wie heißt der Würfel mit sechs farbigen Seiten?';const b=document.createElement('button');b.textContent='RÄTSEL LÖSEN';body.append(q,inp,b);
