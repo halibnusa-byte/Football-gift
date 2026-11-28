@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#07100c">
 <title>Football Gift Challenge</title>
 <style>
-:root{--bg:#07100c;--panel:#101d17;--line:#254333;--green:#5cff9a;--gold:#ffd36a;--muted:#a9bdaf;--text:#f3fff7}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#163d2b 0,#07100c 58%);color:var(--text);font-family:system-ui,Arial,sans-serif}
+:root{--bg:#0a0907;--panel:#171410;--line:#5a4a1e;--green:#f0c75a;--gold:#ffd36a;--muted:#b8ae96;--text:#fff8e7}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#2b2210 0,#0a0907 58%);color:var(--text);font-family:system-ui,Arial,sans-serif}
 body.event-galaxy{background:radial-gradient(ellipse at top,#47206d 0,#10091b 60%);--green:#c59aff;--line:#573b78}
 body.event-diamond{background:radial-gradient(ellipse at top,#123d6b 0,#07121f 60%);--green:#7ed7ff;--line:#28577a}
 body.event-hacker{background:radial-gradient(ellipse at top,#064b25 0,#020a05 65%);--green:#4dff70;--line:#167a37}
@@ -30,33 +30,33 @@ body.event-hacker .gift{background:repeating-linear-gradient(0deg,#031609,#03160
 body.power{--green:#ffd36a;--line:#735b24;background:radial-gradient(ellipse at top,#493714 0,#0d0b07 60%)}
 header{text-align:center;padding:22px 12px 12px}h1{font-size:clamp(24px,7vw,40px);margin:4px 0;color:white;text-shadow:0 0 18px var(--green)}
 header p,.muted,.hint{color:var(--muted);font-size:13px}.wrap{max-width:1100px;margin:auto;padding:10px;display:grid;gap:13px}
-.panel{background:#0e1a14ed;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 8px 28px #0005}
+.panel{background:#14110ced;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 8px 28px #0005}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1;min-width:0}
-input,select,textarea{width:100%;background:#07110b;color:white;border:1px solid #355341;border-radius:9px;padding:10px;margin:5px 0;font:inherit}
-button{background:linear-gradient(135deg,#16884b,#35d879);color:#03190c;border:0;border-radius:10px;padding:11px 13px;font-weight:900;cursor:pointer}
-button.secondary{background:#1a3023;color:#eafff0;border:1px solid var(--line)}button.danger{background:#51202a;color:#fff}button:disabled{opacity:.4;cursor:not-allowed}
-.hidden{display:none!important}.status{padding:9px;border-radius:9px;background:#07110b;color:var(--muted);font-size:13px}
+input,select,textarea{width:100%;background:#0d0b08;color:white;border:1px solid #5a4a1e;border-radius:9px;padding:10px;margin:5px 0;font:inherit}
+button{background:linear-gradient(135deg,#b8860b,#f5d37a);color:#1b1300;border:0;border-radius:10px;padding:11px 13px;font-weight:900;cursor:pointer}
+button.secondary{background:#241d0e;color:#fff3d0;border:1px solid var(--line)}button.danger{background:#51202a;color:#fff}button:disabled{opacity:.4;cursor:not-allowed}
+.hidden{display:none!important}.status{padding:9px;border-radius:9px;background:#0d0b08;color:var(--muted);font-size:13px}
 .grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:14px 0}
-.gift{min-height:78px;background:linear-gradient(145deg,#174d30,#0b2417);border:1px solid #49b978;color:white;border-radius:13px;font-size:24px;box-shadow:0 4px 14px #0006}
-.gift small{display:block;font-size:10px;color:#c6f5d5}.gift.opened{opacity:.35;filter:grayscale(1)}.gift.rare{border-color:var(--gold);box-shadow:0 0 16px #ffd36a66}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.mini{background:#09140e;border:1px solid var(--line);border-radius:11px;padding:10px}.mini b{color:var(--green)}
-.list,.roster{display:grid;gap:6px}.item{display:flex;justify-content:space-between;gap:8px;padding:8px;border-bottom:1px solid #26392d;font-size:13px;align-items:flex-start}
-.tag{font-size:11px;padding:4px 8px;border-radius:30px;background:#1a3827;color:var(--green)}.gold{color:var(--gold)}
+.gift{min-height:78px;background:linear-gradient(145deg,#3a2d0e,#17120a);border:1px solid #c9a13c;color:white;border-radius:13px;font-size:24px;box-shadow:0 4px 14px #0006}
+.gift small{display:block;font-size:10px;color:#f1dfa5}.gift.opened{opacity:.35;filter:grayscale(1)}.gift.rare{border-color:var(--gold);box-shadow:0 0 16px #ffd36a66}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.mini{background:#100d08;border:1px solid var(--line);border-radius:11px;padding:10px}.mini b{color:var(--green)}
+.list,.roster{display:grid;gap:6px}.item{display:flex;justify-content:space-between;gap:8px;padding:8px;border-bottom:1px solid #3a3018;font-size:13px;align-items:flex-start}
+.tag{font-size:11px;padding:4px 8px;border-radius:30px;background:#2c230e;color:var(--green)}.gold{color:var(--gold)}
 .result{font-size:19px;font-weight:900;text-align:center;padding:14px;color:var(--gold);min-height:52px}
-.tvgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:8px}.tvbox{padding:7px 2px;text-align:center;border-radius:7px;background:#183322;border:1px solid #42644e;font-size:15px}.tvbox.open{opacity:.45}.tvbox.rare{border-color:var(--gold)}
+.tvgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:8px}.tvbox{padding:7px 2px;text-align:center;border-radius:7px;background:#2a210e;border:1px solid #6a5a2a;font-size:15px}.tvbox.open{opacity:.45}.tvbox.rare{border-color:var(--gold)}
 .notice{background:#251e0c;border:1px solid #75602a;color:#f4dfaa;border-radius:10px;padding:10px;font-size:12px;line-height:1.45}
 .owner-banner{position:fixed;z-index:99;top:8px;left:8px;right:8px;max-width:900px;margin:auto;padding:12px 16px;border:1px solid var(--gold);border-radius:12px;background:#151006f5;color:#fff2c2;text-align:center;font-weight:900;box-shadow:0 8px 30px #0009}
-.event-challenge{border:1px solid var(--line);background:#09150f;border-radius:12px;padding:12px;margin-top:12px}.event-challenge button{margin-top:8px}.challenge-result{min-height:28px;padding:8px;color:var(--gold);font-weight:800}
-.small{font-size:12px;padding:8px}.foot{font-size:11px;color:#8ea696;text-align:center;padding:10px}
+.event-challenge{border:1px solid var(--line);background:#100d08;border-radius:12px;padding:12px;margin-top:12px}.event-challenge button{margin-top:8px}.challenge-result{min-height:28px;padding:8px;color:var(--gold);font-weight:800}
+.small{font-size:12px;padding:8px}.foot{font-size:11px;color:#a39a80;text-align:center;padding:10px}
 @media(max-width:480px){.grid{gap:5px}.gift{min-height:64px;font-size:20px;padding:5px}.panel{padding:11px}.row>*{min-width:42%}}
 
-.admin-welcome{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:14px;margin:14px 0;background:linear-gradient(120deg,#123b27,#0b1c13);border:1px solid #34734d;border-radius:14px}
-.admin-kicker{font-size:10px;font-weight:900;letter-spacing:1.6px;color:var(--green)}.admin-welcome-title{font-size:23px;margin:5px 0}.admin-live-chip{white-space:nowrap;border:1px solid #34734d;background:#092315;color:#77ffac;border-radius:30px;padding:7px 10px;font-size:10px;font-weight:900}
-.admin-nav{position:sticky;top:6px;z-index:20;display:flex;gap:7px;overflow-x:auto;padding:8px;margin:10px -2px 16px;background:#07130df2;border:1px solid var(--line);border-radius:13px;scrollbar-width:thin}
-.admin-nav-btn{flex:0 0 auto;padding:9px 12px;font-size:12px;background:#193524;color:#eafff0;border:1px solid #31563d;border-radius:9px}
-.admin-nav-btn.active{background:linear-gradient(135deg,#16884b,#35d879);color:#03190c;border-color:transparent}
-#adminPanel>h3:not(.admin-section-title){margin:18px 0 7px;padding-top:12px;border-top:1px solid #284334;font-size:15px;color:#e7fff0}
-#adminPanel>.admin-section-title{scroll-margin-top:78px;margin:22px 0 10px;padding:12px 13px;border:1px solid #315d40;border-radius:11px;background:linear-gradient(100deg,#153b27,#0b1b12);font-size:17px;color:var(--green)}
+.admin-welcome{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:14px;margin:14px 0;background:linear-gradient(120deg,#2b2210,#14100a);border:1px solid #7a6430;border-radius:14px}
+.admin-kicker{font-size:10px;font-weight:900;letter-spacing:1.6px;color:var(--green)}.admin-welcome-title{font-size:23px;margin:5px 0}.admin-live-chip{white-space:nowrap;border:1px solid #7a6430;background:#1c150a;color:#f5d37a;border-radius:30px;padding:7px 10px;font-size:10px;font-weight:900}
+.admin-nav{position:sticky;top:6px;z-index:20;display:flex;gap:7px;overflow-x:auto;padding:8px;margin:10px -2px 16px;background:#0d0b07f2;border:1px solid var(--line);border-radius:13px;scrollbar-width:thin}
+.admin-nav-btn{flex:0 0 auto;padding:9px 12px;font-size:12px;background:#2a210e;color:#fff3d0;border:1px solid #6a5a2a;border-radius:9px}
+.admin-nav-btn.active{background:linear-gradient(135deg,#b8860b,#f5d37a);color:#1b1300;border-color:transparent}
+#adminPanel>h3:not(.admin-section-title){margin:18px 0 7px;padding-top:12px;border-top:1px solid #4a3d1c;font-size:15px;color:#fff3d0}
+#adminPanel>.admin-section-title{scroll-margin-top:78px;margin:22px 0 10px;padding:12px 13px;border:1px solid #7a6430;border-radius:11px;background:linear-gradient(100deg,#2b2210,#14100a);font-size:17px;color:var(--green)}
 #adminPanel button{min-height:42px}#adminPanel .notice{margin-bottom:12px}
 @media(max-width:480px){.admin-welcome{padding:11px}.admin-welcome-title{font-size:20px}.admin-nav{top:3px}.admin-nav-btn{padding:9px 10px}}
 
@@ -173,7 +173,7 @@ import {getFunctions,httpsCallable} from 'https://www.gstatic.com/firebasejs/10.
 
 const firebaseConfig={apiKey:'AIzaSyAXt8wqnPyRYGXrbq8ZWtCl4uQT83V0Nso',authDomain:'football-gift-challange.firebaseapp.com',databaseURL:'https://football-gift-challange-default-rtdb.europe-west1.firebasedatabase.app',projectId:'football-gift-challange',storageBucket:'football-gift-challange.firebasestorage.app',messagingSenderId:'935406041054',appId:'1:935406041054:web:efc64818b9364fd2d2cf4f'};
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getDatabase(app),functions=getFunctions(app,'europe-west1'),$=id=>document.getElementById(id);
-const EXPIRY=new Date('2026-11-28T14:30:00+01:00');
+const EXPIRY=new Date('2999-12-31T23:59:59+01:00'); // Automatische Sperre entfernt: Der Hauptadmin entscheidet über SERVER SPERREN / FREIGEBEN
 const PRIZES=[
 {id:'deinewahl',name:'Deine-Wahl-Token',emoji:'👑',chance:.0001,rank:1},
 {id:'revenge',name:'Revenge Token',emoji:'🔥',chance:.00025,rank:2},
