@@ -642,7 +642,7 @@ function renderPlannedMiniGame(type,body,result,status,claim,win){
  const panel=document.createElement('div');panel.className='status';body.append(panel);
  const controls=document.createElement('div');controls.className='cards';body.append(controls);
  let started=false,done=false;
- const begin=async()=>{if(started)return false;started=true;controls.querySelectorAll('button').forEach(b=>b.disabled=true);if(!await claim()){done=true;status.textContent='Du hast dieses Event in dieser Runde bereits gespielt.';return false;}return true;};
+ const begin=async()=>{if(started)return false;started=true;if(!await claim()){done=true;status.textContent='Du hast dieses Event in dieser Runde bereits gespielt.';return false;}return true;};
  const finish=async()=>{if(done)return;done=true;controls.querySelectorAll('button').forEach(b=>b.disabled=true);await win(spec.success);};
  const fail=msg=>{if(done)return;done=true;controls.querySelectorAll('button').forEach(b=>b.disabled=true);result.textContent=msg||'Challenge nicht geschafft – diesmal keine Belohnung.';};
  const button=(label,fn)=>{const b=document.createElement('button');b.className='secondary';b.textContent=label;b.onclick=fn;controls.append(b);return b;};
