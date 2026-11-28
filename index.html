@@ -620,7 +620,7 @@ function renderPlannedMiniGame(type,body,result,status,claim,win){
   candy:{title:'SWEET CHAOS · SÜSSIGKEITEN-KOMBI',mode:'pairs',prompt:'Finde alle drei gleichen Süßigkeiten-Paare.',success:'Alle Süßigkeiten wurden richtig kombiniert!'},
   castle:{title:'THE ROYAL SECRET · BURG-AUFGABE',mode:'quiz',prompt:'Wähle deine Rolle und beantworte die Frage: Was schützt eine Burg?',options:['Zugbrücke und Mauern','Ein Surfbrett','Ein U-Boot'],answer:0,success:'Die Burgprüfung bestanden!'},
   space:{title:'GALACTIC MISSION · PLANETENROUTE',mode:'order',prompt:'Ordne die drei Planeten von der Sonne aus: Erde, Merkur, Venus.',items:['Erde','Merkur','Venus'],answer:['Merkur','Venus','Erde'],success:'Raumschiff sicher am Ziel gelandet!'},
-  ghost:{title:'HAUNTED GIFTS · GEISTER-ILLUSION',mode:'quiz',prompt:'Ein Geist versteckt das Geschenk. Welche Spur bleibt sichtbar?',options:['Leuchtende Fußspuren','Ein Sonnenbrand','Ein nasser Regenschirm'],answer:0,success:'Du hast die echte Spur gefunden!'},
+  ghost:{title:'HAUNTED GIFTS · GEISTER-ILLUSION',mode:'cups',prompt:'Die Geister tauschen die Geschenk-Boxen. Finde die Box mit dem leuchtenden Geist.',success:'Du hast die echte Geister-Box gefunden!'},
   winter:{title:'FROZEN KINGDOM · EIS-RÄTSEL',mode:'quiz',prompt:'Was lässt Eis normalerweise schmelzen?',options:['Wärme','Schatten','Schnee'],answer:0,success:'Der Eisblock ist geschmolzen!'},
   egypt:{title:"THE PHARAOH'S SECRET · HIEROGLYPHEN",mode:'quiz',prompt:'Das Sonnensymbol steht für welchen Himmelskörper?',options:['Mond','Sonne','Mars'],answer:1,success:'Die Hieroglyphe ist entschlüsselt!'},
   superhero:{title:'HERO ACADEMY · HELDEN-TEST',mode:'steps',prompt:'Schließe deine Helden-Ausbildung ab.',steps:['🛡️ Schutzschild aktivieren','⚡ Energie sammeln','🦸 Zivilisten retten'],success:'Heldenprüfung bestanden!'},
@@ -639,7 +639,7 @@ function renderPlannedMiniGame(type,body,result,status,claim,win){
   wildwest:{title:'WILD WEST · RÄTSEL-DUELL',mode:'quiz',prompt:'Ein Cowboy reitet 10 km nach Westen und 10 km nach Osten. Wie weit ist er vom Start entfernt?',options:['0 km','10 km','20 km'],answer:0,success:'Du gewinnst das Rätsel-Duell!'},
   bakery:{title:'BAKERY · TORTEN-DEKORATION',mode:'order',prompt:'Dekoriere die Torte in der richtigen Reihenfolge.',items:['🍰 Boden','🧁 Creme','🍓 Erdbeeren'],answer:['🍰 Boden','🧁 Creme','🍓 Erdbeeren'],success:'Die Torte ist fertig dekoriert!'},
   comic:{title:'COMIC WORLD · STORY-ENTSCHEIDUNG',mode:'quiz',prompt:'Der Held sieht eine Person in Gefahr. Was macht er?',options:['Hilfe holen und retten','Weggehen','Die Gefahr ignorieren'],answer:0,success:'Du hast die gute Story-Route gewählt!'},
-  safari:{title:'SAFARI · TIERFORSCHER',mode:'quiz',prompt:'Welches Tier hat einen langen Rüssel?',options:['Elefant','Giraffe','Zebra'],answer:0,success:'Tier entdeckt und fotografiert!'},
+  safari:{title:'SAFARI · TIERFORSCHER',mode:'photo',prompt:'Suche das gesuchte Tier im Sucher und mache ein Foto.',success:'Tier entdeckt und fotografiert!'},
   cyber:{title:'CYBER MISSION · CODE KNACKEN',mode:'quiz',prompt:'Entschlüssle den Code: 2, 4, 6, 8, ?',options:['9','10','12'],answer:1,success:'System erfolgreich entschlüsselt!'},
   wizard:{title:'WIZARD TOWER · ZAUBERFORMEL',mode:'sequence',prompt:'Wiederhole die Zauberformel in der richtigen Reihenfolge.',sequence:['✨','🔥','💧','✨'],success:'Der Zauber ist gelungen!'},
   moon:{title:'MOON QUEST · STERNBILD',mode:'order',prompt:'Verbinde die Sterne vom kleinsten zum größten Himmelskörper: Mond, Erde, Sonne.',items:['☀️ Sonne','🌙 Mond','🌍 Erde'],answer:['🌙 Mond','🌍 Erde','☀️ Sonne'],success:'Sternbild verbunden!'},
@@ -677,6 +677,12 @@ function renderPlannedMiniGame(type,body,result,status,claim,win){
   let showing=true;const seq=spec.sequence;panel.textContent='Merke dir: '+seq.join('  ');let pos=0;const start=button('ICH BIN BEREIT',async()=>{if(!await begin())return;showing=false;panel.textContent='Wiederhole die Folge.';controls.innerHTML='';['🔴','🟡','🟢','🔵','🥁','🎵','👏','🥷','⭐','🌙','✨','🔥','💧','💎','👑'].forEach(x=>button(x,()=>{if(showing||done)return;if(x!==seq[pos]){fail('Falsche Reihenfolge!');return;}pos++;if(pos===seq.length)finish();}));});
  }else if(spec.mode==='tap'){
   let count=0,left=spec.seconds,timer=null;const b=button('START',async()=>{if(!await begin())return;left=spec.seconds;count=0;panel.textContent='0 / '+spec.target+' · '+left+' Sekunden';controls.innerHTML='';const hit=button('⚡ DRÜCKEN!',()=>{if(done)return;count++;panel.textContent=count+' / '+spec.target+' · '+left+' Sekunden';if(count>=spec.target){clearInterval(timer);finish();}});timer=setInterval(()=>{left--;if(left<=0){clearInterval(timer);fail('Zeit abgelaufen!');}else panel.textContent=count+' / '+spec.target+' · '+left+' Sekunden';},1000);});
+ }else if(spec.mode==='cups'){
+  const gift=Math.floor(Math.random()*3);panel.textContent='🎁 Das Geschenk ist in einer der drei Geister-Boxen versteckt.';['👻 Box A','👻 Box B','👻 Box C'].forEach((label,i)=>button(label,async()=>{if(!await begin())return;if(i===gift)await finish();else fail('Die Box war eine Illusion!');}));
+ }else if(spec.mode==='photo'){
+  const target='🦒 GIRAFFE';panel.textContent='📷 Sucher aktiv · Finde: '+target;
+  const options=['🦓 ZEBRA','🦒 GIRAFFE','🐘 ELEFANT','🦁 LÖWE'].sort(()=>Math.random()-.5);
+  options.forEach(label=>button(label,async()=>{if(!await begin())return;if(label===target)await finish();else fail('Falsches Tier im Sucher – Foto verpasst.');}));
  }else if(spec.mode==='reaction'){
   let armed=false;const b=button('REAKTION STARTEN',async()=>{if(!await begin())return;b.disabled=true;panel.textContent='Warte auf das grüne Signal …';const delay=1800+Math.floor(Math.random()*2500);setTimeout(()=>{if(done)return;armed=true;panel.textContent='🟢 JETZT!';button('JETZT DRÜCKEN',()=>{if(!armed){fail('Zu früh!');return;}finish();});},delay);});
  }
