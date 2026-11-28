@@ -358,6 +358,8 @@ test("Ocean reward requires a recorded chest opening", () => {
   const award = source.slice(start, source.indexOf("exports.", start + 10));
   assert.match(award, /eventId === "ocean"/);
   assert.match(award, /events\/oceanChests/);
+  assert.match(award, /oceanChestOutcome\.goldenShark === true/);
+  assert.match(award, /special: "goldenShark"/);
   assert.match(award, /Öffne zuerst eine Schatztruhe/);
 });
 
