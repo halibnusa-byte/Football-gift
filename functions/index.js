@@ -78,13 +78,9 @@ function securePick(items, weights) {
 }
 function currentLuck(auth, player, settings) {
   const claims = auth.token || {};
-  const now = new Date();
-  const berlin = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(now);
-  const parts = Object.fromEntries(berlin.map((p) => [p.type, p.value]));
-  const minute = Number(parts.hour) * 60 + Number(parts.minute);
-  const power = parts.weekday === "Sat" || (minute >= 900 && minute < 1020) ? 2 : 1;
+  // Keine erfundenen Power-Hours-Zeiten: Power-Hours bleiben aus, bis echte Admin-Zeiten konfiguriert sind.
   return Math.max(settings.luckEnabled ? Number(settings.luckMultiplier || 1) : 1,
-    claims.special ? 2 : 1, power,
+    claims.special ? 2 : 1,
     claims.halfAdmin && !claims.mainAdmin ? Math.min(50, Number(settings.roleLuck?.[auth.uid] || 1)) : 1);
 }
 function pickRoundPrize(multiplier, eventType, settings, player) {
