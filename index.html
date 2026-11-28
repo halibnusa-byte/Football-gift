@@ -775,20 +775,33 @@ async function renderEventChallenge(){
   hit.onclick=async()=>{if(finished)return;hp=Math.max(0,hp-10);if(hp===0){if(stage===4){finished=true;clearInterval(timer);hit.disabled=true;await win('Divine-Glücksrad gewonnen');return;}stage++;hp=stages[stage][1];seconds=120;}draw();};
   body.append(info,bar,hit);draw();status.textContent='Jeder Klick zieht 10 HP ab. Jede Stufe hat zwei Minuten.';
  }else if(type==='lasertag'){
-  const skins=['🔴 Rot','🔵 Blau','🟢 Grün','🟡 Gelb','🟣 Lila'];const colors=['#ff4545','#45a4ff','#54e477','#ffe34a','#c78aff'];
-  const elapsed=Math.max(0,Date.now()-Number(eventState.startedAt||Date.now()));const prep=Math.max(0,30000-elapsed),remaining=Math.max(0,300000-elapsed);
-  const intro=document.createElement('p');intro.textContent=prep>0?'Wähle in den ersten 30 Sekunden deinen Skin. Danach beginnt die Runde.':'LaserTag läuft – tippe auf FEUERN, um Punkte zu sammeln.';body.append(intro);
+  const skins=['🔴 Rot','🔵 Blau','🟢 Grün','🟡 Gelb','🟣 Lila'];
+  const elapsed=()=>Math.max(0,Date.now()-Number(eventState.startedAt||Date.now()));
+  const intro=document.createElement('p');intro.textContent='Wähle innerhalb der ersten 10 Sekunden deinen Skin. Danach: Jeder Spieler hat 3 Leben. Wer keine Leben mehr hat, scheidet aus.';body.append(intro);
   const skinSel=document.createElement('select');skins.forEach((x,i)=>{const o=document.createElement('option');o.value=i;o.textContent=x;skinSel.append(o)});body.append(skinSel);
-  const choose=document.createElement('button');choose.textContent='SKIN AUSWÄHLEN';body.append(choose);
-  const fire=document.createElement('button');fire.textContent='🔫 FEUERN';fire.disabled=prep>0;body.append(fire);
-  const board=document.createElement('div');board.className='status';body.append(board);
+  const choose=document.createElement('button');choose.textContent='SKIN AUSWÄHLEN & BEITRETEN';body.append(choose);
+  const arena=document.createElement('div');arena.id='laserArena';arena.style.cssText='margin:12px 0;padding:16px;border:2px solid #4d9bd0;border-radius:16px;background:repeating-linear-gradient(0deg,#101d39,#101d39 22px,#172b4e 23px,#172b4e 25px);transform:perspective(700px) rotateX(8deg);min-height:145px;color:white;text-align:center';
+  arena.innerHTML='<b>⚡ LASERTAG ARENA ⚡</b><div style="font-size:38px;margin:12px">🏟️</div><div>Bewege dich mit dem Steuerkreuz und markiere einen Gegner.</div>';body.append(arena);
+  const move=document.createElement('div');move.className='row';['⬅️','⬆️','⬇️','➡️'].forEach(label=>{const b=document.createElement('button');b.className='secondary';b.textContent=label;b.onclick=()=>{arena.dataset.position=(arena.dataset.position||'Mitte')+' '+label;arena.querySelector('div:last-child').textContent='Deine Bewegung: '+arena.dataset.position;};move.append(b);});body.append(move);
+  const camera=document.createElement('button');camera.className='secondary';camera.textContent='📷 KAMERA DREHEN';camera.onclick=()=>{const v=Number(arena.dataset.camera||0)+90;arena.dataset.camera=v;arena.style.transform='perspective(700px) rotateX(8deg) rotateY('+v+'deg)';};body.append(camera);
+  const board=document.createElement('div');board.className='cards';body.append(board);
+  let joined=false,finished=false,finishBusy=false;
+  choose.onclick=async()=>{choose.disabled=true;try{await httpsCallable(functions,'joinLaserTag')({skin:Number(skinSel.value)});joined=true;intro.textContent='Du bist dabei! Skin: '+skins[Number(skinSel.value)]+'.';skinSel.disabled=true;}catch(e){choose.disabled=false;intro.textContent=e?.message||'Beitritt fehlgeschlagen.';}};
   const arenaRef=path('events/laserPlayers');
-  choose.onclick=async()=>{try{await httpsCallable(functions,'joinLaserTag')({skin:Number(skinSel.value)});intro.textContent='Skin ausgewählt: '+skins[Number(skinSel.value)]+'.';}catch(e){intro.textContent=e?.message||'Beitritt fehlgeschlagen.';}};
-  if(!eventState.laserTimerStarted){/* Timer wird aus dem gemeinsamen Eventstart abgeleitet. */}
-  const unsub=onValue(arenaRef,snap=>{const arr=Object.entries(snap.val()||{}).map(([id,v])=>({...v,id})).sort((a,b)=>(b.score||0)-(a.score||0));board.innerHTML='<b>LIVE-RANGLISTE</b><br>'+arr.slice(0,10).map((x,i)=>(i+1)+'. '+skins[x.skin||0]+' – '+(x.score||0)+' Punkte').join('<br>')+'<br><br>Restzeit: '+Math.ceil(Math.max(0,300000-(Date.now()-Number(eventState.startedAt||Date.now())))/1000)+' Sek.';});
-  fire.onclick=async()=>{try{const r=await httpsCallable(functions,'scoreLaserTag')({});result.textContent='Treffer! '+r.data.score+' Punkte';}catch(e){result.textContent=e?.message||'Treffer nicht gewertet.';}};
-  status.textContent='Gemeinsame Browser-Arena: 30 Sekunden Skin-Auswahl, danach 5 Minuten. Bei Gleichstand gilt Golden Point; Die Top 3 werden nach Event-Ende angezeigt. Das ist eine gemeinsame Punkte-Arena, keine echte 3D-Teleport-Lobby.';
-  const finish=setInterval(async()=>{if(Date.now()-Number(eventState.startedAt||Date.now())>=330000){clearInterval(finish);const arr=Object.entries((await get(arenaRef)).val()||{}).sort((a,b)=>(b[1].score||0)-(a[1].score||0));status.textContent='LaserTag beendet – Top 3: '+arr.slice(0,3).map(([id,v],i)=>(i+1)+'. '+(v.name||'Spieler')+' ('+(v.score||0)+' Punkte)').join(' · ');}},2000);
+  const unsub=onValue(arenaRef,snap=>{
+   const players=Object.entries(snap.val()||{}).map(([id,v])=>({...v,id})).sort((x,y)=>(Number(y.lives)||0)-(Number(x.lives)||0)||(Number(y.hits)||0)-(Number(x.hits)||0));
+   board.innerHTML='';
+   players.forEach(p=>{
+    const card=document.createElement('div');card.className='mini';
+    const name=document.createElement('b');name.textContent=(p.id===uid?'DU · ':'')+(p.name||'Spieler');card.append(name);
+    const meta=document.createElement('div');meta.textContent=skins[p.skin||0]+' · ❤️ '+Math.max(0,Number(p.lives??3))+' · Treffer '+(p.hits||0)+(p.spectator?' · AUSGESCHIEDEN':'');card.append(meta);
+    if(joined&&p.id!==uid&&!p.spectator&&elapsed()>=10000&&elapsed()<310000){const hit=document.createElement('button');hit.className='secondary';hit.textContent='🎯 TREFFER';hit.onclick=async()=>{hit.disabled=true;try{const r=await httpsCallable(functions,'laserHit')({targetUid:p.id});result.textContent=r.data.eliminated?'Gegner ausgeschieden!':'Treffer! Gegner hat noch '+r.data.targetLives+' Leben.';}catch(e){hit.disabled=false;result.textContent=e?.message||'Treffer fehlgeschlagen.';}};card.append(hit);}
+    board.append(card);
+   });
+  });
+  const timer=document.createElement('div');timer.className='status';body.append(timer);
+  const tick=setInterval(async()=>{if(!body.isConnected){clearInterval(tick);unsub();return;}const ms=elapsed();if(ms<10000)timer.textContent='Skin-Auswahl: '+Math.ceil((10000-ms)/1000)+' Sekunden';else if(ms<310000)timer.textContent='MATCH LIVE · '+Math.ceil((310000-ms)/1000)+' Sekunden übrig';else{timer.textContent='MATCH BEENDET';if(!finishBusy){finishBusy=true;try{await httpsCallable(functions,'finishLaserTag')({});const data=(await get(arenaRef)).val()||{};const top=Object.entries(data).sort((x,y)=>(Number(y[1].lives)||0)-(Number(x[1].lives)||0)||(Number(y[1].hits)||0)-(Number(x[1].hits)||0)).slice(0,3);status.textContent='TOP 3 · DIAMOND GESCHENK: '+top.map(([id,p],i)=>(i+1)+'. '+(p.name||'Spieler')).join(' · ');}catch(e){status.textContent=e?.message||'Rundenabschluss fehlgeschlagen.';}}}},1000);
+  status.textContent='Free-for-all: 3 Leben pro Spieler. Bei 0 Leben wird man Zuschauer. Die drei besten Spieler erhalten je ein DIAMOND GESCHENK.';
  }else if(type==='ocean'){
   const q=document.createElement('p');q.textContent='THE LOST TREASURE: Drei versunkene Schatztruhen warten auf dich. Wähle genau eine.';body.append(q);
   let used=false;
