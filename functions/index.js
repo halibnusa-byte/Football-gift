@@ -1221,6 +1221,72 @@ exports.chooseLavaPath = onCall({ region: "europe-west1" }, async (request) => {
   return { safe: outcome.safe === true, shieldUsed: outcome.shieldUsed === true };
 });
 
+exports.startAlienChallenge = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "alien") throw new HttpsError("failed-precondition", "Alien-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const ref = db.ref("events/alienChallenges/" + runId + "/" + auth.uid);
+  const codes = ["1842", "3907", "6251", "7418", "9063"];
+  const tx = await ref.transaction((existing) => existing || { safeIndex: crypto.randomInt(3), code: codes[crypto.randomInt(codes.length)], startedAt: Date.now() });
+  return { started: Boolean(tx.snapshot.exists()) };
+});
+
+exports.scanAlienRadar = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "alien") throw new HttpsError("failed-precondition", "Alien-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const challenge = (await db.ref("events/alienChallenges/" + runId + "/" + auth.uid).get()).val();
+  if (!challenge) throw new HttpsError("failed-precondition", "Starte zuerst die Alien-Ortung.");
+  const playerRef = db.ref("players/" + auth.uid);
+  const tx = await playerRef.transaction((p) => {
+    if (!p) return;
+    const inventory = { ...(p.shopInventory || {}) };
+    if (Number(inventory.alienRadar || 0) < 1) return;
+    inventory.alienRadar = Number(inventory.alienRadar) - 1;
+    return { ...p, shopInventory: inventory };
+  });
+  if (!tx.committed) throw new HttpsError("failed-precondition", "Du besitzt kein Alien Radar.");
+  return { safeIndex: challenge.safeIndex };
+});
+
+exports.chooseAlienUfo = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const index = Number(request.data?.index);
+  if (!Number.isInteger(index) || index < 0 || index > 2) throw new HttpsError("invalid-argument", "Ungültiges UFO.");
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "alien") throw new HttpsError("failed-precondition", "Alien-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const player = (await db.ref("players/" + auth.uid).get()).val();
+  if (!player?.eventClaims?.["alien:" + runId]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
+  const ref = db.ref("events/alienChallenges/" + runId + "/" + auth.uid);
+  const tx = await ref.transaction((c) => c && !c.chosenIndex && c.recovered !== true ? { ...c, chosenIndex: index } : undefined);
+  if (!tx.committed) throw new HttpsError("already-exists", "Du hast bereits ein UFO gewählt.");
+  return { chosen: true };
+});
+
+exports.recoverAlienGift = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const code = String(request.data?.code || "").trim();
+  if (!/^\\d{4}$/.test(code)) throw new HttpsError("invalid-argument", "Gib einen vierstelligen Code ein.");
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "alien") throw new HttpsError("failed-precondition", "Alien-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const ref = db.ref("events/alienChallenges/" + runId + "/" + auth.uid);
+  const tx = await ref.transaction((c) => {
+    if (!c || !Number.isInteger(c.chosenIndex) || c.recovered !== undefined) return;
+    const success = c.chosenIndex === c.safeIndex && code === c.code;
+    return { ...c, recovered: success, attempted: true, attemptedAt: Date.now() };
+  });
+  if (!tx.committed) throw new HttpsError("already-exists", "Du hast diesen Rückholversuch bereits benutzt.");
+  return { recovered: tx.snapshot.val().recovered === true };
+});
+
 exports.openOceanChest = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
   await assertMainAdminDuringLock(auth);
@@ -1320,6 +1386,10 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
     if (!rescue || rescue.completed !== true || rescue.ownerUid !== auth.uid || rescue.votes?.[auth.uid] !== true) {
       throw new HttpsError("failed-precondition", "Die gemeinsame Zombie-Rettung ist noch nicht abgeschlossen oder du bist nicht der Geschenkbesitzer.");
     }
+  }
+  if (eventId === "alien") {
+    const challenge = (await db.ref("events/alienChallenges/" + runId + "/" + auth.uid).get()).val();
+    if (!challenge || challenge.recovered !== true) throw new HttpsError("failed-precondition", "Hole zuerst das Geschenk aus dem richtigen UFO zurück.");
   }
   if (eventId === "lava") {
     const challenge = (await db.ref("events/lavaChallenges/" + runId + "/" + auth.uid).get()).val();
