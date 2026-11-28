@@ -1232,6 +1232,12 @@ exports.laserHit = onCall({ region: "europe-west1" }, async (request) => {
   if (elapsed < 10000 || elapsed >= 310000) throw new HttpsError("deadline-exceeded", "Die LaserTag-Runde läuft gerade nicht.");
   const attackerRef = db.ref("events/laserPlayers/" + auth.uid);
   const targetRef = db.ref("events/laserPlayers/" + targetUid);
+  const [attackerSnap, targetSnap] = await Promise.all([attackerRef.get(), targetRef.get()]);
+  const attackerNow = attackerSnap.val(), targetNow = targetSnap.val();
+  if (!attackerNow || attackerNow.spectator || !targetNow || targetNow.spectator) throw new HttpsError("failed-precondition", "Spieler ist nicht mehr in der Arena.");
+  const dx = Number(attackerNow.x || 0) - Number(targetNow.x || 0);
+  const dz = Number(attackerNow.z || 0) - Number(targetNow.z || 0);
+  if (Math.hypot(dx, dz) > 4) throw new HttpsError("failed-precondition", "Der Gegner ist zu weit entfernt.");
   const attackerTx = await attackerRef.transaction((p) => {
     const now = Date.now();
     if (!p || p.spectator || now - Number(p.lastShotAt || 0) < 900) return;
