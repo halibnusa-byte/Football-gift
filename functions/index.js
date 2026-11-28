@@ -1170,6 +1170,12 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
       throw new HttpsError("failed-precondition", "Die gemeinsame Zombie-Rettung ist noch nicht abgeschlossen oder du bist nicht der Geschenkbesitzer.");
     }
   }
+  if (eventId === "ocean") {
+    const chest = (await db.ref("events/oceanChests/" + runId + "/" + auth.uid).get()).val();
+    if (!chest || !Number.isInteger(Number(chest.chestIndex))) {
+      throw new HttpsError("failed-precondition", "Öffne zuerst eine Schatztruhe im Ocean-Event.");
+    }
+  }
   if (!before?.eventClaims?.[claimKey]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
   if (before.eventClaims[claimKey].rewarded) throw new HttpsError("already-exists", "Belohnung bereits abgeholt.");
   const reward = pickRoundPrize(currentLuck(auth, before, settings), eventId, settings, before);
