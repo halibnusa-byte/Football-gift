@@ -397,3 +397,9 @@ test("Comic World branches into different story outcomes", () => {
   assert.match(client, /Leuchtsignal setzen/);
   assert.match(client, /Fluchtweg auf der Karte markieren/);
 });
+
+test("Safari challenge requires focusing an animal and taking a photo", () => {
+  assert.match(client, /SAFARI-SUCHER/);
+  assert.match(client, /FOTO AUFNEHMEN/);
+  assert.match(client, /Fokus eingestellt/);
+});
