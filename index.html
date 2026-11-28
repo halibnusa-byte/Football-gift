@@ -630,7 +630,7 @@ async function resetData(){
 function renderPlannedMiniGame(type,body,result,status,claim,win){
  const specs={
   football:{title:'GOLDEN CUP · ELFMETER',mode:'penalty',prompt:'Du stehst am Elfmeterpunkt. Täusche den Torwart und schieße in eine Ecke.',options:['⬅️ Linke Ecke','⬆️ Mitte','➡️ Rechte Ecke'],success:'TOR! GOLDEN CUP geschafft.'},
-  dinosaur:{title:'JURASSIC TREASURE · FOSSILIEN',mode:'steps',prompt:'Brüte ein Ei aus und setze das Fossil zusammen.',steps:['🥚 Dinosaurier-Ei ausbrüten','🦴 Fossil-Teil 1 finden','🦴 Fossil-Teil 2 zusammensetzen'],success:'Das Dinosaurier-Fossil ist vollständig!'},
+  dinosaur:{title:'JURASSIC TREASURE · FOSSILIEN',mode:'fossil',prompt:'Wähle ein Dinosaurier-Ei, brüte es aus und setze drei passende Fossil-Teile zusammen.',success:'Das Dinosaurier-Fossil ist vollständig!'},
   candy:{title:'SWEET CHAOS · SÜSSIGKEITEN-KOMBI',mode:'pairs',prompt:'Finde alle drei gleichen Süßigkeiten-Paare.',success:'Alle Süßigkeiten wurden richtig kombiniert!'},
   castle:{title:'THE ROYAL SECRET · BURG-AUFGABE',mode:'role',prompt:'Wähle deine Rolle: König, Ritter oder Zauberer. Jede Rolle erhält eine eigene Aufgabe.',success:'Die königliche Aufgabe ist bestanden!'},
   space:{title:'GALACTIC MISSION · PLANETENROUTE',mode:'order',prompt:'Ordne die drei Planeten von der Sonne aus: Erde, Merkur, Venus.',items:['Erde','Merkur','Venus'],answer:['Merkur','Venus','Erde'],success:'Raumschiff sicher am Ziel gelandet!'},
@@ -688,6 +688,9 @@ function renderPlannedMiniGame(type,body,result,status,claim,win){
  }else if(spec.mode==='hieroglyph'){
   panel.textContent='📜 HIEROGLYPHEN-TAFEL: ☀️ = Sonne · 🐦 = Vogel · 🌊 = Wasser. Entschlüssle: ☀️ 🐦 🌊';
   ['Mond – Vogel – Wasser','Sonne – Vogel – Wasser','Sonne – Schlange – Feuer'].forEach((answer,i)=>button(answer,async()=>{if(!await begin())return;if(i===1)await finish();else fail('Die Zeichen wurden falsch gelesen.');}));
+ }else if(spec.mode==='fossil'){
+  const eggs=['🥚 Ei A','🥚 Ei B','🥚 Ei C'];const dinos=[{name:'🦖 TRICERATOPS',parts:['🦴 Horn','🦴 Schädel','🦴 Rückenplatte']},{name:'🦕 BRACHIOSAURUS',parts:['🦴 Halsknochen','🦴 Bein','🦴 Wirbel']},{name:'🦖 TYRANNOSAURUS',parts:['🦴 Kiefer','🦴 Zahn','🦴 Fußknochen']}];
+  panel.textContent='🥚 Wähle ein Dinosaurier-Ei zum Ausbrüten.';eggs.forEach((egg,index)=>button(egg,async()=>{if(!await begin())return;const dino=dinos[index];panel.textContent='✨ '+dino.name+' ist geschlüpft! Sammle jetzt die drei passenden Fossil-Teile.';controls.innerHTML='';const decoys=dinos.filter((_,i)=>i!==index).flatMap(d=>d.parts).slice(0,3);const pieces=[...dino.parts,...decoys].sort(()=>Math.random()-.5);const picked=[];pieces.forEach(part=>button(part,()=>{if(done||picked.includes(part))return;if(!dino.parts.includes(part)){fail('Dieses Fossil gehört zu einer anderen Dinosaurier-Art.');return;}picked.push(part);panel.textContent='Fossil-Teile gesammelt: '+picked.length+' / 3';if(picked.length===3)finish();}));}));
  }else if(spec.mode==='story'){
   panel.textContent='SEITE 1 · Dein Held entdeckt einen Freund, der in einem eingestürzten Comic-Labor feststeckt. Was tust du?';
   const first=[['📞 Rettungsteam rufen',0],['🏃 Allein hineinrennen',1],['🚪 Weggehen',2]];
