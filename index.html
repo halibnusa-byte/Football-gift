@@ -477,7 +477,7 @@ function applyRolePanelPermissions(){
  const title=$('adminPanel')?.querySelector('h2');if(title)title.textContent=role==='admin'?'👑 Hauptadmin-Panel':role==='halfAdmin'?'🛡️ Halb-Admin-Panel':'🛡️ Viertel-Admin-Panel';
 }
 
-async function adminSaveCode(){if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf den Admin-Code ändern.');const v=$('newAdminCode').value;if(v.length<8)return msg('adminMsg','Mindestens 8 Zeichen.');const nh=await hash(v);await set(path('admin/codeHash'),nh);try{await set(path('adminProof/'+uid),nh);ownerCode=v;}catch(e){}$('newAdminCode').value='';msg('adminMsg','Admin-Code geändert.');}
+async function adminSaveCode(){if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf den Admin-Code ändern.');const v=$('newAdminCode').value;if(v.length<8)return msg('adminMsg','Mindestens 8 Zeichen.');try{await httpsCallable(functions,'saveMainAdminCode')({code:v});ownerCode=v;$('newAdminCode').value='';msg('adminMsg','Admin-Code sicher geändert.');}catch(e){msg('adminMsg',e?.message||'Admin-Code konnte nicht geändert werden.');}}
 async function saveSpecial(){
  if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf besondere Spieler festlegen.');
  const name=clean($('specialName').value),code=$('newSpecialCode').value;
@@ -631,12 +631,12 @@ async function renderEventChallenge(){
   const fire=document.createElement('button');fire.textContent='🔫 FEUERN';fire.disabled=prep>0;body.append(fire);
   const board=document.createElement('div');board.className='status';body.append(board);
   const arenaRef=path('events/laserPlayers');
-  choose.onclick=async()=>{await set(path('events/laserPlayers/'+uid),{name:'Spieler',skin:Number(skinSel.value),score:0,joinedAt:Date.now(),spectator:false});intro.textContent='Skin ausgewählt: '+skins[Number(skinSel.value)]+'.';};
+  choose.onclick=async()=>{try{await httpsCallable(functions,'joinLaserTag')({skin:Number(skinSel.value)});intro.textContent='Skin ausgewählt: '+skins[Number(skinSel.value)]+'.';}catch(e){intro.textContent=e?.message||'Beitritt fehlgeschlagen.';}};
   if(!eventState.laserTimerStarted){/* Timer wird aus dem gemeinsamen Eventstart abgeleitet. */}
   const unsub=onValue(arenaRef,snap=>{const arr=Object.entries(snap.val()||{}).map(([id,v])=>({...v,id})).sort((a,b)=>(b.score||0)-(a.score||0));board.innerHTML='<b>LIVE-RANGLISTE</b><br>'+arr.slice(0,10).map((x,i)=>(i+1)+'. '+skins[x.skin||0]+' – '+(x.score||0)+' Punkte').join('<br>')+'<br><br>Restzeit: '+Math.ceil(Math.max(0,300000-(Date.now()-Number(eventState.startedAt||Date.now())))/1000)+' Sek.';});
-  fire.onclick=async()=>{if(Date.now()-Number(eventState.startedAt||Date.now())<30000)return;const mine=(await get(path('events/laserPlayers/'+uid))).val()||{skin:Math.floor(Math.random()*5),score:0};await update(path('events/laserPlayers/'+uid),{name:'Spieler',skin:mine.skin??Math.floor(Math.random()*5),score:Number(mine.score||0)+1});result.textContent='Treffer! +1 Punkt';};
-  status.textContent='Gemeinsame Browser-Arena: 30 Sekunden Skin-Auswahl, danach 5 Minuten. Bei Gleichstand gilt Golden Point; Top 3 erhalten eine Belohnung nach Event-Ende. Das ist eine gemeinsame Punkte-Arena, keine echte 3D-Teleport-Lobby.';
-  const finish=setInterval(async()=>{if(Date.now()-Number(eventState.startedAt||Date.now())>=330000){clearInterval(finish);const arr=Object.entries((await get(arenaRef)).val()||{}).sort((a,b)=>(b[1].score||0)-(a[1].score||0));for(const [id] of arr.slice(0,3)){const prize=weightedPrize(1);if(prize)await awardPrizeTo(id,prize.id,1);}status.textContent='LaserTag beendet – Top 3 wurden belohnt.';}},2000);
+  fire.onclick=async()=>{try{const r=await httpsCallable(functions,'scoreLaserTag')({});result.textContent='Treffer! '+r.data.score+' Punkte';}catch(e){result.textContent=e?.message||'Treffer nicht gewertet.';}};
+  status.textContent='Gemeinsame Browser-Arena: 30 Sekunden Skin-Auswahl, danach 5 Minuten. Bei Gleichstand gilt Golden Point; Die Top 3 werden nach Event-Ende angezeigt. Das ist eine gemeinsame Punkte-Arena, keine echte 3D-Teleport-Lobby.';
+  const finish=setInterval(async()=>{if(Date.now()-Number(eventState.startedAt||Date.now())>=330000){clearInterval(finish);const arr=Object.entries((await get(arenaRef)).val()||{}).sort((a,b)=>(b[1].score||0)-(a[1].score||0));status.textContent='LaserTag beendet – Top 3: '+arr.slice(0,3).map(([id,v],i)=>(i+1)+'. '+(v.name||'Spieler')+' ('+(v.score||0)+' Punkte)').join(' · ');}},2000);
  }else if(['ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery'].includes(type)){
   const games={
    ocean:{q:'Welche dieser Kreaturen lebt im Meer?',a:['Delfin','Kamel','Adler'],correct:0},
@@ -755,7 +755,7 @@ function kickFromGame(){
  if(watchUnsub){try{watchUnsub()}catch(e){}watchUnsub=null}
  role='normal';roleName='';
  show('app',false);show('loginPanel',true);show('ownerBanner',false);
- if(u)remove(path('online/'+u)).catch(()=>{});
+ if(u)httpsCallable(functions,'updatePlayerPresence')({remove:true}).catch(()=>{});
 }
 function applyServerState(){
  const block=lockHidesGame();
@@ -870,10 +870,10 @@ $('chatSendBtn').onclick=async()=>{
  }catch(e){msg('chatStatus',e?.message||'Nachricht konnte nicht gesendet werden.');}
 };
 $('messageManSend').onclick=async()=>{const textValue=$('messageManText').value.trim();if(!textValue)return msg('messageManStatus','Bitte eine Nachricht eingeben.');try{await httpsCallable(functions,'sendChatMessage')({text:textValue});$('messageManText').value='';msg('messageManStatus','Nachricht gesendet.');}catch(e){msg('messageManStatus',e?.message||'Nachricht konnte nicht gesendet werden.');}};
-$('logoutBtn').onclick=async()=>{if(uid)await remove(path('online/'+uid));unsubs.forEach(f=>f());if(watchUnsub)watchUnsub();unsubs=[];await signOut(auth);uid=null;show('app',false);show('loginPanel',true)};
+$('logoutBtn').onclick=async()=>{if(uid)await httpsCallable(functions,'updatePlayerPresence')({remove:true});unsubs.forEach(f=>f());if(watchUnsub)watchUnsub();unsubs=[];await signOut(auth);uid=null;show('app',false);show('loginPanel',true)};
 $('awardPrize').innerHTML='';PRIZES.concat([{id:'diamondGift',name:'Diamond-Geschenk'}]).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;$('awardPrize').append(o)});
-setInterval(()=>{if(uid){update(path('online/'+uid),{name,at:Date.now()}).catch(()=>{});updateHeader();}},30000);
-window.addEventListener('beforeunload',()=>{if(uid)remove(path('online/'+uid));});
+setInterval(()=>{if(uid){httpsCallable(functions,'updatePlayerPresence')({}).catch(()=>{});updateHeader();}},30000);
+
 if(Date.now()>EXPIRY.getTime()){$('globalStatus').textContent='SPIEL BEENDET';$('loginMsg').textContent='Das Spiel ist seit dem 28.11.2026 um 14:30 Uhr beendet.';$('joinBtn').disabled=true;}
 </script>
 </body>
