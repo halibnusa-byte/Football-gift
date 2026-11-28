@@ -1174,9 +1174,33 @@ exports.joinLaserTag = onCall({ region: "europe-west1" }, async (request) => {
   const elapsed = Date.now() - Number(events.startedAt || Date.now());
   if (elapsed < 0 || elapsed > 10000) throw new HttpsError("deadline-exceeded", "Die Skin-Auswahl ist beendet.");
   const name = String((await db.ref("players/" + auth.uid + "/name").get()).val() || "Spieler").slice(0,24);
-  await db.ref("events/laserPlayers/" + auth.uid).set({ name, skin, score: 0, hits: 0, lives: 3, joinedAt: Date.now(), spectator: false, lastShotAt: 0 });
+  await db.ref("events/laserPlayers/" + auth.uid).set({ name, skin, score: 0, hits: 0, lives: 3, x: crypto.randomInt(-7, 8), z: crypto.randomInt(-7, 8), joinedAt: Date.now(), spectator: false, lastShotAt: 0 });
   return { joined: true };
 });
+exports.moveLaserTag = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const direction = String(request.data?.direction || "");
+  if (!["up","down","left","right"].includes(direction)) throw new HttpsError("invalid-argument", "Ungültige Bewegungsrichtung.");
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "lasertag") throw new HttpsError("failed-precondition", "LaserTag ist nicht aktiv.");
+  const elapsed = Date.now() - Number(events.startedAt || Date.now());
+  if (elapsed < 10000 || elapsed >= 310000) throw new HttpsError("deadline-exceeded", "Die Arena ist gerade nicht aktiv.");
+  const ref = db.ref("events/laserPlayers/" + auth.uid);
+  const tx = await ref.transaction((p) => {
+    const now = Date.now();
+    if (!p || p.spectator || now - Number(p.lastMoveAt || 0) < 120) return;
+    let x = Number(p.x) || 0, z = Number(p.z) || 0;
+    if (direction === "up") z -= 1;
+    if (direction === "down") z += 1;
+    if (direction === "left") x -= 1;
+    if (direction === "right") x += 1;
+    return { ...p, x: Math.max(-9, Math.min(9, x)), z: Math.max(-9, Math.min(9, z)), lastMoveAt: now };
+  });
+  if (!tx.committed) throw new HttpsError("resource-exhausted", "Warte kurz oder du bist bereits ausgeschieden.");
+  return { x: tx.snapshot.val().x, z: tx.snapshot.val().z };
+});
+
 exports.scoreLaserTag = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
   await assertMainAdminDuringLock(auth);
