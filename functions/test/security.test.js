@@ -222,3 +222,25 @@ test("gift rounds are created and opened only through server-authoritative calla
   const openBox = client.slice(client.indexOf("async function openBox(i)"), client.indexOf("async function enter"));
   assert.doesNotMatch(openBox, /rollAndAward/);
 });
+
+
+test("all browser database mutations have been migrated to trusted callables", () => {
+  const mutations = client.split("\n").filter((line) => /\b(set|update|remove|push|runTransaction)\(/.test(line));
+  assert.deepEqual(mutations, []);
+  for (const fn of ["saveRoleCodes","saveNamedRoleCodes","saveGodzillaSettings","recordEventClaim","awardEventReward","saveGodzillaVote","addPlayerActivity","updatePlayerPresence","saveMainAdminCode","queueBlitz","joinLaserTag","scoreLaserTag","saveShopConfig","redeemShopItem","setComebackAdminAbuse","joinComebackAdminAbuse","grantComebackRewards","openComebackGift"]) {
+    assert.ok(source.includes("exports." + fn + " = onCall"));
+  }
+});
+test("shop points are credited per server-confirmed gift opening and redemption is atomic", () => {
+  assert.ok(source.includes("shopPoints: Math.max(0, Number(latest.shopPoints) || 0) + 1"));
+  assert.ok(source.includes("exports.saveShopConfig = onCall"));
+  assert.ok(source.includes("exports.redeemShopItem = onCall"));
+  assert.ok(source.includes("shopPoints: points - product.price"));
+});
+test("Comeback gifts are restricted to registered participants", () => {
+  assert.ok(source.includes("exports.setComebackAdminAbuse = onCall"));
+  assert.ok(source.includes("exports.joinComebackAdminAbuse = onCall"));
+  assert.ok(source.includes("exports.grantComebackRewards = onCall"));
+  assert.ok(source.includes("events/comebackAdminAbuse/participants"));
+  assert.ok(client.includes("httpsCallable(functions,'openComebackGift')"));
+});
