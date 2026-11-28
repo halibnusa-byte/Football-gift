@@ -333,6 +333,8 @@ test("Zombie vials are server-selected and reward requires a completed two-playe
   assert.match(choose, /crypto\.randomInt\(5\)/);
   assert.match(choose, /safe\.size < 3/);
   assert.match(rescue, /Object\.keys\(votes\)\.length >= 2/);
+  assert.match(rescue, /votes\[state\.ownerUid\]/);
+  assert.match(choose, /votes\[ownerUid\]/);
   assert.match(award, /rescue\.completed !== true/);
   assert.match(award, /rescue\.ownerUid !== auth\.uid/);
   assert.match(award, /rescue\.votes\?\.\[auth\.uid\] !== true/);
