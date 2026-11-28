@@ -434,10 +434,18 @@ async function stopEvent(){
  catch(e){msg('adminMsg','Event konnte nicht gestoppt werden: '+(e?.message||e));}
 }
 async function adminAnnouncement(){
- const textValue=$('announcementText').value.trim();if(!textValue)return msg('adminMsg','Bitte eine Nachricht schreiben.');
- if(!['admin','quarterAdmin','halfAdmin'].includes(role))return msg('adminMsg','Keine Berechtigung.');const targets=await resolveTargets($('announcementScope').value,$('announcementTarget').value),a={text:textValue,at:Date.now(),sender:role==='admin'?'OWNER':(roleName||name)};
- if($('announcementScope').value==='global')await set(path('announcements/global'),a);else{const [id]=targets[0];await set(path('announcements/users/'+id),{...a,targetUid:id});}
- if($('announcementPublic').checked)await addActivity((a.sender||'OWNER')+' hat eine Ankündigung gesendet.');msg('adminMsg','Announcement gesendet.');
+ const textValue=$('announcementText').value.trim();
+ if(!textValue)return msg('adminMsg','Bitte eine Nachricht schreiben.');
+ if(!['admin','quarterAdmin','halfAdmin'].includes(role))return msg('adminMsg','Keine Berechtigung.');
+ try{
+  const result=await httpsCallable(functions,'sendAnnouncement')({
+   text:textValue,
+   scope:$('announcementScope').value,
+   targetName:$('announcementTarget').value.trim(),
+   public:$('announcementPublic').checked
+  });
+  msg('adminMsg','Announcement gesendet ('+result.data.delivered+' Empfänger).');
+ }catch(e){msg('adminMsg',e?.message||'Announcement konnte nicht gesendet werden.');}
 }
 async function spawnGalaxy(){
  if(role!=='admin')return msg('adminMsg','Nur der Hauptadmin darf Galaxy-Truhen spawnen.');
