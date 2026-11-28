@@ -98,6 +98,19 @@ body.server-locked header,body.server-locked main,body.server-locked .owner-bann
 @keyframes hackerGlow{0%,100%{text-shadow:0 0 5px #32ff68;filter:hue-rotate(0)}50%{text-shadow:0 0 22px #32ff68;filter:hue-rotate(25deg)}}
 @keyframes robotBlink{0%,44%,48%,100%{opacity:1}46%{opacity:.15}}
 @keyframes pinataSwing{0%,100%{transform:perspective(500px) rotateY(-12deg) rotateZ(-4deg)}50%{transform:perspective(500px) rotateY(12deg) rotateZ(4deg)}}
+@keyframes rainbowFlicker{0%,100%{filter:hue-rotate(0deg) brightness(1)}50%{filter:hue-rotate(85deg) brightness(1.35)}}
+.pinata-model{width:142px;height:118px;margin:8px auto 14px;position:relative;transform-style:preserve-3d;animation:pinataSwing 2s ease-in-out infinite}
+.pinata-model:before{content:"";position:absolute;left:67px;top:-16px;width:7px;height:32px;background:linear-gradient(90deg,#d9c7a2,#fff1ce,#8c7048);border-radius:8px}
+.pinata-body{position:absolute;left:20px;top:17px;width:104px;height:84px;border-radius:48% 48% 42% 42%;background:repeating-linear-gradient(0deg,#ff4b78 0 11px,#ffca42 11px 22px,#48d7ff 22px 33px,#a66cff 33px 44px);box-shadow:inset -13px -8px 0 #0002,inset 9px 5px 0 #fff5,0 13px 20px #0008;animation:rainbowFlicker 2.4s linear infinite}
+.pinata-body:before,.pinata-body:after{content:"";position:absolute;top:25px;width:28px;height:45px;background:repeating-linear-gradient(90deg,#ffdf5d 0 6px,#ff65a5 6px 12px);clip-path:polygon(0 0,100% 0,70% 100%,35% 80%)}
+.pinata-body:before{left:-15px;transform:rotate(12deg)}.pinata-body:after{right:-15px;transform:scaleX(-1) rotate(12deg)}
+.pinata-face{position:absolute;left:0;right:0;top:39px;font-size:23px;text-shadow:0 2px 3px #0008}
+.pinata-caption{font-weight:900;letter-spacing:2px;color:#ffe9a8;text-shadow:0 0 12px #ff5ec4}
+.event-visual.hacker .hero,.event-visual.robot .hero{font-size:20px;line-height:1.6;filter:none;animation:none}
+.event-visual.hacker .hero{color:#71ff91;text-shadow:0 0 10px #26ff68}
+.event-visual.robot .hero{color:#c6e8ff;text-shadow:0 0 10px #5bc5ff}
+.event-visual.robot .led{display:inline-block;color:#ff4d65;text-shadow:0 0 10px #ff294c;animation:robotBlink 1.8s infinite}
+
 @keyframes scanSweep{0%{transform:translateY(-35px);opacity:.2}50%{opacity:1}100%{transform:translateY(35px);opacity:.2}}
 .event-visual{position:relative;overflow:hidden;text-align:center;padding:18px;border-radius:14px;background:linear-gradient(135deg,#10291d,#08120d);border:1px solid var(--line);margin:10px 0}
 .event-visual .hero{font-size:76px;line-height:1.2;display:block;filter:drop-shadow(0 8px 8px #0008)}
@@ -719,7 +732,9 @@ async function renderEventChallenge(){
   const hacker=type==='hacker',title=hacker?'HACKER EVENT · DIGITAL GIFT SCAN':'ROBOT EVENT · FACTORY SCAN';
   $('eventChallengeTitle').textContent=title;
   const visual=document.createElement('div');visual.className='event-visual '+(hacker?'hacker':'robot');visual.style.cssText='font-size:20px;text-align:center;letter-spacing:2px;line-height:1.8;white-space:pre-wrap';
-  visual.textContent=hacker?'01001000 01000001 01000011 01001011\\n🟩 GIFT FIREWALL 🟩\\n01010100 01001111 01001011 01000101 01001110':'🤖 FACTORY SCAN ONLINE\\n[ LED ● ]  [ LED ● ]\\nMETALLIC GIFT HELMET';const beam=document.createElement('span');beam.className='scanline';visual.append(beam);
+  const hero=document.createElement('div');hero.className='hero';hero.textContent=hacker?'01001000 01000001 01000011 01001011\\n🟩 GIFT FIREWALL 🟩\\n01010100 01001111 01001011 01000101 01001110':'🤖 FACTORY SCAN ONLINE\\n[ LED ● ]  [ LED ● ]\\nMETALLIC GIFT HELMET';visual.append(hero);
+  if(!hacker){const leds=document.createElement('div');leds.innerHTML='<span class="led">●</span> &nbsp; <span class="led">●</span> &nbsp; FACTORY ONLINE';visual.append(leds);}
+  const beam=document.createElement('span');beam.className='scanline';visual.append(beam);
   body.append(visual);
   const desc=document.createElement('p');desc.textContent=hacker?'Grüne Hacker-Geschenke, Binärcode und Scan-Effekt. Der Scanner zeigt nur TOKEN oder NIETE.':'Roboterhelm-Geschenke mit LED-Augen. Der Scanner zeigt die Seltenheitsstufe, nicht das genaue Token.';body.append(desc);
   const owned=Number(player?.shopInventory?.[hacker?'hackerScanner':'robotScanner']||0)>0;
@@ -727,7 +742,8 @@ async function renderEventChallenge(){
   scan.onclick=async()=>{scan.disabled=true;if(owned){try{await useShopItem(hacker?'hackerScanner':'robotScanner');}catch(e){result.textContent=e?.message||'Scanner nicht verfügbar.';return;}}if(!await claim())return;try{const response=await httpsCallable(functions,'awardEventReward')({eventId:type});const id=response.data.reward;const prize=PRIZES.find(p=>p.id===id);if(!id){result.textContent='Scanner-Ergebnis: NIETE.';}else if(hacker){result.textContent='Scanner-Ergebnis: TOKEN! (Der genaue Token bleibt geheim.)';}else{const rarity=prize?.rank?'Seltenheitsrang #'+prize.rank:'Seltenheitsrang nicht hinterlegt';result.textContent='Robot Scanner: '+rarity+'. Das genaue Token bleibt geheim.';}await addActivity('hat am '+(EVENT_INFO[type]?.[0]||'Event')+' teilgenommen.');renderInventory();renderRanking();}catch(e){result.textContent=e?.message||'Scan fehlgeschlagen.';}};
   body.append(scan);
  }else if(type==='unicorn'){
-  const visual=document.createElement('div');visual.className='event-visual pinata';visual.innerHTML='<span class="hero">🪅</span><div>🌈 RAINBOW PIÑATA 🌈</div>';body.append(visual);
+  const visual=document.createElement('div');visual.className='event-visual pinata';
+  visual.innerHTML='<div class="pinata-model"><div class="pinata-body"></div><div class="pinata-face">✦ ◉‿◉ ✦</div></div><div class="pinata-caption">🌈 RAINBOW PIÑATA 🌈</div><div class="muted">Ein Schlag pro Spieler · Die Piñata behält ihr eigenes Design</div>';body.append(visual);
   const b=document.createElement('button');b.textContent='🪅 PINATA EINMAL SCHLAGEN';b.onclick=async()=>{b.disabled=true;if(!await claim()){status.textContent='Schon benutzt.';return;}await win('Die Piñata spuckt aus');status.textContent='Dein Schlag ist verbraucht.';};body.append(b);
  }else if(type==='cube'){
   const puzzles=[
