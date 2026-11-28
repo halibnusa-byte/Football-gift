@@ -117,6 +117,6 @@ test("announcements are sent through a role-checked backend callable", () => {
 
 test("browser announcement UI uses the trusted callable instead of direct database writes", () => {
   const section = client.slice(client.indexOf("async function adminAnnouncement"), client.indexOf("async function spawnGalaxy"));
-  assert.match(section, /httpsCallable\\(functions,'sendAnnouncement'\\)/);
-  assert.doesNotMatch(section, /set\\(path\\(['"]announcements/);
+  assert.ok(section.includes("httpsCallable(functions,'sendAnnouncement')"));
+  assert.ok(!section.includes("set(path('announcements"));
 });
