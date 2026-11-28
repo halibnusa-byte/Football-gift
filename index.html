@@ -588,9 +588,9 @@ async function renderEventChallenge(){
  const result=document.createElement('div');result.className='challenge-result';const status=document.createElement('div');status.className='hint';
  const run=String(eventState.runId||eventState.startedAt||'x');
  const claimPath='players/'+uid+'/eventClaims/'+type+'/'+run;
- async function claim(){const token=String(Date.now())+Math.random();const tx=await runTransaction(path(claimPath),v=>v||{token,at:Date.now()});return tx.committed&&tx.snapshot.val()?.token===token;}
+ async function claim(){try{await httpsCallable(functions,'recordEventClaim')({eventId:type});return true;}catch(e){return false;}}
  async function win(label){const prize=await rollAndAward(uid,1,'Event');result.textContent=prize?label+' – '+prize.name+'!':label+' – Niete!';await addActivity('hat am '+(EVENT_INFO[type]?.[0]||'Event')+' teilgenommen.');}
- const already=await get(path(claimPath));if(already.exists()){status.textContent='Du hast deine einmalige Aktion in diesem Event bereits benutzt.';body.append(status);return;}
+
  if(type==='unicorn'){
   const b=document.createElement('button');b.textContent='🪅 PINATA EINMAL SCHLAGEN';b.onclick=async()=>{b.disabled=true;if(!await claim()){status.textContent='Schon benutzt.';return;}if(Math.random()<.5)await win('Die Pinata spuckt aus');else result.textContent='🪅 Niete!';status.textContent='Dein Schlag ist verbraucht.';};body.append(b);
  }else if(type==='cube'){
@@ -670,7 +670,7 @@ function renderGodzilla(body,result,status,claim,win){
  let voted=false;const begin=Date.now();
  const check=()=>{if(voted)return;if((Date.now()-begin)/1000>=pause){vote.classList.remove('hidden');note.textContent='Video pausiert: Entscheide dich genau einmal.';frame.contentWindow?.postMessage(JSON.stringify({event:'command',func:'pauseVideo',args:[]}), '*');}};
  const ticker=setInterval(check,500);if(remaining===0)check();
- async function pick(side,btn){if(voted)return;voted=true;clearInterval(ticker);a.disabled=b.disabled=true;if(!await claim()){status.textContent='Du hast bereits abgestimmt.';return;}const voteObj={side,at:Date.now()};await set(path('players/'+uid+'/godzillaVote/'+(eventState.runId||eventState.startedAt)),voteObj);note.textContent='Dein Tipp: '+(side==='godzilla'?'Godzilla':'Kong')+'. Das Video läuft weiter.';vote.classList.add('hidden');frame.contentWindow?.postMessage(JSON.stringify({event:'command',func:'playVideo',args:[]}), '*');setTimeout(async()=>{const winner=cfg.winner||'godzilla';if(side===winner)await win('Richtig getippt');else result.textContent='Falsch getippt – diesmal nichts.';},Math.max(5000,(end-pause)*1000));}
+ async function pick(side,btn){if(voted)return;voted=true;clearInterval(ticker);a.disabled=b.disabled=true;if(!await claim()){status.textContent='Du hast bereits abgestimmt.';return;}try{await httpsCallable(functions,'saveGodzillaVote')({side});}catch(e){status.textContent=e?.message||'Abstimmung fehlgeschlagen.';return;}note.textContent='Dein Tipp: '+(side==='godzilla'?'Godzilla':'Kong')+'. Das Video läuft weiter.';vote.classList.add('hidden');frame.contentWindow?.postMessage(JSON.stringify({event:'command',func:'playVideo',args:[]}), '*');setTimeout(async()=>{const winner=cfg.winner||'godzilla';if(side===winner)await win('Richtig getippt');else result.textContent='Falsch getippt – diesmal nichts.';},Math.max(5000,(end-pause)*1000));}
  a.onclick=()=>pick('godzilla',a);b.onclick=()=>pick('kong',b);
 }
 async function saveGodzilla(){
