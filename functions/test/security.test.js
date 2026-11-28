@@ -554,3 +554,11 @@ test("Multiverse requires all three timed dimension answers or the secret-rift p
   assert.match(client, /submitMultiverseAnswer/);
   assert.match(client, /Gelöst:/);
 });
+
+test("Godzilla vs Kong reward requires a correct vote for the current event run", () => {
+  const start = source.indexOf("exports.awardEventReward");
+  const award = source.slice(start, source.indexOf("exports.", start + 10));
+  assert.match(award, /eventId === "godzilla"/);
+  assert.match(award, /vote\.runId !== runId/);
+  assert.match(award, /vote\.side !== video\.winner/);
+});
