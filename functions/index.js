@@ -1521,7 +1521,13 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
       return { ...p, inventory, firstWon, eventClaims: claims, totalWins: (Number(p.totalWins) || 0) + (reward ? 1 : 0) };
     });
     if (!tx.committed) throw new HttpsError("aborted", "Belohnung konnte nicht sicher vergeben werden.");
-    return { reward: reward?.id || null };
+    const hiddenReward = eventId === "hacker" || eventId === "robot";
+    const rarityRanks = { deinewahl: 1, revenge: 2, comeback: 3, doublegoal: 3, selfretter: 5, freistoss: 6, football: 7, penalty: 8, goal: 9, redcard: 10, keeper: 11, switch: 12 };
+    return {
+      reward: hiddenReward ? null : (reward?.id || null),
+      hasReward: Boolean(reward),
+      rarityRank: eventId === "robot" && reward ? (rarityRanks[reward.id] || null) : null
+    };
   } catch (e) {
     if (reserved) await db.ref("settings/footballTokenOwner").transaction((v) => v === auth.uid ? null : undefined);
     throw e;
