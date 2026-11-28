@@ -230,7 +230,7 @@ exports.setActiveEvent = onCall({ region: "europe-west1" }, async (request) => {
 
   const currentEventSnap = await db.ref("events").get();
   const currentEventState = currentEventSnap.val() || {};
-  if (currentEventState.active === "racing" && type !== "racing") {
+  if (currentEventState.active === "racing") {
     await finalizeRacingEvent(String(currentEventState.runId || currentEventState.startedAt || ""));
   }
   if (type === null && currentEventState.active === "skibidi") {
