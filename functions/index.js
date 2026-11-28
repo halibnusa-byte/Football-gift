@@ -1273,7 +1273,7 @@ exports.recoverAlienGift = onCall({ region: "europe-west1" }, async (request) =>
   const auth = requireAuth(request);
   await assertMainAdminDuringLock(auth);
   const code = String(request.data?.code || "").trim();
-  if (!/^\\d{4}$/.test(code)) throw new HttpsError("invalid-argument", "Gib einen vierstelligen Code ein.");
+  if (!/^\d{4}$/.test(code)) throw new HttpsError("invalid-argument", "Gib einen vierstelligen Code ein.");
   const events = (await db.ref("events").get()).val() || {};
   if (events.active !== "alien") throw new HttpsError("failed-precondition", "Alien-Event ist nicht aktiv.");
   const runId = String(events.runId || events.startedAt || "");
