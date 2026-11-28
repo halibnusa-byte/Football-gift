@@ -684,7 +684,7 @@ function renderPlannedMiniGame(type,body,result,status,claim,win){
 }
 
 async function renderEventChallenge(){
- const type=eventState.active,available=['hacker','robot','unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery','madness','secretgarden','elephantparade','pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type);
+ const type=eventState.active,available=['galaxy','diamond','hacker','robot','unicorn','cube','skibidi','godzilla','time','school','lava','alien','lasertag','ocean','zombie','multiverse','football','dinosaur','candy','castle','space','ghost','winter','egypt','superhero','racing','dragon','music','mystery','madness','secretgarden','elephantparade','pirate','carnival','ninja','toy','crystal','wildwest','bakery','comic','safari','cyber','wizard','moon','arcade','samurai','stoneage','masquerade','science','luxury','rainbow','timemachine'].includes(type);
  show('eventChallengePanel',available);if(!available||!uid)return;
  const body=$('eventChallengeBody');body.innerHTML='';$('eventChallengeTitle').textContent=EVENT_INFO[type]?.[0]||'Event';
  const descriptions={unicorn:'Wähle deinen Einhorn-Drop. Jeder Spieler kann pro Event einmal eine Belohnung erhalten.',cube:'Löse das Rätsel. Ein Versuch pro Event.',skibidi:'Klicke dich durch fünf Boss-Stufen. Jeder Boss hat einen eigenen Timer von zwei Minuten.',godzilla:'Sieh den Videoclip. Er stoppt mitten im Kampf. Danach tippst du einmal auf Godzilla oder Kong.',time:'Wähle einmal Vergangenheit, Gegenwart oder Zukunft.',school:'Beantworte die Schulfrage. Richtig: normales Geschenk. Falsch: nichts.',lava:'Wähle eine von drei Lava-Kisten. Ein Versuch.',alien:'Löse das Alien-Rätsel. Ein Versuch.',ocean:'Wähle eine Schatztruhe aus dem Ozean.',zombie:'Beantworte die Zombie-Frage.',multiverse:'Wähle dein Universum.',football:'Beantworte die Fußballfrage.',dinosaur:'Erkenne den Dinosaurier.',candy:'Wähle eine Süßigkeiten-Überraschung.',castle:'Löse das Burg-Rätsel.',space:'Wähle einen Planeten.',ghost:'Löse das Geister-Rätsel.',winter:'Beantworte die Winterfrage.',egypt:'Löse das Pyramiden-Rätsel.',superhero:'Wähle deine Helden-Mission.',racing:'Starte dein kurzes Reaktionsrennen.',dragon:'Wähle einen Drachentyp.',music:'Erkenne die Musikrichtung anhand eines Rhythmus-Musters.',mystery:'Wähle eine geheimnisvolle Tür.'};
@@ -703,7 +703,10 @@ async function renderEventChallenge(){
  }catch(e){result.textContent=e?.message||'Belohnung konnte nicht vergeben werden.';}
 }
 
- if(type==='hacker'||type==='robot'){
+ if(type==='galaxy'||type==='diamond'){
+  const galaxy=type==='galaxy';const visual=document.createElement('div');visual.className='event-visual';visual.innerHTML='<span class="hero">'+(galaxy?'🌌':'💎')+'</span><div>'+(galaxy?'GALAXY EVENT':'DIAMOND EVENT')+'</div>';body.append(visual);
+  const p=document.createElement('p');p.textContent=galaxy?'Das Galaxy Gift kann ausschließlich während des Galaxy Events erscheinen. Die Spawn-Chance beträgt 0,001 %.':'Diamond Event: Diamant-Geschenke können nach den bereits gespeicherten Event-Einstellungen erscheinen.';body.append(p);
+ }else if(type==='hacker'||type==='robot'){
   const hacker=type==='hacker',title=hacker?'HACKER EVENT · DIGITAL GIFT SCAN':'ROBOT EVENT · FACTORY SCAN';
   $('eventChallengeTitle').textContent=title;
   const visual=document.createElement('div');visual.className='event-visual '+(hacker?'hacker':'robot');visual.style.cssText='font-size:20px;text-align:center;letter-spacing:2px;line-height:1.8;white-space:pre-wrap';
