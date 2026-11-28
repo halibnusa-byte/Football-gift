@@ -1226,7 +1226,7 @@ exports.discoverMultiverseSecret = onCall({ region: "europe-west1" }, async (req
   const runId = String(events.runId || events.startedAt || "");
   const ref = db.ref("events/multiverseChallenges/" + runId + "/" + auth.uid);
   const tx = await ref.transaction((challenge) => {
-    if (!challenge || Date.now() - Number(challenge.startedAt || 0) < 90000 || challenge.secretAvailable !== true || challenge.secretDiscovered === true) return;
+    if (!challenge || challenge.failed === true || Date.now() - Number(challenge.startedAt || 0) < 90000 || challenge.secretAvailable !== true || challenge.secretDiscovered === true) return;
     return { ...challenge, secretDiscovered: true, discoveredAt: Date.now() };
   });
   if (!tx.committed) return { discovered: false };
