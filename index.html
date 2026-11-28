@@ -618,7 +618,7 @@ function renderPlannedMiniGame(type,body,result,status,claim,win){
   football:{title:'GOLDEN CUP · ELFMETER',mode:'quiz',prompt:'Du stehst am Elfmeterpunkt. In welche Ecke schießt du?',options:['Links unten','Mittig','Rechts oben'],answer:2,success:'TOR! GOLDEN CUP geschafft.'},
   dinosaur:{title:'JURASSIC TREASURE · FOSSILIEN',mode:'steps',prompt:'Brüte ein Ei aus und setze das Fossil zusammen.',steps:['🥚 Dinosaurier-Ei ausbrüten','🦴 Fossil-Teil 1 finden','🦴 Fossil-Teil 2 zusammensetzen'],success:'Das Dinosaurier-Fossil ist vollständig!'},
   candy:{title:'SWEET CHAOS · SÜSSIGKEITEN-KOMBI',mode:'pairs',prompt:'Finde alle drei gleichen Süßigkeiten-Paare.',success:'Alle Süßigkeiten wurden richtig kombiniert!'},
-  castle:{title:'THE ROYAL SECRET · BURG-AUFGABE',mode:'quiz',prompt:'Wähle deine Rolle und beantworte die Frage: Was schützt eine Burg?',options:['Zugbrücke und Mauern','Ein Surfbrett','Ein U-Boot'],answer:0,success:'Die Burgprüfung bestanden!'},
+  castle:{title:'THE ROYAL SECRET · BURG-AUFGABE',mode:'role',prompt:'Wähle deine Rolle: König, Ritter oder Zauberer. Jede Rolle erhält eine eigene Aufgabe.',success:'Die königliche Aufgabe ist bestanden!'},
   space:{title:'GALACTIC MISSION · PLANETENROUTE',mode:'order',prompt:'Ordne die drei Planeten von der Sonne aus: Erde, Merkur, Venus.',items:['Erde','Merkur','Venus'],answer:['Merkur','Venus','Erde'],success:'Raumschiff sicher am Ziel gelandet!'},
   ghost:{title:'HAUNTED GIFTS · GEISTER-ILLUSION',mode:'cups',prompt:'Die Geister tauschen die Geschenk-Boxen. Finde die Box mit dem leuchtenden Geist.',success:'Du hast die echte Geister-Box gefunden!'},
   winter:{title:'FROZEN KINGDOM · EIS-RÄTSEL',mode:'quiz',prompt:'Was lässt Eis normalerweise schmelzen?',options:['Wärme','Schatten','Schnee'],answer:0,success:'Der Eisblock ist geschmolzen!'},
@@ -663,6 +663,9 @@ function renderPlannedMiniGame(type,body,result,status,claim,win){
  const button=(label,fn)=>{const b=document.createElement('button');b.className='secondary';b.textContent=label;b.onclick=fn;controls.append(b);return b;};
  if(spec.mode==='quiz'){
   spec.options.forEach((v,i)=>button(v,async()=>{if(!await begin())return;if(i===spec.answer)await finish();else fail('Falsch – die Challenge ist vorbei.');}));
+ }else if(spec.mode==='role'){
+  const roles=[{name:'👑 König',task:'Was gehört zu einer königlichen Krone?',opts:['Edelsteine','Fußballschuhe','Taucherbrille'],answer:0},{name:'🛡️ Ritter',task:'Was schützt einen Ritter?',opts:['Schild','Regenschirm','Rucksack'],answer:0},{name:'🪄 Zauberer',task:'Welches Werkzeug passt zum Zauberer?',opts:['Zauberstab','Hammer','Fernglas'],answer:0}];
+  panel.textContent='Wähle deine Rolle.';roles.forEach(role=>button(role.name,()=>{panel.textContent=role.name+' · '+role.task;controls.innerHTML='';role.opts.forEach((v,i)=>button(v,async()=>{if(!await begin())return;if(i===role.answer)await finish();else fail('Die Burgprüfung ist fehlgeschlagen.');}));}));
  }else if(spec.mode==='quizset'){
   let qi=0;let timer=null;const ask=()=>{if(qi>=spec.questions.length){clearTimeout(timer);finish();return;}const q=spec.questions[qi];panel.textContent='Frage '+(qi+1)+' / '+spec.questions.length+': '+q[0];controls.innerHTML='';q[1].forEach((v,i)=>button(v,()=>{if(i!==q[2]){clearTimeout(timer);fail('Falsche Antwort – Zeit-Challenge beendet.');return;}qi++;ask();}));};
   const b=button('60-SEKUNDEN-CHALLENGE STARTEN',async()=>{if(!await begin())return;let left=60;panel.textContent='Noch '+left+' Sekunden';timer=setInterval(()=>{left--;panel.textContent='Noch '+left+' Sekunden';if(left<=0){clearInterval(timer);fail('Zeit abgelaufen!');}},1000);ask();});
