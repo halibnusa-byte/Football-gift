@@ -275,6 +275,7 @@ async function buildRound(){
  $('result').textContent='Neue Runde wird vorbereitet…';
  const response=await httpsCallable(functions,'startPlayerRound')({});
  const round=response.data.round;
+ player.roundState=round;
  boxes=round.boxes.map((b,i)=>({...b,id:i}));opened=boxes.filter(b=>b.opened).map(b=>b.id);
  rareType=round.rareType?RARE.find(r=>r.id===round.rareType)||null:null;
  renderBoxes();
