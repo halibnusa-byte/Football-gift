@@ -635,7 +635,7 @@ function renderPlannedMiniGame(type,body,result,status,claim,win){
   castle:{title:'THE ROYAL SECRET · BURG-AUFGABE',mode:'role',prompt:'Wähle deine Rolle: König, Ritter oder Zauberer. Jede Rolle erhält eine eigene Aufgabe.',success:'Die königliche Aufgabe ist bestanden!'},
   space:{title:'GALACTIC MISSION · PLANETENROUTE',mode:'order',prompt:'Ordne die drei Planeten von der Sonne aus: Erde, Merkur, Venus.',items:['Erde','Merkur','Venus'],answer:['Merkur','Venus','Erde'],success:'Raumschiff sicher am Ziel gelandet!'},
   ghost:{title:'HAUNTED GIFTS · GEISTER-ILLUSION',mode:'cups',prompt:'Die Geister tauschen die Geschenk-Boxen. Finde die Box mit dem leuchtenden Geist.',success:'Du hast die echte Geister-Box gefunden!'},
-  winter:{title:'FROZEN KINGDOM · EIS-RÄTSEL',mode:'quiz',prompt:'Was lässt Eis normalerweise schmelzen?',options:['Wärme','Schatten','Schnee'],answer:0,success:'Der Eisblock ist geschmolzen!'},
+  winter:{title:'FROZEN KINGDOM · EIS-RÄTSEL',mode:'ice',prompt:'Befreie das Geschenk aus drei Eisblöcken, indem du die Eisfragen löst.',success:'Alle drei Eisblöcke sind geschmolzen!'},
   egypt:{title:"THE PHARAOH'S SECRET · HIEROGLYPHEN",mode:'hieroglyph',prompt:'Entschlüssle die Zeichen mithilfe der Hieroglyphen-Tafel.',success:'Die Hieroglyphen sind entschlüsselt!'},
   superhero:{title:'HERO ACADEMY · HELDEN-TEST',mode:'steps',prompt:'Schließe deine Helden-Ausbildung ab.',steps:['🛡️ Schutzschild aktivieren','⚡ Energie sammeln','🦸 Zivilisten retten'],success:'Heldenprüfung bestanden!'},
   racing:{title:'TURBO CHALLENGE · ZEITRENNEN',mode:'race',prompt:'Drücke den Turbo-Knopf 12-mal in höchstens 15 Sekunden. Die drei schnellsten Fahrer erhalten ein Geschenk.',target:12,seconds:15,success:'ZIELLINIE! Deine Rennzeit ist gespeichert.'},
@@ -675,7 +675,14 @@ function renderPlannedMiniGame(type,body,result,status,claim,win){
  const finish=async()=>{if(done)return;done=true;controls.querySelectorAll('button').forEach(b=>b.disabled=true);await win(spec.success);};
  const fail=msg=>{if(done)return;done=true;controls.querySelectorAll('button').forEach(b=>b.disabled=true);result.textContent=msg||'Challenge nicht geschafft – diesmal keine Belohnung.';};
  const button=(label,fn)=>{const b=document.createElement('button');b.className='secondary';b.textContent=label;b.onclick=fn;controls.append(b);return b;};
- if(spec.mode==='casefile'){
+ if(spec.mode==='ice'){
+  const questions=[
+   ['🧊 Eisblock 1 · Was passiert mit Eis bei Wärme?',['Es schmilzt','Es wird zu Stein','Es wächst'],0],
+   ['🧊 Eisblock 2 · Bei welcher Temperatur gefriert Wasser ungefähr?',['10 °C','0 °C','50 °C'],1],
+   ['🧊 Eisblock 3 · Wie nennt man gefrorenes Wasser?',['Dampf','Sand','Eis'],2]
+  ];
+  let step=0;const ask=()=>{const q=questions[step];panel.textContent=q[0]+' · Block '+(step+1)+' / 3';controls.innerHTML='';q[1].forEach((answer,i)=>button(answer,async()=>{if(!started&&!await begin())return;if(i!==q[2]){fail('Der Eisblock bleibt gefroren.');return;}step++;if(step===questions.length)await finish();else ask();}));};ask();
+ }else if(spec.mode==='casefile'){
   panel.textContent='FALLAKTE 07 · HINWEISE: Erde liegt vor dem Gewächshaus. Am Schlüssel steckt feuchte Erde. In der Bäckerei liegt nur Mehl, beim Astronauten Sternenstaub.';
   [['🌱 Gärtner','Die Erde an Schuhen und Schlüssel passt zum Gewächshaus.'],['🥖 Bäcker','Es gibt keine Mehlspuren am Schlüssel.'],['🚀 Astronaut','Sternenstaub passt nicht zu den Gartenspuren.']].forEach(([suspect,clue],i)=>button(suspect,async()=>{if(!await begin())return;if(i===0){panel.textContent='🔎 '+clue;await finish();}else fail('Die Hinweise passen nicht zu dieser Person.');}));
  }else if(spec.mode==='hieroglyph'){
