@@ -360,7 +360,7 @@ test("Ocean reward requires a recorded chest opening", () => {
   assert.match(award, /events\/oceanChests/);
   assert.match(award, /oceanChestOutcome\.goldenShark === true/);
   assert.match(award, /special: "goldenShark"/);
-  assert.match(award, /Öffne zuerst eine Schatztruhe/);
+  assert.match(award, /Diese Schatztruhe war leer/);
 });
 
 test("Magic Cube uses three separately configured chances and server-stored outcomes", () => {
