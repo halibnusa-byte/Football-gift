@@ -251,11 +251,13 @@ exports.redeemRoleCode = onCall({ region: "europe-west1", secrets: [roleCodeMapS
   if (code.length < 4 || code.length > 128) {
     throw new HttpsError("invalid-argument", "Ungültiger Zugangscode.");
   }
-  let roleMap;
-  try {
-    roleMap = JSON.parse(roleCodeMapSecret.value());
-  } catch {
-    throw new HttpsError("failed-precondition", "Die sichere Rollen-Konfiguration fehlt oder ist ungültig.");
+  let roleMap = {};
+  const storedCodes = (await db.ref("admin/roleCodes").get()).val() || {};
+  const storedEntry = storedCodes[digest];
+  if (storedEntry) roleMap[digest] = storedEntry;
+  if (!storedEntry) {
+    try { roleMap = JSON.parse(roleCodeMapSecret.value()); }
+    catch { roleMap = {}; }
   }
   if (!roleMap || typeof roleMap !== "object" || Array.isArray(roleMap)) {
     throw new HttpsError("failed-precondition", "Die sichere Rollen-Konfiguration ist ungültig.");
@@ -927,4 +929,127 @@ exports.redeemShopItem = onCall({ region: "europe-west1" }, async (request) => {
   if (!tx.committed) throw new HttpsError("failed-precondition", "Nicht genug Punkte oder Spielerprofil fehlt.");
   await db.ref("shop/purchases").push({ uid: auth.uid, productId: id, price: product.price, at: Date.now() });
   return { productId: id, price: product.price, balance: tx.snapshot.val().shopPoints, quantity: tx.snapshot.val().shopInventory[id] };
+});
+
+
+// Role codes are hashed and stored server-side; clients never write role-control paths.
+exports.saveRoleCodes = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireRole(request, ["mainAdmin"]);
+  await assertMainAdminDuringLock(auth);
+  const kind = request.data?.kind;
+  const entries = request.data?.entries;
+  const role = kind === "half" ? "halfAdmin" : kind === "quarter" ? "quarterAdmin" : null;
+  if (!role || !Array.isArray(entries) || entries.length < 1 || entries.length > (kind === "half" ? 2 : 1)) {
+    throw new HttpsError("invalid-argument", "Ungültige Rollen-Codes.");
+  }
+  const next = {};
+  for (const item of entries) {
+    const code = String(item?.code || "").trim();
+    if (code.length < 4 || code.length > 128) throw new HttpsError("invalid-argument", "Codes müssen 4 bis 128 Zeichen lang sein.");
+    const digest = hashCode(code);
+    if (next[digest]) throw new HttpsError("invalid-argument", "Jeder Code muss einzigartig sein.");
+    next[digest] = { role, createdBy: auth.uid, createdAt: Date.now() };
+  }
+  const existing = (await db.ref("admin/roleCodes").get()).val() || {};
+  for (const digest of Object.keys(next)) if (existing[digest]) throw new HttpsError("already-exists", "Dieser Code wird bereits verwendet.");
+  const old = Object.fromEntries(Object.entries(existing).filter(([,v]) => v.role !== role));
+  await db.ref("admin/roleCodes").set({ ...old, ...next });
+  return { saved: Object.keys(next).length };
+});
+exports.saveNamedRoleCodes = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireRole(request, ["mainAdmin"]);
+  await assertMainAdminDuringLock(auth);
+  const kind = request.data?.kind;
+  const entries = request.data?.entries;
+  const role = kind === "special" ? "special" : kind === "messageMan" ? "messageMan" : null;
+  const max = kind === "messageMan" ? 2 : 1;
+  if (!role || !Array.isArray(entries) || entries.length > max) throw new HttpsError("invalid-argument", "Ungültige Rollen-Zuweisung.");
+  const players = (await db.ref("players").get()).val() || {};
+  const codes = {};
+  const usedUids = new Set();
+  for (const item of entries) {
+    const name = String(item?.name || "").trim().slice(0, 40);
+    const code = String(item?.code || "").trim();
+    if (!name || code.length < 4 || code.length > 128) throw new HttpsError("invalid-argument", "Name und Code (mindestens 4 Zeichen) sind erforderlich.");
+    const found = Object.entries(players).find(([,p]) => String(p?.name || "").trim().toLowerCase() === name.toLowerCase());
+    if (!found) throw new HttpsError("not-found", "Spieler nicht gefunden: " + name);
+    if (usedUids.has(found[0])) throw new HttpsError("invalid-argument", "Ein Spieler kann nicht doppelt eingetragen werden.");
+    usedUids.add(found[0]);
+    const digest = hashCode(code);
+    if (codes[digest]) throw new HttpsError("invalid-argument", "Codes müssen einzigartig sein.");
+    codes[digest] = { role, uid: found[0], name, createdBy: auth.uid, createdAt: Date.now() };
+  }
+  const existing = (await db.ref("admin/roleCodes").get()).val() || {};
+  const retained = Object.fromEntries(Object.entries(existing).filter(([,v]) => v.role !== role));
+  for (const digest of Object.keys(codes)) if (existing[digest] && existing[digest].role !== role) throw new HttpsError("already-exists", "Dieser Code wird bereits für eine andere Rolle verwendet.");
+  await db.ref("admin/roleCodes").set({ ...retained, ...codes });
+  return { saved: Object.keys(codes).length };
+});
+exports.saveGodzillaSettings = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireRole(request, ["mainAdmin"]);
+  await assertMainAdminDuringLock(auth);
+  const data = request.data || {};
+  const url = String(data.url || "").trim();
+  const id = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([A-Za-z0-9_-]{11})/);
+  const pause = Number(data.pause), end = Number(data.end), winner = data.winner;
+  if (!id || !Number.isInteger(pause) || pause < 5 || pause > 600 || !Number.isInteger(end) || end <= pause || end > 1200 || !["godzilla","kong"].includes(winner)) {
+    throw new HttpsError("invalid-argument", "Ungültige Godzilla-Videoeinstellungen.");
+  }
+  await db.ref("settings/godzillaVideo").set({ url, pause, end, winner });
+  return { saved: true };
+});
+exports.recordEventClaim = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const eventId = String(request.data?.eventId || "");
+  if (!EVENT_TYPES.has(eventId)) throw new HttpsError("invalid-argument", "Unbekanntes Event.");
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== eventId) throw new HttpsError("failed-precondition", "Dieses Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  if (!runId) throw new HttpsError("failed-precondition", "Event-Runde fehlt.");
+  const ref = db.ref("players/" + auth.uid);
+  const tx = await ref.transaction((p) => {
+    if (!p) return;
+    const claims = { ...(p.eventClaims || {}) };
+    if (claims[eventId + ":" + runId]) return;
+    claims[eventId + ":" + runId] = { at: Date.now(), status: "claimed" };
+    return { ...p, eventClaims: claims };
+  });
+  if (!tx.committed) throw new HttpsError("already-exists", "Du hast bei diesem Event bereits mitgemacht.");
+  return { claimed: true, runId };
+});
+exports.addPlayerActivity = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  const text = String(request.data?.text || "").trim().slice(0, 120);
+  if (!text) throw new HttpsError("invalid-argument", "Aktivität fehlt.");
+  const player = (await db.ref("players/" + auth.uid + "/name").get()).val() || "Spieler";
+  await db.ref("activity").push({ name: String(player).slice(0, 24), text, at: Date.now(), uid: auth.uid });
+  return { saved: true };
+});
+exports.updatePlayerPresence = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  const remove = request.data?.remove === true;
+  if (remove) { await db.ref("online/" + auth.uid).remove(); return { online: false }; }
+  const name = String((await db.ref("players/" + auth.uid + "/name").get()).val() || "Spieler").slice(0, 24);
+  await db.ref("online/" + auth.uid).set({ name, at: Date.now() });
+  return { online: true };
+});
+exports.saveGodzillaVote = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const side = request.data?.side;
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "godzilla" || !["godzilla","kong"].includes(side)) throw new HttpsError("failed-precondition", "Godzilla-Abstimmung ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const ref = db.ref("players/" + auth.uid);
+  const tx = await ref.transaction((p) => {
+    if (!p) return;
+    const votes = { ...(p.godzillaVotes || {}) };
+    if (votes[runId]) return;
+    votes[runId] = side;
+    return { ...p, godzillaVotes: votes };
+  });
+  if (!tx.committed) throw new HttpsError("already-exists", "Du hast bereits abgestimmt.");
+  await db.ref("events/godzillaVotes/" + auth.uid).set({ side, at: Date.now(), runId });
+  return { saved: true };
 });
