@@ -139,3 +139,9 @@ test("browser live chat uses callable mutations and renders text safely", () => 
   assert.ok(client.includes("body.textContent=String(m.text)"));
   assert.ok(client.includes('id="liveChatPanel"'));
 });
+
+test("Message Man uses the same server-authoritative live chat endpoint", () => {
+  const section = client.slice(client.indexOf("$('messageManSend').onclick"), client.indexOf("$('logoutBtn').onclick"));
+  assert.ok(section.includes("httpsCallable(functions,'sendChatMessage')"));
+  assert.ok(!section.includes("push(path('messages')"));
+});
