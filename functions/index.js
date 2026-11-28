@@ -1198,7 +1198,12 @@ exports.joinLaserTag = onCall({ region: "europe-west1" }, async (request) => {
   const elapsed = Date.now() - Number(events.startedAt || Date.now());
   if (elapsed < 0 || elapsed > 10000) throw new HttpsError("deadline-exceeded", "Die Skin-Auswahl ist beendet.");
   const name = String((await db.ref("players/" + auth.uid + "/name").get()).val() || "Spieler").slice(0,24);
-  await db.ref("events/laserPlayers/" + auth.uid).set({ name, skin, score: 0, hits: 0, lives: 3, x: crypto.randomInt(-7, 8), z: crypto.randomInt(-7, 8), joinedAt: Date.now(), spectator: false, lastShotAt: 0 });
+  const playerRef = db.ref("events/laserPlayers/" + auth.uid);
+  const joined = await playerRef.transaction((existing) => {
+    if (existing) return;
+    return { name, skin, score: 0, hits: 0, lives: 3, x: crypto.randomInt(-7, 8), z: crypto.randomInt(-7, 8), joinedAt: Date.now(), spectator: false, lastShotAt: 0 };
+  });
+  if (!joined.committed) throw new HttpsError("already-exists", "Du bist dieser LaserTag-Runde bereits beigetreten.");
   return { joined: true };
 });
 exports.moveLaserTag = onCall({ region: "europe-west1" }, async (request) => {
