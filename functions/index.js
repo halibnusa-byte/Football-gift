@@ -44,6 +44,157 @@ async function assertMainAdminDuringLock(auth) {
   }
 }
 
+
+
+// Server-authoritative gift rounds: 15 boxes, at most 3 opens, server RNG and atomic inventory update.
+const ROUND_PRIZES = [
+  { id: "deinewahl", chance: 0.0001 },
+  { id: "revenge", chance: 0.00025 },
+  { id: "comeback", chance: 0.0005 },
+  { id: "doublegoal", chance: 0.0005 },
+  { id: "selfretter", chance: 0.001 },
+  { id: "freistoss", chance: 0.0015 },
+  { id: "football", chance: 0.002 },
+  { id: "penalty", chance: 0.003 },
+  { id: "goal", chance: 0.01 },
+  { id: "redcard", chance: 0.015 },
+  { id: "keeper", chance: 0.02 },
+  { id: "switch", chance: 0.025 },
+];
+const ROUND_RARITIES = [
+  { id: "bronze", mult: 2, weight: 70 },
+  { id: "silver", mult: 3, weight: 20 },
+  { id: "gold", mult: 4, weight: 8 },
+  { id: "diamond", mult: 5, weight: 2 },
+];
+function secureUnit() { return crypto.randomInt(0, 1_000_000_000) / 1_000_000_000; }
+function securePick(items, weights) {
+  const total = weights.reduce((a, b) => a + b, 0);
+  let roll = secureUnit() * total;
+  for (let i = 0; i < items.length; i++) { roll -= weights[i]; if (roll < 0) return items[i]; }
+  return items[items.length - 1];
+}
+function currentLuck(auth, player, settings) {
+  const claims = auth.token || {};
+  const now = new Date();
+  const berlin = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(now);
+  const parts = Object.fromEntries(berlin.map((p) => [p.type, p.value]));
+  const minute = Number(parts.hour) * 60 + Number(parts.minute);
+  const power = parts.weekday === "Sat" || (minute >= 900 && minute < 1020) ? 2 : 1;
+  return Math.max(settings.luckEnabled ? Number(settings.luckMultiplier || 1) : 1,
+    claims.special ? 2 : 1, power,
+    claims.halfAdmin && !claims.mainAdmin ? Math.min(50, Number(settings.roleLuck?.[auth.uid] || 1)) : 1);
+}
+function pickRoundPrize(multiplier, eventType, settings, player) {
+  if (eventType === "galaxy" && secureUnit() < 0.00001) {
+    const choices = ["comeback", "revenge"];
+    if (!settings.footballTokenOwner) choices.push("football");
+    return { id: choices[crypto.randomInt(choices.length)], special: "galaxy" };
+  }
+  if (eventType === "elephant" && secureUnit() < Number(settings.elephantChestChance ?? 0.00001)) {
+    return { id: secureUnit() < 0.5 ? "revenge" : "switch" };
+  }
+  if (eventType === "diamond" && secureUnit() < Number(settings.diamondChance ?? 0.1) / 100) {
+    return { id: "diamondGift" };
+  }
+  let extra = 1;
+  if (eventType === "blitz" && secureUnit() < Number(settings.blitzChance ?? 0.015)) extra = 10;
+  if (eventType === "spiderman" && secureUnit() < Number(settings.spiderChance ?? 0.01)) extra = Number(settings.spiderLuck || 5);
+  if (eventType === "cocacola" && secureUnit() < Number(settings.colaChance ?? 0.01)) extra = Number(settings.colaLuck || 5);
+  if (eventType === "plants" && secureUnit() < Number(settings.vineChance ?? 0.01)) extra = Number(settings.plantLuck || 5);
+  const unlocked = settings.completedEvents?.skibidi === true;
+  const list = ROUND_PRIZES.filter((p) =>
+    (unlocked || !["deinewahl", "doublegoal", "selfretter", "freistoss", "comeback"].includes(p.id)) &&
+    !(p.id === "penalty" && Number(player.inventory?.penalty || 0) > 0) &&
+    !(p.id === "football" && settings.footballTokenOwner)
+  );
+  const weights = list.map((p) => p.chance * multiplier * extra);
+  const sum = weights.reduce((a, b) => a + b, 0);
+  const capped = sum > 100 ? weights.map((w) => w * 100 / sum) : weights;
+  const roll = secureUnit() * 100;
+  let cursor = roll;
+  for (let i = 0; i < list.length; i++) { cursor -= capped[i]; if (cursor < 0) return { id: list[i].id }; }
+  return null;
+}
+exports.startPlayerRound = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const playerRef = db.ref("players/" + auth.uid);
+  const tx = await playerRef.transaction((current) => {
+    if (!current) return;
+    const existing = current.roundState;
+    if (existing && Array.isArray(existing.boxes) && existing.boxes.length === 15 && Number(existing.openedCount || 0) < 3) return;
+    const boxes = Array.from({ length: 15 }, (_, id) => ({ id, opened: false, rare: false, galaxy: false, blitz: false }));
+    let rareType = null;
+    if (secureUnit() < 0.01) {
+      rareType = securePick(ROUND_RARITIES, ROUND_RARITIES.map((r) => r.weight));
+      boxes[crypto.randomInt(15)].rare = true;
+    }
+    let pendingBlitz = Math.max(0, Number(current.pendingBlitz) || 0);
+    if (pendingBlitz > 0) { boxes[crypto.randomInt(15)].blitz = true; pendingBlitz--; }
+    let pendingGalaxy = Math.max(0, Number(current.pendingGalaxy) || 0);
+    if (pendingGalaxy > 0) {
+      const candidates = boxes.map((b, i) => b.rare ? -1 : i).filter((i) => i >= 0);
+      if (candidates.length) { boxes[candidates[crypto.randomInt(candidates.length)]].galaxy = true; pendingGalaxy--; }
+    }
+    const roundId = crypto.randomUUID();
+    const roundState = { roundId, boxes, openedCount: 0, rareType: rareType?.id || null, createdAt: Date.now() };
+    return { ...current, pendingBlitz, pendingGalaxy, roundState,
+      lastBoxes: boxes.map((b) => ({ ...b })), lastRareType: roundState.rareType, opensThisRound: 0, roundUpdated: Date.now() };
+  });
+  if (!tx.committed) throw new HttpsError("failed-precondition", "Deine Runde konnte nicht erstellt werden.");
+  return { round: tx.snapshot.val().roundState };
+});
+exports.openPlayerGift = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const index = Number(request.data?.index);
+  const roundId = String(request.data?.roundId || "");
+  if (!Number.isInteger(index) || index < 0 || index >= 15 || !roundId) throw new HttpsError("invalid-argument", "Ungültige Geschenkbox.");
+  const settings = (await db.ref("settings").get()).val() || {};
+  const events = (await db.ref("events").get()).val() || {};
+  const playerRef = db.ref("players/" + auth.uid);
+  const snapshot = await playerRef.get();
+  const current = snapshot.val();
+  if (!current) throw new HttpsError("not-found", "Spielerprofil nicht gefunden.");
+  const round = current.roundState;
+  if (!round || round.roundId !== roundId || !Array.isArray(round.boxes) || round.boxes.length !== 15) throw new HttpsError("failed-precondition", "Diese Runde ist nicht mehr aktuell.");
+  if (round.openedCount >= 3) throw new HttpsError("failed-precondition", "Du hast bereits 3 Geschenke geöffnet.");
+  if (round.boxes[index]?.opened) throw new HttpsError("already-exists", "Diese Geschenkbox wurde bereits geöffnet.");
+  const box = round.boxes[index];
+  const rarity = ROUND_RARITIES.find((r) => r.id === round.rareType);
+  const mult = (box.rare && rarity ? rarity.mult : 1) * (box.blitz ? 10 : 1);
+  const reward = pickRoundPrize(currentLuck(auth, current, settings) * mult, events.active, settings, current);
+  let reservedFootball = false;
+  if (reward?.id === "football") {
+    const owner = await db.ref("settings/footballTokenOwner").transaction((v) => v == null ? auth.uid : undefined);
+    if (!owner.committed) throw new HttpsError("already-exists", "Der Football Token wurde bereits vergeben.");
+    reservedFootball = true;
+  }
+  try {
+    const tx = await playerRef.transaction((latest) => {
+      if (!latest || latest.roundState?.roundId !== roundId || latest.roundState.openedCount >= 3 || latest.roundState.boxes?.[index]?.opened) return;
+      const boxes = latest.roundState.boxes.map((b, i) => i === index ? { ...b, opened: true } : b);
+      const inventory = { ...(latest.inventory || {}) };
+      const firstWon = { ...(latest.firstWon || {}) };
+      if (reward) {
+        if (reward.id === "football" && Number(inventory.football || 0) > 0) return;
+        inventory[reward.id] = (Number(inventory[reward.id]) || 0) + 1;
+        if (!firstWon[reward.id]) firstWon[reward.id] = Date.now();
+      }
+      const updatedRound = { ...latest.roundState, boxes, openedCount: latest.roundState.openedCount + 1 };
+      return { ...latest, inventory, firstWon, totalWins: (Number(latest.totalWins) || 0) + (reward ? 1 : 0),
+        roundState: updatedRound, lastBoxes: boxes, opensThisRound: updatedRound.openedCount, roundUpdated: Date.now() };
+    });
+    if (!tx.committed) throw new HttpsError("aborted", "Die Geschenkbox konnte nicht sicher geöffnet werden. Bitte aktualisieren.");
+    return { reward: reward?.id || null, openedCount: tx.snapshot.val().roundState.openedCount,
+      round: tx.snapshot.val().roundState, blitz: !!box.blitz, galaxy: !!box.galaxy };
+  } catch (error) {
+    if (reservedFootball) await db.ref("settings/footballTokenOwner").transaction((v) => v === auth.uid ? null : undefined);
+    throw error;
+  }
+});
+
 // Deliberately disabled until box openings and event claims are tracked
 // authoritatively on the server. A callable that lets a client request a
 // fresh random reward without a server-verified game action would be exploitable.
