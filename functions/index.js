@@ -841,7 +841,7 @@ exports.saveGameSettings = onCall({ region: "europe-west1" }, async (request) =>
   } else if (data.luckMultiplier !== undefined) {
     throw new HttpsError("failed-precondition", "Die Server-Sperre verhindert diese Änderung.");
   }
-  const decimalOdds = ["blitzChance", "spiderChance", "colaChance", "vineChance", "elephantChestChance", "oceanGoldenSharkChance", "magicCubeAChance", "magicCubeBChance", "magicCubeCChance"];
+  const decimalOdds = ["blitzChance", "spiderChance", "colaChance", "vineChance", "elephantChestChance", "oceanGoldenSharkChance", "multiverseSecretChance", "magicCubeAChance", "magicCubeBChance", "magicCubeCChance"];
   for (const key of decimalOdds) {
     if (data[key] === undefined) continue;
     const value = Number(data[key]);
@@ -1172,6 +1172,38 @@ exports.scanOceanPearlRadar = onCall({ region: "europe-west1" }, async (request)
   const result = radarTx.snapshot.val();
   if (!result?.radarUsed) throw new HttpsError("failed-precondition", "Pearl Radar konnte nicht aktiviert werden.");
   return { treasureIndex: result.treasureIndex, remaining };
+});
+
+exports.startMultiverseChallenge = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "multiverse") throw new HttpsError("failed-precondition", "Multiverse-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const settings = (await db.ref("settings").get()).val() || {};
+  const chance = Math.max(0, Math.min(1, Number(settings.multiverseSecretChance) || 0));
+  const ref = db.ref("events/multiverseChallenges/" + runId + "/" + auth.uid);
+  const tx = await ref.transaction((existing) => existing || {
+    startedAt: Date.now(),
+    secretAvailable: secureUnit() < chance,
+    secretChance: chance
+  });
+  return { startedAt: tx.snapshot.val().startedAt };
+});
+
+exports.discoverMultiverseSecret = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "multiverse") throw new HttpsError("failed-precondition", "Multiverse-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const ref = db.ref("events/multiverseChallenges/" + runId + "/" + auth.uid);
+  const tx = await ref.transaction((challenge) => {
+    if (!challenge || Date.now() - Number(challenge.startedAt || 0) < 90000 || challenge.secretAvailable !== true || challenge.secretDiscovered === true) return;
+    return { ...challenge, secretDiscovered: true, discoveredAt: Date.now() };
+  });
+  if (!tx.committed) return { discovered: false };
+  return { discovered: true };
 });
 
 exports.startLavaChallenge = onCall({ region: "europe-west1" }, async (request) => {
