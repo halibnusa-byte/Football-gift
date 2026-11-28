@@ -806,7 +806,7 @@ $('chatSendBtn').onclick=async()=>{
   msg('chatStatus','Nachricht gesendet.');
  }catch(e){msg('chatStatus',e?.message||'Nachricht konnte nicht gesendet werden.');}
 };
-$('messageManSend').onclick=async()=>{const t=$('messageManText').value.trim();if(!t)return msg('messageManStatus','Bitte eine Nachricht eingeben.');await push(path('messages'),{uid,name,text:t,at:Date.now()});await addActivity('hat eine Nachricht geschrieben.');$('messageManText').value='';msg('messageManStatus','Nachricht gesendet.')};
+$('messageManSend').onclick=async()=>{const textValue=$('messageManText').value.trim();if(!textValue)return msg('messageManStatus','Bitte eine Nachricht eingeben.');try{await httpsCallable(functions,'sendChatMessage')({text:textValue});$('messageManText').value='';msg('messageManStatus','Nachricht gesendet.');}catch(e){msg('messageManStatus',e?.message||'Nachricht konnte nicht gesendet werden.');}};
 $('logoutBtn').onclick=async()=>{if(uid)await remove(path('online/'+uid));unsubs.forEach(f=>f());if(watchUnsub)watchUnsub();unsubs=[];await signOut(auth);uid=null;show('app',false);show('loginPanel',true)};
 $('awardPrize').innerHTML='';PRIZES.concat([{id:'diamondGift',name:'Diamond-Geschenk'}]).forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;$('awardPrize').append(o)});
 setInterval(()=>{if(uid){update(path('online/'+uid),{name,at:Date.now()}).catch(()=>{});updateHeader();}},30000);
