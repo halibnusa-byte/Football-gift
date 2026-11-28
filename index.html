@@ -285,13 +285,11 @@ async function openBox(i){
  await saveRound();renderInventory();renderRanking();
 }
 async function enter(){
- if(serverState!=='open'&&!isOwner){applyServerState();return msg('loginMsg',serverState==='locked'?'Server gesperrt.':LOCK_ERR);}
  name=clean($('playerName').value);if(name.length<2)return msg('loginMsg','Bitte mindestens 2 Zeichen eingeben.');
  try{
   if(!auth.currentUser)await signInAnonymously(auth);uid=auth.currentUser.uid;
-  const snap=await get(path('players/'+uid));player=snap.val()||{name,inventory:{},firstWon:{},totalWins:0,created:Date.now()};
-  player.name=name;await update(path('players/'+uid),{name,created:player.created||Date.now()});
-  await set(path('online/'+uid),{name,at:Date.now()});
+  const joined=await httpsCallable(functions,'joinGame')({name});
+  player=joined.data.player;name=player.name;
   show('loginPanel',false);show('app',true);$('hello').textContent='Willkommen, '+name+'!';
   if(Array.isArray(player.lastBoxes)&&player.lastBoxes.length===15){
     boxes=player.lastBoxes.map((b,i)=>({...b,id:i,opened:!!b.opened}));opened=boxes.filter(b=>b.opened).map(b=>b.id);
