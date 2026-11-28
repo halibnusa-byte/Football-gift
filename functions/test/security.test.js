@@ -168,5 +168,5 @@ test("admin live chat exposes report moderation controls", () => {
   assert.ok(client.includes('id="chatReportsPanel"'));
   assert.ok(client.includes("onValue(path('messageReports')"));
   assert.ok(client.includes("function renderChatReports"));
-  assert.ok(client.includes("action:'restore'"));
+  assert.ok(client.includes("['Wiederherstellen','restore']"));
 });
