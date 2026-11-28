@@ -156,10 +156,10 @@ exports.grantAdminTokens = onCall({ region: "europe-west1" }, async (request) =>
   if (!Number.isInteger(amount) || amount < 1 || amount > 50) {
     throw new HttpsError("invalid-argument", "Die Menge muss zwischen 1 und 50 liegen.");
   }
-  if (scope !== "single" && scope !== "global") {
+  if (scope !== "single" && scope !== "global" && scope !== "random") {
     throw new HttpsError("invalid-argument", "Ungültiger Vergabebereich.");
   }
-  if (prizeId === "football" && (scope !== "single" || amount !== 1)) {
+  if (prizeId === "football" && ((scope === "global") || amount !== 1)) {
     throw new HttpsError("failed-precondition", "Der Football Token kann nur einmal an einen einzelnen Spieler vergeben werden.");
   }
 
@@ -171,6 +171,10 @@ exports.grantAdminTokens = onCall({ region: "europe-west1" }, async (request) =>
     if (targets.length > 200) {
       throw new HttpsError("failed-precondition", "Zu viele Spieler für eine globale Aktion. Bitte in kleinere Gruppen aufteilen.");
     }
+  } else if (scope === "random") {
+    const candidates = Object.keys(players);
+    if (!candidates.length) throw new HttpsError("failed-precondition", "Es gibt keine Spieler.");
+    targets = [candidates[crypto.randomInt(candidates.length)]];
   } else {
     if (!targetName) throw new HttpsError("invalid-argument", "Bitte einen Spielernamen eingeben.");
     const normalized = targetName.toLowerCase();
