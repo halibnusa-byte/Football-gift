@@ -10,6 +10,7 @@ const roleCodeMapSecret = defineSecret("ROLE_CODE_MAP");
 
 initializeApp({ databaseURL: "https://football-gift-challange-default-rtdb.europe-west1.firebasedatabase.app" });
 const db = getDatabase();
+const GAME_EXPIRY_MS = Date.parse("2026-11-28T14:30:00+01:00");
 
 const EVENT_TYPES = new Set([
   "galaxy", "diamond", "hacker", "unicorn", "robot", "cube", "skibidi",
@@ -119,6 +120,7 @@ function pickRoundPrize(multiplier, eventType, settings, player) {
 exports.startPlayerRound = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
   await assertMainAdminDuringLock(auth);
+  if (Date.now() > GAME_EXPIRY_MS) throw new HttpsError("failed-precondition", "Das Spiel ist seit dem 28.11.2026 um 14:30 Uhr beendet.");
   const playerRef = db.ref("players/" + auth.uid);
   const tx = await playerRef.transaction((current) => {
     if (!current) return;
@@ -148,6 +150,7 @@ exports.startPlayerRound = onCall({ region: "europe-west1" }, async (request) =>
 exports.openPlayerGift = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
   await assertMainAdminDuringLock(auth);
+  if (Date.now() > GAME_EXPIRY_MS) throw new HttpsError("failed-precondition", "Das Spiel ist seit dem 28.11.2026 um 14:30 Uhr beendet.");
   const index = Number(request.data?.index);
   const roundId = String(request.data?.roundId || "");
   if (!Number.isInteger(index) || index < 0 || index >= 15 || !roundId) throw new HttpsError("invalid-argument", "Ungültige Geschenkbox.");
