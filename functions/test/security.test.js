@@ -180,3 +180,14 @@ test("main admin random recipient grant selects a player server-side without ran
   assert.ok(client.includes("grantTokens(true)"));
   assert.ok(client.includes("prizeId:$('awardPrize').value"));
 });
+
+test("update lockdown rejects non-main-admin event, gift, announcement and chat actions", () => {
+  assert.ok(source.includes("async function assertMainAdminDuringLock(auth)"));
+  assert.ok(source.includes("Während der Update-Sperre hat nur der Hauptadmin Zugriff."));
+  for (const fn of ["setActiveEvent", "sendGift", "sendAnnouncement", "sendChatMessage", "deleteChatMessage", "reportChatMessage"]) {
+    const at = source.indexOf("exports." + fn + " = onCall");
+    assert.notEqual(at, -1);
+    const section = source.slice(at, at + 700);
+    assert.ok(section.includes("assertMainAdminDuringLock(auth)"), fn + " should enforce update lockdown");
+  }
+});
