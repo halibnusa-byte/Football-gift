@@ -842,7 +842,8 @@ onAuthStateChanged(auth,u=>{if(u)startServerWatch();else signInAnonymously(auth)
 // ===== ENDE SERVER LOCKDOWN 1.0 =====
 
 $('joinBtn').onclick=enter;$('playerName').addEventListener('keydown',e=>{if(e.key==='Enter')enter()});
-$('saveShopConfig').onclick=saveShopConfig;\n$('nextRound').onclick=async()=>{if(opened.length===3){try{await buildRound();$('result').textContent='Neue Runde! Viel Glück.';}catch(e){$('result').textContent=e?.message||'Neue Runde fehlgeschlagen.';}}};
+$('saveShopConfig').onclick=saveShopConfig;
+$('nextRound').onclick=async()=>{if(opened.length===3){try{await buildRound();$('result').textContent='Neue Runde! Viel Glück.';}catch(e){$('result').textContent=e?.message||'Neue Runde fehlgeschlagen.';}}};
 
 // Admin-Panel 2.0: schnelle Navigation zwischen den Bereichen
  document.querySelectorAll('.admin-nav-btn').forEach(btn=>btn.addEventListener('click',()=>{
