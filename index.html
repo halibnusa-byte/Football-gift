@@ -704,9 +704,12 @@ function renderPlannedMiniGame(type,body,result,status,claim,win){
  }else if(spec.mode==='cups'){
   const gift=Math.floor(Math.random()*3);panel.textContent='🎁 Das Geschenk ist in einer der drei Geister-Boxen versteckt.';['👻 Box A','👻 Box B','👻 Box C'].forEach((label,i)=>button(label,async()=>{if(!await begin())return;if(i===gift)await finish();else fail('Die Box war eine Illusion!');}));
  }else if(spec.mode==='photo'){
-  const target='🦒 GIRAFFE';panel.textContent='📷 Sucher aktiv · Finde: '+target;
-  const options=['🦓 ZEBRA','🦒 GIRAFFE','🐘 ELEFANT','🦁 LÖWE'].sort(()=>Math.random()-.5);
-  options.forEach(label=>button(label,async()=>{if(!await begin())return;if(label===target)await finish();else fail('Falsches Tier im Sucher – Foto verpasst.');}));
+  const animals=['🦓 ZEBRA','🦒 GIRAFFE','🐘 ELEFANT','🦁 LÖWE'];const target=animals[Math.floor(Math.random()*animals.length)];let focused=null;
+  panel.textContent='📷 SAFARI-SUCHER · Fotografiere: '+target;
+  const shutter=button('📸 FOTO AUFNEHMEN',async()=>{if(!focused){panel.textContent='Wähle zuerst ein Tier im Sucher.';return;}if(!await begin())return;shutter.disabled=true;if(focused===target)await finish();else fail('Das Tier war nicht das gesuchte Motiv – Foto verpasst.');});
+  shutter.disabled=true;
+  const options=[...animals].sort(()=>Math.random()-.5);
+  options.forEach(label=>button(label,()=>{if(done)return;focused=label;panel.textContent='📷 Fokus eingestellt: '+label+' · Jetzt Foto aufnehmen.';shutter.disabled=false;}));
  }else if(spec.mode==='reaction'){
   let armed=false;const b=button('REAKTION STARTEN',async()=>{if(!await begin())return;b.disabled=true;panel.textContent='Warte auf das grüne Signal …';const delay=1800+Math.floor(Math.random()*2500);setTimeout(()=>{if(done)return;armed=true;panel.textContent='🟢 JETZT!';button('JETZT DRÜCKEN',()=>{if(!armed){fail('Zu früh!');return;}finish();});},delay);});
  }
