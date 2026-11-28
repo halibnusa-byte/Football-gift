@@ -1143,25 +1143,61 @@ exports.submitZombieRescue = onCall({ region: "europe-west1" }, async (request) 
   return { votes: Object.keys(state?.votes || {}).length, completed: state?.completed === true };
 });
 
+exports.scanOceanPearlRadar = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "ocean") throw new HttpsError("failed-precondition", "Ocean-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const eventRef = db.ref("events/oceanChests/" + runId + "/" + auth.uid);
+  const existing = (await eventRef.get()).val();
+  if (existing?.radarUsed || existing?.chestIndex != null) throw new HttpsError("failed-precondition", "Pearl Radar kann nur vor dem Öffnen einer Schatztruhe verwendet werden.");
+  const playerRef = db.ref("players/" + auth.uid);
+  let remaining = 0;
+  const playerTx = await playerRef.transaction((p) => {
+    if (!p) return;
+    const shopInventory = { ...(p.shopInventory || {}) };
+    const quantity = Math.max(0, Number(shopInventory.pearlRadar) || 0);
+    if (quantity < 1) return;
+    remaining = quantity - 1;
+    if (remaining) shopInventory.pearlRadar = remaining;
+    else delete shopInventory.pearlRadar;
+    return { ...p, shopInventory };
+  });
+  if (!playerTx.committed) throw new HttpsError("failed-precondition", "Du besitzt kein Pearl Radar.");
+  const radarTx = await eventRef.transaction((current) => {
+    if (current?.radarUsed || current?.chestIndex != null) return;
+    return { ...(current || {}), treasureIndex: Number.isInteger(Number(current?.treasureIndex)) ? Number(current.treasureIndex) : crypto.randomInt(3), radarUsed: true };
+  });
+  const result = radarTx.snapshot.val();
+  if (!result?.radarUsed) throw new HttpsError("failed-precondition", "Pearl Radar konnte nicht aktiviert werden.");
+  return { treasureIndex: result.treasureIndex, remaining };
+});
+
 exports.openOceanChest = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
   await assertMainAdminDuringLock(auth);
   const chestIndex = Number(request.data?.chestIndex);
   if (!Number.isInteger(chestIndex) || chestIndex < 0 || chestIndex > 2) throw new HttpsError("invalid-argument", "Ungültige Schatztruhe.");
-  const [events, settings, player] = await Promise.all([
+  const [eventsSnap, settingsSnap, playerSnap] = await Promise.all([
     db.ref("events").get(), db.ref("settings").get(), db.ref("players/" + auth.uid).get()
   ]);
-  const eventState = events.val() || {};
+  const eventState = eventsSnap.val() || {};
   if (eventState.active !== "ocean") throw new HttpsError("failed-precondition", "Ocean-Event ist nicht aktiv.");
   const runId = String(eventState.runId || eventState.startedAt || "");
-  if (!player.val()?.eventClaims?.["ocean:" + runId]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
-  const chance = Math.max(0, Math.min(1, Number(settings.val()?.oceanGoldenSharkChance) || 0));
+  if (!playerSnap.val()?.eventClaims?.["ocean:" + runId]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
+  const chance = Math.max(0, Math.min(1, Number(settingsSnap.val()?.oceanGoldenSharkChance) || 0));
   const ref = db.ref("events/oceanChests/" + runId + "/" + auth.uid);
-  const proposed = { chestIndex, goldenShark: secureUnit() < chance, openedAt: Date.now() };
-  const tx = await ref.transaction((existing) => existing || proposed);
+  const randomTreasureIndex = crypto.randomInt(3);
+  const goldenShark = secureUnit() < chance;
+  const tx = await ref.transaction((current) => {
+    if (current?.chestIndex != null) return current;
+    const treasureIndex = Number.isInteger(Number(current?.treasureIndex)) ? Number(current.treasureIndex) : randomTreasureIndex;
+    return { ...(current || {}), chestIndex, treasureIndex, treasure: chestIndex === treasureIndex, goldenShark, openedAt: Date.now() };
+  });
   const outcome = tx.snapshot.val();
   if (Number(outcome.chestIndex) !== chestIndex) throw new HttpsError("already-exists", "Du hast bereits eine andere Schatztruhe geöffnet.");
-  return { goldenShark: outcome.goldenShark === true };
+  return { treasure: outcome.treasure === true, goldenShark: outcome.goldenShark === true };
 });
 
 exports.openMagicCube = onCall({ region: "europe-west1" }, async (request) => {
@@ -1256,7 +1292,9 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
     ? (magicCubeOutcome.rewardId ? ROUND_PRIZES.find((p) => p.id === magicCubeOutcome.rewardId) || null : null)
     : eventId === "ocean" && oceanChestOutcome.goldenShark === true
       ? { id: "diamondGift", special: "goldenShark" }
-      : pickRoundPrize(currentLuck(auth, before, settings), eventId, settings, before);
+      : eventId === "ocean" && oceanChestOutcome.treasure !== true
+        ? null
+        : pickRoundPrize(currentLuck(auth, before, settings), eventId, settings, before);
   let reserved = false;
   if (reward?.id === "football") {
     const txOwner = await db.ref("settings/footballTokenOwner").transaction((v) => v == null ? auth.uid : undefined);
