@@ -619,8 +619,43 @@ async function renderEventChallenge(){
  }else if(type==='cube'){
   const q=document.createElement('p');q.textContent='Rätsel: Ich habe sechs Seiten und farbige Felder. Was bin ich?';const inp=document.createElement('input');inp.placeholder='Deine Antwort';const b=document.createElement('button');b.textContent='ANTWORT';b.onclick=async()=>{b.disabled=true;if(!await claim())return;if(['zauberwürfel','zauberwurfel','rubik cube','rubiks cube'].includes(inp.value.trim().toLowerCase()))await win('Richtig gelöst');else result.textContent='Falsch – keine Belohnung.';inp.disabled=true;};body.append(q,inp,b);
  }else if(type==='time'){
-  const q=document.createElement('p');q.textContent='Wähle deine Zeitreise:';body.append(q);
-  ['Vergangenheit','Gegenwart','Zukunft'].forEach(v=>{const b=document.createElement('button');b.className='secondary';b.textContent=v;b.onclick=async()=>{body.querySelectorAll('button').forEach(x=>x.disabled=true);if(await claim()){if(Math.random()<.45)await win('Zeitreise erfolgreich');else result.textContent='⏳ Niete – keine Belohnung.';}};body.append(b)});
+  const videos={
+   'Cristiano Ronaldo':['9N3rLlUqXS4','OpBxzZgZ6v0'],
+   'Lionel Messi':['d2KV4BPoBKY','mdbTyzu__XY'],
+   'Neymar Jr.':['rrY4sMtobGQ','t3UlZ4qY9o0']
+  };
+  const q=document.createElement('p');q.textContent='Wähle einen Fußballer. Danach wird zufällig eines seiner zwei gespeicherten Shorts einmal abgespielt.';body.append(q);
+  let playing=false;
+  Object.keys(videos).forEach(playerName=>{
+   const b=document.createElement('button');b.className='secondary';b.textContent=playerName;
+   b.onclick=async()=>{
+    if(playing)return;
+    if(!await claim()){status.textContent='Du hast deine Zeitreise in diesem Event bereits benutzt.';return;}
+    playing=true;body.querySelectorAll('button').forEach(x=>x.disabled=true);
+    const list=videos[playerName],videoId=list[Math.floor(Math.random()*list.length)];
+    const frame=document.createElement('iframe');frame.width='100%';frame.height='520';frame.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';frame.allowFullscreen=true;
+    frame.style.cssText='display:block;width:100%;max-width:420px;min-height:520px;margin:12px auto;border:0;border-radius:16px';
+    frame.src='https://www.youtube-nocookie.com/embed/'+videoId+'?autoplay=1&mute=1&enablejsapi=1&playsinline=1&rel=0&origin='+encodeURIComponent(location.origin);
+    body.append(frame);q.textContent=playerName+'s Video läuft einmal. Nach dem Ende kehrt das Spiel zurück.';
+    let finished=false;
+    const onMessage=async event=>{
+     if(event.source!==frame.contentWindow||finished)return;
+     let data=event.data;try{if(typeof data==='string')data=JSON.parse(data);}catch{return;}
+     if(data?.event==='onStateChange'&&Number(data.info)===0){
+      finished=true;window.removeEventListener('message',onMessage);
+      try{if(document.fullscreenElement)await document.exitFullscreen();}catch{}
+      frame.remove();await win('Zeitreise abgeschlossen');
+     }
+    };
+    window.addEventListener('message',onMessage);
+    frame.addEventListener('load',()=>{
+     frame.contentWindow?.postMessage(JSON.stringify({event:'listening',id:1}),'*');
+     frame.contentWindow?.postMessage(JSON.stringify({event:'command',func:'addEventListener',args:['onStateChange']}),'*');
+    },{once:true});
+    try{if(frame.requestFullscreen)await frame.requestFullscreen();}catch{}
+   };
+   body.append(b);
+  });
  }else if(type==='school'){
   const q=document.createElement('p');q.textContent='Wie viele Spieler einer Mannschaft stehen normalerweise gleichzeitig auf dem Fußballfeld?';const inp=document.createElement('input');inp.placeholder='Antwort als Zahl';const b=document.createElement('button');b.textContent='ANTWORT ABSENDEN';b.onclick=async()=>{b.disabled=true;if(await claim()){if(inp.value.trim()==='11')await win('Richtig');else result.textContent='Falsch – kein Geschenk.';}};body.append(q,inp,b);
  }else if(type==='lava'){
