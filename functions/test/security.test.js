@@ -503,3 +503,8 @@ test("Empty Ocean chests cannot be used to claim an event prize", () => {
   assert.match(client, /Die Schatztruhe war leer – diesmal eine Niete/);
   assert.doesNotMatch(client, /Leere Schatztruhe/);
 });
+
+test("Alien recovery code accepts exactly four numeric digits", () => {
+  const recover = source.slice(source.indexOf("exports.recoverAlienGift"), source.indexOf("exports.openOceanChest"));
+  assert.match(recover, /if \(!\/\^\\d\{4\}\$\//);
+});
