@@ -538,3 +538,16 @@ test("Multiverse secret dimension appears only after three switches and an admin
   assert.match(client, /discoverMultiverseSecret/);
   assert.match(client, /multiverseSecretChance/);
 });
+
+test("Multiverse requires all three timed dimension answers or the secret-rift path", () => {
+  const submit = source.slice(source.indexOf("exports.submitMultiverseAnswer"), source.indexOf("exports.discoverMultiverseSecret"));
+  const awardStart = source.indexOf("exports.awardEventReward");
+  const award = source.slice(awardStart, source.indexOf("exports.", awardStart + 10));
+  assert.match(submit, /currentDimension/);
+  assert.match(submit, /answer !== 0/);
+  assert.match(submit, /Object\.keys\(solvedDimensions\)\.length === 3/);
+  assert.match(award, /eventId === "multiverse"/);
+  assert.match(award, /challenge\.completed !== true && challenge\.secretDiscovered !== true/);
+  assert.match(client, /submitMultiverseAnswer/);
+  assert.match(client, /Gelöst:/);
+});
