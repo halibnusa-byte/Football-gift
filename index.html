@@ -818,13 +818,15 @@ async function renderEventChallenge(){
   status.textContent='Free-for-all: 3 Leben pro Spieler. Bei 0 Leben wird man Zuschauer. Die drei besten Spieler erhalten je ein DIAMOND GESCHENK.';
  }else if(type==='ocean'){
   const q=document.createElement('p');q.textContent='THE LOST TREASURE: Drei versunkene Schatztruhen warten auf dich. Wähle genau eine.';body.append(q);
-  let used=false;
-  for(let i=1;i<=3;i++){
-   const chest=document.createElement('button');chest.className='secondary';chest.textContent='🧰 Schatztruhe '+i;
+  const hint=Math.floor(Math.random()*3);let used=false;
+  const radar=Number(player?.shopInventory?.pearlRadar||0)>0;
+  if(radar){const scan=document.createElement('button');scan.textContent='🦪 PEARL RADAR BENUTZEN';scan.onclick=async()=>{scan.disabled=true;try{await useShopItem('pearlRadar');q.textContent='🦪 Pearl Radar: Ein starkes Signal kommt aus Schatztruhe '+(hint+1)+'.';}catch(e){scan.disabled=false;result.textContent=e?.message||'Pearl Radar nicht verfügbar.';}};body.append(scan);}
+  for(let i=0;i<3;i++){
+   const chest=document.createElement('button');chest.className='secondary';chest.textContent='🧰 Schatztruhe '+(i+1);
    chest.onclick=async()=>{if(used)return;used=true;body.querySelectorAll('button').forEach(x=>x.disabled=true);if(await claim())await win('Schatztruhe geöffnet');};
    body.append(chest);
   }
-  status.textContent='Die Truhe kann ein bestehendes Token oder eine Niete enthalten.';
+  status.textContent='Die Truhe kann ein bestehendes Token oder eine Niete enthalten. Ein seltener goldener Hai kann zusätzlich auftauchen.';
  }else if(type==='zombie'){
   const q=document.createElement('p');q.textContent='THE LAST SURVIVOR: Du hast drei Impfstoff-Fläschchen. Wähle eines der fünf geheimnisvollen Fläschchen.';body.append(q);
   const safeIndex=Math.floor(Math.random()*5);let chosen=false;
