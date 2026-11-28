@@ -105,3 +105,18 @@ test("browser gift transfer, Galaxy queue and reset use server callables", () =>
   assert.match(reset, /httpsCallable\(functions,'resetPlayerData'\)/);
   assert.doesNotMatch(reset, /update\(path\('players\//);
 });
+
+
+test("announcements are sent through a role-checked backend callable", () => {
+  assert.match(source, /exports\\.sendAnnouncement\\s*=\\s*onCall/);
+  assert.match(source, /requireRole\\(request, \\["mainAdmin", "halfAdmin", "quarterAdmin"\\]\\)/);
+  assert.match(source, /message\\.length > 240/);
+  assert.match(source, /announcements\\/global/);
+  assert.match(source, /announcements\\/users\\//);
+});
+
+test("browser announcement UI uses the trusted callable instead of direct database writes", () => {
+  const section = client.slice(client.indexOf("async function adminAnnouncement"), client.indexOf("async function spawnGalaxy"));
+  assert.match(section, /httpsCallable\\(functions,'sendAnnouncement'\\)/);
+  assert.doesNotMatch(section, /set\\(path\\(['"]announcements/);
+});
