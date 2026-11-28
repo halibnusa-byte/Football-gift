@@ -1645,10 +1645,15 @@ exports.submitSchoolExam = onCall({ region: "europe-west1" }, async (request) =>
   if (events.active !== "school") throw new HttpsError("failed-precondition", "School-Event ist nicht aktiv.");
   const runId = String(events.runId || events.startedAt || "");
   const playerRef = db.ref("players/" + auth.uid);
+  const ref = db.ref("events/schoolExams/" + runId + "/" + auth.uid);
+  const existingExam = (await ref.get()).val();
   if (!retry) {
     const player = (await playerRef.get()).val();
     if (!player?.eventClaims?.["school:" + runId]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
   } else {
+    if (!existingExam || !existingExam.firstAnswered || existingExam.firstCorrect === true || existingExam.retryUsed || existingExam.completed) {
+      throw new HttpsError("failed-precondition", "Die Report Card kann nur eine nicht bestandene Prüfung einmal neu bewerten.");
+    }
     const itemTx = await playerRef.transaction((p) => {
       if (!p) return;
       const inventory = { ...(p.shopInventory || {}) };
@@ -1658,7 +1663,6 @@ exports.submitSchoolExam = onCall({ region: "europe-west1" }, async (request) =>
     });
     if (!itemTx.committed) throw new HttpsError("failed-precondition", "Du besitzt keine Golden Report Card.");
   }
-  const ref = db.ref("events/schoolExams/" + runId + "/" + auth.uid);
   const tx = await ref.transaction((exam) => {
     if (!exam || exam.completed) return;
     if (retry) {
