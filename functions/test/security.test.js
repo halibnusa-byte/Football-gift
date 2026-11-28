@@ -276,3 +276,10 @@ test("Unicorn piñata does not use an invented 50-percent reward chance", () => 
   assert.match(section, /await win\('Die Piñata spuckt aus'\)/);
   assert.doesNotMatch(section, /Math\.random\(\)\s*<\s*\.5/);
 });
+
+test("Power Hours do not use invented weekday or clock schedules", () => {
+  assert.match(source, /Keine erfundenen Power-Hours-Zeiten/);
+  assert.doesNotMatch(source, /parts\.weekday === ["']Sat["']/);
+  assert.doesNotMatch(source, /minute >= 900 && minute < 1020/);
+  assert.match(client, /const isPower=\(\)=>false/);
+});
