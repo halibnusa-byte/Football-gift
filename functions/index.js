@@ -1085,6 +1085,52 @@ exports.saveGodzillaVote = onCall({ region: "europe-west1" }, async (request) =>
   return { saved: true };
 });
 
+exports.chooseZombieVial = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const index = Number(request.data?.index);
+  if (!Number.isInteger(index) || index < 0 || index > 4) throw new HttpsError("invalid-argument", "Ungültiges Fläschchen.");
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "zombie") throw new HttpsError("failed-precondition", "Zombie-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const claimKey = "zombie:" + runId;
+  const player = (await db.ref("players/" + auth.uid).get()).val();
+  if (!player?.eventClaims?.[claimKey]) throw new HttpsError("failed-precondition", "Bitte nimm zuerst am Zombie-Event teil.");
+  const vialRef = db.ref("events/zombieVials/" + runId + "/" + auth.uid);
+  const safe = new Set();
+  while (safe.size < 3) safe.add(crypto.randomInt(5));
+  const proposed = { index, safe: safe.has(index), chosenAt: Date.now() };
+  const tx = await vialRef.transaction((existing) => existing || proposed);
+  const outcome = tx.snapshot.val();
+  if (Number(outcome.index) !== index) throw new HttpsError("already-exists", "Du hast bereits ein anderes Fläschchen gewählt.");
+  if (!outcome.safe) return { safe: false };
+  const rescueRef = db.ref("events/zombieRescue/" + runId);
+  await rescueRef.transaction((current) => current || ({ ownerUid: auth.uid, votes: {}, completed: false, startedAt: Date.now() }));
+  const rescue = (await rescueRef.get()).val();
+  return { safe: true, owner: rescue.ownerUid === auth.uid };
+});
+
+exports.submitZombieRescue = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  await assertMainAdminDuringLock(auth);
+  const answer = String(request.data?.answer || "").trim().toLowerCase();
+  if (answer !== "6" && answer !== "sechs") throw new HttpsError("invalid-argument", "Die Teamantwort stimmt nicht.");
+  const events = (await db.ref("events").get()).val() || {};
+  if (events.active !== "zombie") throw new HttpsError("failed-precondition", "Zombie-Event ist nicht aktiv.");
+  const runId = String(events.runId || events.startedAt || "");
+  const player = (await db.ref("players/" + auth.uid).get()).val();
+  if (!player?.eventClaims?.["zombie:" + runId]) throw new HttpsError("failed-precondition", "Nimm zuerst am Zombie-Event teil.");
+  const ref = db.ref("events/zombieRescue/" + runId);
+  const tx = await ref.transaction((current) => {
+    if (!current || current.completed) return;
+    const votes = { ...(current.votes || {}), [auth.uid]: true };
+    const completed = Object.keys(votes).length >= 2;
+    return { ...current, votes, completed, completedAt: completed ? Date.now() : null };
+  });
+  const state = tx.snapshot.val();
+  return { votes: Object.keys(state?.votes || {}).length, completed: state?.completed === true };
+});
+
 exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) => {
   const auth = requireAuth(request);
   await assertMainAdminDuringLock(auth);
@@ -1097,6 +1143,12 @@ exports.awardEventReward = onCall({ region: "europe-west1" }, async (request) =>
   const ref = db.ref("players/" + auth.uid);
   const before = (await ref.get()).val();
   const claimKey = eventId + ":" + runId;
+  if (eventId === "zombie") {
+    const rescue = (await db.ref("events/zombieRescue/" + runId).get()).val();
+    if (!rescue || rescue.completed !== true || rescue.ownerUid !== auth.uid) {
+      throw new HttpsError("failed-precondition", "Die gemeinsame Zombie-Rettung ist noch nicht abgeschlossen oder du bist nicht der Geschenkbesitzer.");
+    }
+  }
   if (!before?.eventClaims?.[claimKey]) throw new HttpsError("failed-precondition", "Event-Teilnahme fehlt.");
   if (before.eventClaims[claimKey].rewarded) throw new HttpsError("already-exists", "Belohnung bereits abgeholt.");
   const reward = pickRoundPrize(currentLuck(auth, before, settings), eventId, settings, before);
