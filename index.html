@@ -214,50 +214,6 @@ const isPower=()=>{const a=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Ber
 const luck=()=>Math.max(settings.luckEnabled?Number(settings.luckMultiplier||1):1,role==='special'?2:1,isPower()?2:1,role==='halfAdmin'?Math.min(50,Number(settings.roleLuck?.[uid]||1)):1);
 const newTokensUnlocked=()=>settings.completedEvents?.skibidi===true;
 const prizeById=id=>PRIZES.find(p=>p.id===id)||({id:'diamondGift',name:'Diamond-Geschenk',emoji:'💎',chance:0});
-function activePrizeList(){return PRIZES.filter(p=>(newTokensUnlocked()||!['deinewahl','doublegoal','selfretter','freistoss','comeback'].includes(p.id))&&!(p.id==='penalty'&&player.inventory?.penalty)&&!(p.id==='football'&&settings.footballTokenOwner));}
-function weightedPrize(mult=1){
- let list=activePrizeList(),weights=list.map(p=>p.chance*mult),sum=weights.reduce((a,b)=>a+b,0);
- if(sum>100)weights=weights.map(x=>x*100/sum);
- let r=Math.random()*100;
- for(let i=0;i<list.length;i++){r-=weights[i];if(r<0)return list[i]}
- return null;
-}
-function rarePick(){let r=Math.random();for(const x of RARE){r-=x.p;if(r<0)return x}return RARE[0]}
-function randomGift(){
- const list=activePrizeList().filter(p=>p.id!=='football');
- return weightedPrize(1);
-}
-async function awardPrizeTo(uidTarget,prizeId,amount=1){
- if(prizeId==='football'){
-  const tx=await runTransaction(path('settings/footballTokenOwner'),v=>v===null?uidTarget:undefined);
-  if(!tx.committed||tx.snapshot.val()!==uidTarget)throw new Error('Der Football Token wurde bereits im gesamten Spiel vergeben.');
- }
- const snap=await get(path('players/'+uidTarget));if(!snap.exists())throw new Error('Spieler nicht gefunden.');
- const p=snap.val(),inv={...(p.inventory||{})};
- if(prizeId==='football'&&inv.football)throw new Error('Der Spieler besitzt den Football Token bereits.');
- inv[prizeId]=(Number(inv[prizeId])||0)+amount;
- const first={...(p.firstWon||{})};if(!first[prizeId])first[prizeId]=Date.now();
- await update(path('players/'+uidTarget),{inventory:inv,firstWon:first,totalWins:(p.totalWins||0)+amount});
- if(uidTarget===uid){player.inventory=inv;player.firstWon=first;player.totalWins=(player.totalWins||0)+amount;}
- return true;
-}
-async function rollAndAward(targetUid,rareMult=1,source='Box',forceGalaxy=false){
- let prize=null;
- if(forceGalaxy||(eventState.active==='galaxy'&&Math.random()<0.00001)){
-  
-  let choices=['comeback','revenge'];if(!settings.footballTokenOwner)choices.push('football');
-  prize=PRIZES.find(p=>p.id===choices[Math.floor(Math.random()*choices.length)]);
- }else if(eventState.active==='elephant'&&Math.random()<Number(settings.elephantChestChance??0.00001)){
-  const id=Math.random()<0.5?'revenge':'switch';prize=PRIZES.find(p=>p.id===id);
- }else if(eventState.active==='diamond'&&Math.random()<(Number(settings.diamondChance??0.1)/100)){
-  prize={id:'diamondGift',name:'Diamond-Geschenk',emoji:'💎'};
- }else {let extra=1;const ev=eventState.active; if(ev==='blitz'&&Math.random()<Number(settings.blitzChance??0.015))extra=10; if(ev==='spiderman'&&Math.random()<Number(settings.spiderChance??0.01))extra=Number(settings.spiderLuck||5); if(ev==='cocacola'&&Math.random()<Number(settings.colaChance??0.01))extra=Number(settings.colaLuck||5); if(ev==='plants'&&Math.random()<Number(settings.vineChance??0.01))extra=Number(settings.plantLuck||5); prize=weightedPrize(luck()*rareMult*extra); }
- if(prize){
-  try{await awardPrizeTo(targetUid,prize.id,1);if(targetUid===uid){$('result').textContent='🎉 '+prize.emoji+' '+prize.name+'!';$('result').classList.add('win');}await addActivity(name+' hat ein Geschenk geöffnet: '+prize.name);}
-  catch(e){if(targetUid===uid)$('result').textContent='🎁 Niete';}
- }else if(targetUid===uid){$('result').textContent='Niete! Vielleicht beim nächsten Mal.';}
- return prize;
-}
 async function addActivity(textValue){if(!uid)return;await httpsCallable(functions,'addPlayerActivity')({text:textValue});}
 function renderBoxes(){
  const g=$('boxGrid');g.innerHTML='';
