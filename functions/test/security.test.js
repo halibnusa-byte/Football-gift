@@ -430,3 +430,10 @@ test("Turbo Challenge records server times and pays the top three when the event
   assert.match(client, /startRacing/);
   assert.match(client, /finishRacing/);
 });
+
+test("Mystery and Egypt events use clue and hieroglyph challenges", () => {
+  assert.match(client, /mystery:\{title:'THE UNKNOWN · FALLAKTE',mode:'casefile'/);
+  assert.match(client, /FALLAKTE 07 · HINWEISE/);
+  assert.match(client, /egypt:\{title:"THE PHARAOH'S SECRET · HIEROGLYPHEN",mode:'hieroglyph'/);
+  assert.match(client, /HIEROGLYPHEN-TAFEL/);
+});
