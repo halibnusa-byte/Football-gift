@@ -352,7 +352,7 @@ async function enter(){
 }
 function subscribe(){
  unsubs.forEach(f=>f());unsubs=[];
- unsubs.push(onValue(path('settings'),s=>{settings=s.val()||{};updateHeader();renderInventory();renderRanking();}));
+ unsubs.push(onValue(path('settings'),s=>{settings=s.val()||{};const sharkField=$('oceanSharkChance');if(sharkField&&document.activeElement!==sharkField)sharkField.value=settings.oceanGoldenSharkChance==null?'':String(Number(settings.oceanGoldenSharkChance)*100);updateHeader();renderInventory();renderRanking();}));
  unsubs.push(onValue(path('events'),s=>{eventState=s.val()||{};updateHeader();renderEventChallenge();}));
  unsubs.push(onValue(path('players'),s=>{const all=s.val()||{};renderRanking(all);get(path('online')).then(o=>renderRoster(all,o.val()||{}));}));
  unsubs.push(onValue(path('online'),s=>{get(path('players')).then(p=>renderRoster(p.val()||{},s.val()||{}));renderWatchOptions(s.val()||{});}));
