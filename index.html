@@ -939,7 +939,7 @@ async function renderEventChallenge(){
     const card=document.createElement('div');card.className='mini';
     const name=document.createElement('b');name.textContent=(id===uid?'DU · ':'')+(p.name||'Spieler');card.append(name);
     const meta=document.createElement('div');meta.textContent=skins[p.skin||0]+' · ❤️ '+Math.max(0,Number(p.lives??3))+' · Treffer '+(p.hits||0)+(p.spectator?' · ZUSCHAUER':'');card.append(meta);
-    if(joined&&id!==uid&&!p.spectator&&elapsed()>=10000&&elapsed()<310000){const hit=document.createElement('button');hit.className='secondary';hit.textContent='🎯 TREFFER';hit.onclick=async()=>{hit.disabled=true;try{const r=await httpsCallable(functions,'laserHit')({targetUid:id});result.textContent=r.data.eliminated?'Gegner ausgeschieden!':'Treffer! Noch '+r.data.targetLives+' Leben.';}catch(e){hit.disabled=false;result.textContent=e?.message||'Treffer fehlgeschlagen.';}};card.append(hit);}
+    if(joined&&id!==uid&&!p.spectator&&elapsed()>=10000){const hit=document.createElement('button');hit.className='secondary';hit.textContent='🎯 TREFFER';hit.onclick=async()=>{hit.disabled=true;try{const r=await httpsCallable(functions,'laserHit')({targetUid:id});result.textContent=r.data.eliminated?'Gegner ausgeschieden!':'Treffer! Noch '+r.data.targetLives+' Leben.';}catch(e){hit.disabled=false;result.textContent=e?.message||'Treffer fehlgeschlagen.';}};card.append(hit);}
     board.append(card);
    });
   });
