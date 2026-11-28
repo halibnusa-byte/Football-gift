@@ -625,3 +625,66 @@ exports.moderateChatMessage = onCall({ region: "europe-west1" }, async (request)
   }
   return { action };
 });
+
+
+// Admin-controlled game settings are validated and written only by the backend.
+exports.saveGameSettings = onCall({ region: "europe-west1" }, async (request) => {
+  const auth = requireAuth(request);
+  const claims = auth.token || {};
+  const data = request.data || {};
+  const patch = {};
+  if (Object.prototype.hasOwnProperty.call(data, "roleLuck")) {
+    if (claims.halfAdmin !== true || claims.mainAdmin === true) {
+      throw new HttpsError("permission-denied", "Diese Einstellung ist nur für Halb-Admins verfügbar.");
+    }
+    const value = Number(data.roleLuck);
+    if (!Number.isFinite(value) || value < 1 || value > 50) {
+      throw new HttpsError("invalid-argument", "Der persönliche Multiplikator muss zwischen 1× und 50× liegen.");
+    }
+    const locked = (await db.ref("serverControl/locked").get()).val() === true;
+    if (locked) throw new HttpsError("failed-precondition", "Während der Sperre darf nur der Hauptadmin Einstellungen ändern.");
+    await db.ref("settings/roleLuck/" + auth.uid).set(value);
+    return { saved: true, roleLuck: value };
+  }
+  requireRole(request, ["mainAdmin"]);
+  const locked = (await db.ref("serverControl/locked").get()).val() === true;
+  if (locked !== true && data.luckMultiplier !== undefined) {
+    const value = Number(data.luckMultiplier);
+    if (!Number.isFinite(value) || value < 1 || value > 1000000 || typeof data.luckEnabled !== "boolean") {
+      throw new HttpsError("invalid-argument", "Ungültige Glücks-Einstellungen.");
+    }
+    patch.luckMultiplier = value;
+    patch.luckEnabled = data.luckEnabled;
+  } else if (data.luckMultiplier !== undefined) {
+    throw new HttpsError("failed-precondition", "Die Server-Sperre verhindert diese Änderung.");
+  }
+  const decimalOdds = ["blitzChance", "spiderChance", "colaChance", "vineChance", "elephantChestChance"];
+  for (const key of decimalOdds) {
+    if (data[key] === undefined) continue;
+    const value = Number(data[key]);
+    if (!Number.isFinite(value) || value < 0 || value > 1) {
+      throw new HttpsError("invalid-argument", "Ungültige Event-Chance: " + key);
+    }
+    patch[key] = value;
+  }
+  for (const key of ["spiderLuck", "colaLuck", "plantLuck"]) {
+    if (data[key] === undefined) continue;
+    const value = Number(data[key]);
+    if (!Number.isFinite(value) || value < 1 || value > 1000000) {
+      throw new HttpsError("invalid-argument", "Ungültiger Multiplikator: " + key);
+    }
+    patch[key] = value;
+  }
+  if (data.diamondChance !== undefined) {
+    const value = Number(data.diamondChance);
+    if (!Number.isFinite(value) || value < 0 || value > 100) {
+      throw new HttpsError("invalid-argument", "Die Diamond-Chance muss zwischen 0 und 100 liegen.");
+    }
+    patch.diamondChance = value;
+  }
+  if (Object.keys(patch).length === 0) {
+    throw new HttpsError("invalid-argument", "Keine gültigen Einstellungen übergeben.");
+  }
+  await db.ref("settings").update(patch);
+  return { saved: true, fields: Object.keys(patch) };
+});
