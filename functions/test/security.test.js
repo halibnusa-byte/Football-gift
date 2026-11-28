@@ -108,11 +108,11 @@ test("browser gift transfer, Galaxy queue and reset use server callables", () =>
 
 
 test("announcements are sent through a role-checked backend callable", () => {
-  assert.match(source, /exports\\.sendAnnouncement\\s*=\\s*onCall/);
-  assert.match(source, /requireRole\\(request, \\["mainAdmin", "halfAdmin", "quarterAdmin"\\]\\)/);
-  assert.match(source, /message\\.length > 240/);
-  assert.match(source, /announcements\\/global/);
-  assert.match(source, /announcements\\/users\\//);
+  assert.ok(source.includes("exports.sendAnnouncement = onCall"));
+  assert.ok(source.includes('requireRole(request, ["mainAdmin", "halfAdmin", "quarterAdmin"])'));
+  assert.ok(source.includes("message.length > 240"));
+  assert.ok(source.includes('"announcements/global"'));
+  assert.ok(source.includes('"announcements/users/"'));
 });
 
 test("browser announcement UI uses the trusted callable instead of direct database writes", () => {
