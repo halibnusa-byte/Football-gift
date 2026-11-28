@@ -792,6 +792,19 @@ async function renderEventChallenge(){
   const safeSet=new Set();while(safeSet.size<3)safeSet.add(Math.floor(Math.random()*5));let chosen=false;
   const labels=['🧪 Fläschchen 1','🧪 Fläschchen 2','🧪 Fläschchen 3','🧪 Fläschchen 4','🧪 Fläschchen 5'];
   labels.forEach((label,i)=>{const b=document.createElement('button');b.className='secondary';b.textContent=label;b.onclick=async()=>{if(chosen)return;chosen=true;body.querySelectorAll('button').forEach(x=>x.disabled=true);if(!await claim())return;if(!safeSet.has(i)){result.textContent='Das Fläschchen war leer – keine Belohnung.';return;}q.textContent='Impfstoff gefunden! Eine Zombie-Hand greift nach dem Geschenk. Löse die gemeinsame Rettungsaufgabe: Wie viele Buchstaben hat ZOMBIE?';const task=document.createElement('p');task.textContent='Gemeinsame Aufgabe: Alle Spieler helfen mit und geben die Antwort 6 ein.';const inp=document.createElement('input');inp.placeholder='Antwort';inp.inputMode='numeric';const go=document.createElement('button');go.textContent='GESCHENK RETTEN';go.onclick=async()=>{go.disabled=true;if(inp.value.trim()==='6')await win('Zombie-Hand abgewehrt – Geschenk gerettet');else result.textContent='Die Zombie-Hand hat das Geschenk erwischt.';};body.append(task,inp,go);};body.append(b);});
+ }else if(type==='multiverse'){
+  const q=document.createElement('p');q.textContent='DIMENSION BREAK: Alle 30 Sekunden wechselt die Welt. Springe durch einen Dimensionsriss und meistere jede Dimension.';body.append(q);
+  const timer=document.createElement('div');timer.className='status';body.append(timer);
+  const worlds=[
+   {name:'🌌 Sternen-Dimension',question:'Was leuchtet am Nachthimmel?',opts:['Sterne','Fische','Bäume'],answer:0},
+   {name:'🌋 Lava-Dimension',question:'Was entsteht, wenn Lava abkühlt?',opts:['Vulkanstein','Wasser','Papier'],answer:0},
+   {name:'🌊 Ozean-Dimension',question:'Welches Tier lebt im Meer?',opts:['Delfin','Kamel','Adler'],answer:0}
+  ];
+  let done=false,cycle=0,current=0;const start=Date.now();const currentWorld=()=>Math.floor((Date.now()-start)/30000);
+  const draw=()=>{cycle=currentWorld();current=cycle%worlds.length;const remain=30-Math.floor((Date.now()-start)/1000)%30;timer.textContent=worlds[current].name+' · Dimensionswechsel in '+remain+' Sekunden';if(cycle>=3&&!body.querySelector('.secret-rift')){const secret=document.createElement('button');secret.className='secret-rift';secret.textContent='✨ GEHEIMER DIMENSIONSRISS';secret.onclick=async()=>{if(done)return;done=true;clearInterval(interval);if(!await claim())return;await win('Geheime Dimension entdeckt');};body.append(secret);}};
+  draw();const interval=setInterval(()=>{if(!body.isConnected){clearInterval(interval);return;}draw();},1000);
+  const rift=document.createElement('button');rift.textContent='🌀 IN DEN DIMENSIONSRISS SPRINGEN';rift.onclick=()=>{if(done)return;const d=worlds[current];q.textContent='🌀 '+d.name+' · '+d.question;body.querySelectorAll('.dimension-choice').forEach(x=>x.remove());d.opts.forEach((v,i)=>{const b=document.createElement('button');b.className='secondary dimension-choice';b.textContent=v;b.onclick=async()=>{if(done)return;done=true;clearInterval(interval);body.querySelectorAll('button').forEach(x=>x.disabled=true);if(!await claim())return;if(i===d.answer)await win('Dimension-Prüfung bestanden');else result.textContent='Falsche Dimension – du bist zurückgekehrt.';};body.append(b);});};body.append(rift);
+  status.textContent='Drei Dimensionen wechseln automatisch. Nach drei Wechseln öffnet sich ein geheimer Riss.';
  }else if(type==='skibidi'){
   const stages=[['Noob-Glücksrad',100],['Glücksrad',500],['Boss-Glücksrad',1000],['Hacker-Glücksrad',1500],['Divine-Glücksrad',2000]];
   if(!await claim()){status.textContent='Du hast deinen Bosskampf in diesem Event bereits benutzt.';body.append(status);return;}
